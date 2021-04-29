@@ -11,32 +11,34 @@
 # ### 1. Load dependencies, set data/model paths, and set hype-parameters for optimization
 # we use PROX dataset, scene 'N3OpenArea', and please set the smplx/vpose model paths according to your configuration.
 
-# In[2]:
+# In[1]:
 
 
 import warnings
+
+import trimesh
+
+from util_mesh import define_scene_boundary_on_the_fly, read_full_mesh_sdf
+from utils_read_data import read_mesh_sdf, define_scene_boundary
+
 warnings.simplefilter("ignore", UserWarning)
 
+import open3d as o3d
 # from open3d import JVisualizer
-from open3d.j_visualizer import JVisualizer
-import torch
 import torch.optim as optim
 from tqdm import tqdm
 from human_body_prior.tools.model_loader import load_vposer
-import open3d as o3d
 import smplx
-from sklearn.neighbors import NearestNeighbors
 import chamfer_pytorch.dist_chamfer as ext
 from models.cvae import *
 from preprocess.preprocess_optimize import *
 from preprocess.bps_encoding import *
 from utils import *
-from utils_read_data import *
 
 data_dir = "/home/dougbel/Documents/UoB/5th_semestre/to_test/place_comparisson/data"
 
 prox_dataset_path = f'{data_dir}/datasets/prox'
-scene_name = 'N3OpenArea'
+scene_name = 'MPH16'
 # smplx/vpose model path
 smplx_model_path = f'{data_dir}/pretained/body_models/smpl'
 vposer_model_path = f'{data_dir}/pretained/body_models/vposer_v1_0'
@@ -64,13 +66,12 @@ bodyDec_path = f'{data_dir}/pretained/aes/body_dec_last_model.pkl'
 
 # ### 2. Load scene mesh, scene SDF, smplx model, vposer model
 
-# In[3]:
+# In[2]:
 
 
 # read scen mesh/sdf
-scene_mesh, cur_scene_verts, s_grid_min_batch, s_grid_max_batch, s_sdf_batch = read_mesh_sdf(prox_dataset_path,
-                                                                                             'prox',
-                                                                                             scene_name)
+# scene_mesh, cur_scene_verts, s_grid_min_batch, s_grid_max_batch, s_sdf_batch = read_mesh_sdf(prox_dataset_path,'prox',scene_name)
+scene_trimesh, cur_scene_verts, s_grid_min_batch, s_grid_max_batch, s_sdf_batch = read_full_mesh_sdf(prox_dataset_path,'prox',scene_name)
 smplx_model = smplx.create(smplx_model_path, model_type='smplx',
                            gender='neutral', ext='npz',
                            num_pca_comps=12,
@@ -96,10 +97,11 @@ print('[INFO] vposer model loaded')
 # ### 3. random select an area in the scene, and compute bps encodings
 # random place a 3D cage with cube size of 2 inside the 3D scene, compute the scene bps encoding, body bps encoding
 
-# In[4]:
-
+# In[3]:
 
 rot_angle_1, scene_min_x, scene_max_x, scene_min_y, scene_max_y = define_scene_boundary('prox', scene_name)
+# rot_angle_1, scene_min_x, scene_max_x, scene_min_y, scene_max_y =define_scene_boundary_on_the_fly(scene_trimesh)
+
 
 scene_verts = rotate_scene_smplx_predefine(cur_scene_verts, rot_angle=rot_angle_1)
 scene_verts_local, scene_verts_crop_local, shift = crop_scene_cube_smplx_predifine(
@@ -107,6 +109,21 @@ scene_verts_local, scene_verts_crop_local, shift = crop_scene_cube_smplx_predifi
     scene_min_x=scene_min_x, scene_max_x=scene_max_x, scene_min_y=scene_min_y, scene_max_y=scene_max_y,
     rotate=True)
 print('[INFO] scene mesh cropped and shifted.')
+
+#define the cube to compare
+orig_scene = scene_trimesh.copy(include_cache=True)
+orig_scene.visual.face_colors = [255, 0, 0, 20]
+rotated_scene = trimesh.Trimesh(vertices=scene_verts, faces=scene_trimesh.faces)
+rotated_scene.visual.face_colors = [255, 0, 255, 20]
+shifted_rotated_scene = trimesh.Trimesh(vertices=scene_verts_local, faces=scene_trimesh.faces)
+s = trimesh.Scene()
+s.add_geometry(scene_trimesh)
+s.add_geometry(rotated_scene)
+s.add_geometry(shifted_rotated_scene)
+s.show(caption=scene_name)
+
+
+
 
 
 scene_basis_set = bps_gen_ball_inside(n_bps=10000, random_seed=100)
@@ -121,7 +138,7 @@ print('[INFO] bps encoding computed.')
 
 # ### 4. load trained checkpoints, and random generate a body inside the selected area
 
-# In[5]:
+# In[4]:
 
 
 ############################# load trained model ###############################
@@ -166,14 +183,14 @@ print('[INFO] a random body is generated.')
 
 # ### 5. Optimization stage 1: perform simple optimization (without interaction-based losses)
 
-# In[6]:
+# In[5]:
 
 
 # load contact parts
 contact_part = ['L_Leg', 'R_Leg']
 vid, _ = get_contact_id(body_segments_folder=os.path.join(prox_dataset_path, 'body_segments'),
                         contact_body_parts=contact_part)
-        
+
 ################ stage 1 (simple optimization, without contact/collision loss) ######
 print('[INFO] start optimization stage 1...')
 body_params_rec = torch.randn(1, 72).to(device)  # initialize smplx params, bs=1, local 3D cage coordinate system
@@ -244,7 +261,7 @@ print('[INFO] optimization stage 1 finished.')
 
 # ### 6. Optimization stage 2: perform advanced optimizatioin (interaction-based), with contact and collision loss
 
-# In[7]:
+# In[6]:
 
 
 print('[INFO] start optimization stage 2...')
@@ -329,7 +346,7 @@ print('[INFO] optimization stage 2 finished.')
 
 # ### 7. Visualize the optimized body
 
-# In[8]:
+# In[ ]:
 
 
 # smplx params --> body mesh
@@ -345,13 +362,21 @@ body_verts_opt_prox_s2[:, 0] = temp[:, 0] * math.cos(-rot_angle_1) - temp[:, 1] 
 body_verts_opt_prox_s2[:, 1] = temp[:, 0] * math.sin(-rot_angle_1) + temp[:, 1] * math.cos(-rot_angle_1)
 body_verts_opt_prox_s2[:, 2] = temp[:, 2]
 
-body_mesh_opt_s2 = o3d.geometry.TriangleMesh()
-body_mesh_opt_s2.vertices = o3d.utility.Vector3dVector(body_verts_opt_prox_s2)
-body_mesh_opt_s2.triangles = o3d.utility.Vector3iVector(smplx_model.faces)
-body_mesh_opt_s2.compute_vertex_normals()
+
+# body_mesh_opt_s2 = o3d.geometry.TriangleMesh()
+# body_mesh_opt_s2.vertices = o3d.utility.Vector3dVector(body_verts_opt_prox_s2)
+# body_mesh_opt_s2.triangles = o3d.utility.Vector3iVector(smplx_model.faces)
+# body_mesh_opt_s2.compute_vertex_normals()
+
+body_trimesh_opt_s2 = trimesh.Trimesh(vertices=body_verts_opt_prox_s2, faces=smplx_model.faces, face_colors=[200, 200, 200, 255])
+
 
 # use normal open3d visualization
-o3d.visualization.draw_geometries([scene_mesh, body_mesh_opt_s2])  
+# o3d.visualization.draw_geometries([scene_trimesh, body_mesh_opt_s2])
+s = trimesh.Scene()
+s.add_geometry(scene_trimesh)
+s.add_geometry(body_trimesh_opt_s2)
+s.show(caption=scene_name)
 
 #  # use webGL
 # visualizer = JVisualizer() 
