@@ -1,6 +1,12 @@
+import json
 import math
 
+import trimesh
 import numpy as np
+import open3d as o3d
+import torch
+import os
+
 
 def angle_between_2D_vectors(orig_2dvetor, dest_2dvector):
     """
@@ -52,8 +58,76 @@ def define_scene_boundary_on_the_fly(scene):
     return rot_angle_1, scene_min_x, scene_max_x, scene_min_y, scene_max_y
 
 
+def read_full_mesh_sdf(dataset_path, dataset, scene_name):
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    if dataset == 'prox':
+        scene_mesh_path = os.path.join(dataset_path, 'scenes')
+        scene = o3d.io.read_triangle_mesh(os.path.join(scene_mesh_path, scene_name + '.ply'))
+        cur_scene_verts = np.asarray(scene.vertices)
+
+        ## read scene sdf
+        scene_sdf_path = os.path.join(dataset_path, 'sdf')
+        with open(os.path.join(scene_sdf_path, scene_name + '.json')) as f:
+            sdf_data = json.load(f)
+            grid_min = np.array(sdf_data['min'])
+            grid_max = np.array(sdf_data['max'])
+            grid_dim = sdf_data['dim']
+        sdf = np.load(os.path.join(scene_sdf_path, scene_name + '_sdf.npy')).reshape(grid_dim, grid_dim, grid_dim)
+        s_grid_min_batch = torch.tensor(grid_min, dtype=torch.float32, device=device).unsqueeze(0).unsqueeze(1)
+        s_grid_max_batch = torch.tensor(grid_max, dtype=torch.float32, device=device).unsqueeze(0).unsqueeze(1)
+        s_sdf_batch = torch.tensor(sdf, dtype=torch.float32, device=device).unsqueeze(0)
+        s_sdf_batch = s_sdf_batch.repeat(1, 1, 1, 1)  # [1, 256, 256, 256]
+
+
+    elif dataset == 'mp3d':
+        scene = o3d.io.read_triangle_mesh(os.path.join(dataset_path, scene_name + '.ply'))
+        # swap z, y axis
+        cur_scene_verts = np.zeros(np.asarray(scene.vertices).shape)
+        cur_scene_verts[:, 0] = np.asarray(scene.vertices)[:, 0]
+        cur_scene_verts[:, 1] = np.asarray(scene.vertices)[:, 2]
+        cur_scene_verts[:, 2] = np.asarray(scene.vertices)[:, 1]
+
+        ## read scene sdf
+        scene_sdf_path = os.path.join(dataset_path, 'sdf')
+        with open(os.path.join(scene_sdf_path, scene_name + '.json')) as f:
+            sdf_data = json.load(f)
+            grid_min = np.array(sdf_data['min'])
+            grid_max = np.array(sdf_data['max'])
+            grid_min = np.array([grid_min[0], grid_min[2], grid_min[1]])
+            grid_max = np.array([grid_max[0], grid_max[2], grid_max[1]])
+            grid_dim = sdf_data['dim']
+        sdf = np.load(os.path.join(scene_sdf_path, scene_name + '_sdf.npy')).reshape(grid_dim, grid_dim, grid_dim)
+        sdf = sdf.transpose(0, 2, 1)  # swap y,z axis
+        s_grid_min_batch = torch.tensor(grid_min, dtype=torch.float32, device=device).unsqueeze(0).unsqueeze(1)
+        s_grid_max_batch = torch.tensor(grid_max, dtype=torch.float32, device=device).unsqueeze(0).unsqueeze(1)
+        s_sdf_batch = torch.tensor(sdf, dtype=torch.float32, device=device).unsqueeze(0)
+        s_sdf_batch = s_sdf_batch.repeat(1, 1, 1, 1)
+
+
+    elif dataset == 'replica':
+        scene = o3d.io.read_triangle_mesh(os.path.join(os.path.join(dataset_path, scene_name), 'mesh.ply'))
+        cur_scene_verts = np.asarray(scene.vertices)
+
+        ## read scene sdf
+        scene_sdf_path = os.path.join(dataset_path, 'sdf')
+        with open(os.path.join(scene_sdf_path, scene_name + '.json')) as f:
+            sdf_data = json.load(f)
+            grid_min = np.array(sdf_data['min'])
+            grid_max = np.array(sdf_data['max'])
+            grid_dim = sdf_data['dim']
+        sdf = np.load(os.path.join(scene_sdf_path, scene_name + '_sdf.npy')).reshape(grid_dim, grid_dim, grid_dim)
+        s_grid_min_batch = torch.tensor(grid_min, dtype=torch.float32, device=device).unsqueeze(0).unsqueeze(1)
+        s_grid_max_batch = torch.tensor(grid_max, dtype=torch.float32, device=device).unsqueeze(0).unsqueeze(1)
+        s_sdf_batch = torch.tensor(sdf, dtype=torch.float32, device=device).unsqueeze(0)
+        s_sdf_batch = s_sdf_batch.repeat(1, 1, 1, 1)
+
+    return scene, cur_scene_verts, s_grid_min_batch, s_grid_max_batch, s_sdf_batch
+
+
+
+
 if __name__ == '__main__':
-    import trimesh
     import os
     dataset_prox_dir = "/home/dougbel/Documents/UoB/5th_semestre/to_test/place_comparisson/data/datasets/prox/scenes"
 

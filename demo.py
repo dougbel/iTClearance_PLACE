@@ -15,28 +15,29 @@
 
 
 import warnings
+
+import trimesh
+
+from util_mesh import define_scene_boundary_on_the_fly, read_full_mesh_sdf
+
 warnings.simplefilter("ignore", UserWarning)
 
+import open3d as o3d
 # from open3d import JVisualizer
-from open3d.j_visualizer import JVisualizer
-import torch
 import torch.optim as optim
 from tqdm import tqdm
 from human_body_prior.tools.model_loader import load_vposer
-import open3d as o3d
 import smplx
-from sklearn.neighbors import NearestNeighbors
 import chamfer_pytorch.dist_chamfer as ext
 from models.cvae import *
 from preprocess.preprocess_optimize import *
 from preprocess.bps_encoding import *
 from utils import *
-from utils_read_data import *
 
 data_dir = "/home/dougbel/Documents/UoB/5th_semestre/to_test/place_comparisson/data"
 
 prox_dataset_path = f'{data_dir}/datasets/prox'
-scene_name = 'N3OpenArea'
+scene_name = 'N0Sofa'
 # smplx/vpose model path
 smplx_model_path = f'{data_dir}/pretained/body_models/smpl'
 vposer_model_path = f'{data_dir}/pretained/body_models/vposer_v1_0'
@@ -68,7 +69,7 @@ bodyDec_path = f'{data_dir}/pretained/aes/body_dec_last_model.pkl'
 
 
 # read scen mesh/sdf
-scene_mesh, cur_scene_verts, s_grid_min_batch, s_grid_max_batch, s_sdf_batch = read_mesh_sdf(prox_dataset_path,
+scene_mesh, cur_scene_verts, s_grid_min_batch, s_grid_max_batch, s_sdf_batch = read_full_mesh_sdf(prox_dataset_path,
                                                                                              'prox',
                                                                                              scene_name)
 smplx_model = smplx.create(smplx_model_path, model_type='smplx',
@@ -98,8 +99,11 @@ print('[INFO] vposer model loaded')
 
 # In[3]:
 
+# rot_angle_1, scene_min_x, scene_max_x, scene_min_y, scene_max_y = define_scene_boundary('prox', scene_name)
 
-rot_angle_1, scene_min_x, scene_max_x, scene_min_y, scene_max_y = define_scene_boundary('prox', scene_name)
+scene_mesh_path = os.path.join(prox_dataset_path, 'scenes')
+trimesh_scn = trimesh.load(os.path.join(scene_mesh_path, scene_name+".ply"))
+rot_angle_1, scene_min_x, scene_max_x, scene_min_y, scene_max_y =define_scene_boundary_on_the_fly(trimesh_scn)
 
 
 scene_verts = rotate_scene_smplx_predefine(cur_scene_verts, rot_angle=rot_angle_1)
@@ -174,7 +178,7 @@ print('[INFO] a random body is generated.')
 contact_part = ['L_Leg', 'R_Leg']
 vid, _ = get_contact_id(body_segments_folder=os.path.join(prox_dataset_path, 'body_segments'),
                         contact_body_parts=contact_part)
-        
+
 ################ stage 1 (simple optimization, without contact/collision loss) ######
 print('[INFO] start optimization stage 1...')
 body_params_rec = torch.randn(1, 72).to(device)  # initialize smplx params, bs=1, local 3D cage coordinate system
@@ -352,7 +356,7 @@ body_mesh_opt_s2.triangles = o3d.utility.Vector3iVector(smplx_model.faces)
 body_mesh_opt_s2.compute_vertex_normals()
 
 # use normal open3d visualization
-o3d.visualization.draw_geometries([scene_mesh, body_mesh_opt_s2])  
+o3d.visualization.draw_geometries([scene_mesh, body_mesh_opt_s2])
 
 #  # use webGL
 # visualizer = JVisualizer() 
