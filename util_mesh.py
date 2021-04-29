@@ -1,11 +1,10 @@
 import json
 import math
 
+import os
 import trimesh
 import numpy as np
-import open3d as o3d
 import torch
-import os
 
 
 def angle_between_2D_vectors(orig_2dvetor, dest_2dvector):
@@ -48,9 +47,9 @@ def find_yaw_to_align_XY_OBB_with_BB(scene):
 def define_scene_boundary_on_the_fly(scene):
     rot_angle_1 = find_yaw_to_align_XY_OBB_with_BB(scene)
 
-    scn = scene.copy(include_cache=True)
-    scn.apply_transform(trimesh.transformations.euler_matrix(0,0,rot_angle_1,axes='rxyz'))
-    bb_vertices = scn.bounding_box.vertices
+    rot_scn = scene.copy(include_cache=True)
+    rot_scn.apply_transform(trimesh.transformations.euler_matrix(0,0,rot_angle_1,axes='rxyz'))
+    bb_vertices = rot_scn.bounding_box.vertices
 
     scene_max_x, scene_max_y = bb_vertices[:, :2].max(axis=0)
     scene_min_x, scene_min_y = bb_vertices[:, :2].min(axis=0)
@@ -63,7 +62,7 @@ def read_full_mesh_sdf(dataset_path, dataset, scene_name):
 
     if dataset == 'prox':
         scene_mesh_path = os.path.join(dataset_path, 'scenes')
-        scene = o3d.io.read_triangle_mesh(os.path.join(scene_mesh_path, scene_name + '.ply'))
+        scene = trimesh.load(os.path.join(scene_mesh_path, scene_name + '.ply'))
         cur_scene_verts = np.asarray(scene.vertices)
 
         ## read scene sdf
@@ -81,7 +80,7 @@ def read_full_mesh_sdf(dataset_path, dataset, scene_name):
 
 
     elif dataset == 'mp3d':
-        scene = o3d.io.read_triangle_mesh(os.path.join(dataset_path, scene_name + '.ply'))
+        scene = trimesh.load(os.path.join(dataset_path, scene_name + '.ply'))
         # swap z, y axis
         cur_scene_verts = np.zeros(np.asarray(scene.vertices).shape)
         cur_scene_verts[:, 0] = np.asarray(scene.vertices)[:, 0]
@@ -106,7 +105,7 @@ def read_full_mesh_sdf(dataset_path, dataset, scene_name):
 
 
     elif dataset == 'replica':
-        scene = o3d.io.read_triangle_mesh(os.path.join(os.path.join(dataset_path, scene_name), 'mesh.ply'))
+        scene = trimesh.load(os.path.join(os.path.join(dataset_path, scene_name), 'mesh.ply'))
         cur_scene_verts = np.asarray(scene.vertices)
 
         ## read scene sdf
