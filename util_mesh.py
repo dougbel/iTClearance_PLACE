@@ -27,11 +27,11 @@ def find_yaw_to_align_XY_OBB_with_BB(scene):
     :param scene: trimesh scene
     :return: yaw rotation to parallel X and Y planes
     """
-    box_ori = scene.bounding_box_oriented.as_outline()
-    obb_vertices = np.asarray(box_ori.vertices)
+    obb = scene.bounding_box_oriented.as_outline()
+    obb_vertices = np.asarray(obb.vertices)
 
     base_num_corner = 5 # this was arbitrarily selected
-    comb = [v for v in box_ori.vertex_nodes if base_num_corner in v]
+    comb = [v for v in obb.vertex_nodes if base_num_corner in v]
     # initializing variable
     yaw = math.pi
     for c in comb:
@@ -130,49 +130,46 @@ if __name__ == '__main__':
     import os
     dataset_prox_dir = "/home/dougbel/Documents/UoB/5th_semestre/to_test/place_comparisson/data/datasets/prox/scenes"
 
-    for scene in os.listdir(dataset_prox_dir):
+    for scene_name in os.listdir(dataset_prox_dir):
 
-        scn = trimesh.load(os.path.join(dataset_prox_dir, scene))
+        scn = trimesh.load(os.path.join(dataset_prox_dir, scene_name))
 
         rot_angle_1, scene_min_x, scene_max_x, scene_min_y, scene_max_y = define_scene_boundary_on_the_fly(scn)
-        print(rot_angle_1, scene_min_x, scene_max_x, scene_min_y, scene_max_y)
+        print(scene_name, rot_angle_1, scene_min_x, scene_max_x, scene_min_y, scene_max_y)
 
-        box = scn.bounding_box.as_outline()
-        box_ori = scn.bounding_box_oriented.as_outline()
-        obb_vertices = np.asarray(box_ori.vertices)
+        bb = scn.bounding_box.as_outline()
+        obb = scn.bounding_box_oriented.as_outline()
+        obb_vertices = np.asarray(obb.vertices)
 
-
-        base_num_corner = 5
-        matched_num_corner = None
-        comb = [v for v in box_ori.vertex_nodes if base_num_corner in v]
-        min_angle = math.pi
+        base_num_corner = 5  # this was arbitrarily selected
+        comb = [v for v in obb.vertex_nodes if base_num_corner in v]
+        # initializing variable
+        yaw = math.pi
         for c in comb:
             base_corner1 = obb_vertices[c[0]]
             base_corner2 = obb_vertices[c[1]]
             vect = base_corner1[:2] - base_corner2[:2]
-            angle_y = angle_between_2D_vectors(vect)
-            if np.linalg.norm(vect) > .5 and abs(min_angle) > abs(angle_y):
-                matched_num_corner = c[1]
-                min_angle = angle_y
+            angle_y = angle_between_2D_vectors(vect, (1, 0))
+            if np.linalg.norm(vect) > .5 and abs(yaw) > abs(angle_y):
+                yaw = angle_y
+                matched_num_corner = c[1] if c[1] != base_num_corner else c[0]
 
-        assert rot_angle_1 == min_angle
+        assert rot_angle_1 == yaw
 
         # bounding box corner are always ordered
         base_corner1 = obb_vertices[base_num_corner]
         base_corner2 = obb_vertices[matched_num_corner]
         vect = base_corner1[:2] - base_corner2[:2]
 
-        scn.apply_transform(trimesh.transformations.euler_matrix(0,0,min_angle,axes='rxyz'))
+        scn.apply_transform(trimesh.transformations.euler_matrix(0,0,yaw,axes='rxyz'))
         aligned_box = scn.bounding_box.as_outline()
-
-
 
         s = trimesh.Scene()
         s.add_geometry(trimesh.primitives.Sphere(radius=.4, center=base_corner1 ))
         s.add_geometry(trimesh.primitives.Sphere(radius=.4, center=base_corner2 ))
         s.add_geometry(scn)
-        s.add_geometry(box)
+        s.add_geometry(bb)
         # s.add_geometry(trimesh.load(os.path.join(dataset_prox_dir, scene)))
-        s.add_geometry(box_ori)
+        s.add_geometry(obb)
         s.add_geometry(aligned_box)
-        s.show(caption = scene)
+        s.show(caption =scene_name + f" {rot_angle_1}")
