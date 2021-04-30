@@ -19,7 +19,9 @@ import warnings
 import trimesh
 import vedo.utils
 
+from util_interactive import Selector
 from util_mesh import define_scene_boundary_on_the_fly, read_full_mesh_sdf
+from util_preprocessing import crop_scene_cube_smplx_at_point
 from utils_read_data import read_mesh_sdf, define_scene_boundary
 
 warnings.simplefilter("ignore", UserWarning)
@@ -39,7 +41,7 @@ from utils import *
 data_dir = "/home/dougbel/Documents/UoB/5th_semestre/to_test/place_comparisson/data"
 
 prox_dataset_path = f'{data_dir}/datasets/prox'
-scene_name = 'MPH16'
+scene_name = 'N3OpenArea'
 # smplx/vpose model path
 smplx_model_path = f'{data_dir}/pretained/body_models/smpl'
 vposer_model_path = f'{data_dir}/pretained/body_models/vposer_v1_0'
@@ -105,18 +107,30 @@ rot_angle_1, scene_min_x, scene_max_x, scene_min_y, scene_max_y = define_scene_b
 
 
 scene_verts = rotate_scene_smplx_predefine(cur_scene_verts, rot_angle=rot_angle_1)
-scene_verts_local, scene_verts_crop_local, shift = crop_scene_cube_smplx_predifine(
-    scene_verts, r=cube_size, with_wall_ceilling=True, random_seed=np.random.randint(10000),
-    scene_min_x=scene_min_x, scene_max_x=scene_max_x, scene_min_y=scene_min_y, scene_max_y=scene_max_y,
-    rotate=True)
+
+rotated_scene = trimesh.Trimesh(vertices=scene_verts, faces=scene_trimesh.faces)
+rotated_scene.visual.face_colors = scene_trimesh.visual.face_colors
+
+
+# scene_verts_local, scene_verts_crop_local, shift = crop_scene_cube_smplx_predifine(
+#     scene_verts, r=cube_size, with_wall_ceilling=True, random_seed=np.random.randint(10000),
+#     scene_min_x=scene_min_x, scene_max_x=scene_max_x, scene_min_y=scene_min_y, scene_max_y=scene_max_y,
+#     rotate=True)
+sel_gui = Selector(rotated_scene, scene_min_x, scene_max_x, scene_min_y, scene_max_y)
+selected_p = sel_gui.select_point_to_test()
+scene_verts_local, scene_verts_crop_local, shift = crop_scene_cube_smplx_at_point(
+     scene_verts, scene_center=selected_p, r=cube_size, with_wall_ceilling=True, random_seed=np.random.randint(10000),
+     scene_min_x=scene_min_x, scene_max_x=scene_max_x, scene_min_y=scene_min_y, scene_max_y=scene_max_y,
+     rotate=True)
+
+
 print('[INFO] scene mesh cropped and shifted.')
 
 #define the cube to compare
-orig_scene = scene_trimesh.copy(include_cache=True)
-rotated_scene = trimesh.Trimesh(vertices=scene_verts, faces=scene_trimesh.faces)
-rotated_scene.visual.face_colors = orig_scene.visual.face_colors
+# orig_scene = scene_trimesh.copy(include_cache=True)
+
 shifted_rotated_scene = trimesh.Trimesh(vertices=scene_verts_local, faces=scene_trimesh.faces)
-shifted_rotated_scene.visual.face_colors = orig_scene.visual.face_colors
+shifted_rotated_scene.visual.face_colors = scene_trimesh.visual.face_colors
 
 # s = trimesh.Scene()
 # s.add_geometry(orig_scene)
@@ -134,6 +148,7 @@ vp=vedo.Plotter(bg="white", axes=2)
 vp.show([vedo.Spheres(scene_verts_crop_local, r=.007, c="yellow", alpha=1).lighting("plastic"),
          vedo.utils.trimesh2vtk(shifted_rotated_scene).lighting('ambient')])
 #ambient=0.8, diffuse=0.2, specular=0.1, specularPower=1, specularColor=(1,1,1)
+
 
 scene_basis_set = bps_gen_ball_inside(n_bps=10000, random_seed=100)
 scene_verts_global, scene_verts_crop_global, rot_angle_2 =     augmentation_crop_scene_smplx(scene_verts_local / cube_size,
