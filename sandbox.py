@@ -17,6 +17,7 @@
 import warnings
 
 import trimesh
+import vedo.utils
 
 from util_mesh import define_scene_boundary_on_the_fly, read_full_mesh_sdf
 from utils_read_data import read_mesh_sdf, define_scene_boundary
@@ -100,7 +101,7 @@ print('[INFO] vposer model loaded')
 # In[3]:
 
 rot_angle_1, scene_min_x, scene_max_x, scene_min_y, scene_max_y = define_scene_boundary('prox', scene_name)
-# rot_angle_1, scene_min_x, scene_max_x, scene_min_y, scene_max_y =define_scene_boundary_on_the_fly(scene_trimesh)
+# rot_angle_1t, scene_min_xt, scene_max_xt, scene_min_yt, scene_max_yt =define_scene_boundary_on_the_fly(scene_trimesh)
 
 
 scene_verts = rotate_scene_smplx_predefine(cur_scene_verts, rot_angle=rot_angle_1)
@@ -112,19 +113,27 @@ print('[INFO] scene mesh cropped and shifted.')
 
 #define the cube to compare
 orig_scene = scene_trimesh.copy(include_cache=True)
-orig_scene.visual.face_colors = [255, 0, 0, 20]
 rotated_scene = trimesh.Trimesh(vertices=scene_verts, faces=scene_trimesh.faces)
-rotated_scene.visual.face_colors = [255, 0, 255, 20]
+rotated_scene.visual.face_colors = orig_scene.visual.face_colors
 shifted_rotated_scene = trimesh.Trimesh(vertices=scene_verts_local, faces=scene_trimesh.faces)
-s = trimesh.Scene()
-s.add_geometry(scene_trimesh)
-s.add_geometry(rotated_scene)
-s.add_geometry(shifted_rotated_scene)
-s.show(caption=scene_name)
+shifted_rotated_scene.visual.face_colors = orig_scene.visual.face_colors
 
+# s = trimesh.Scene()
+# s.add_geometry(orig_scene)
+# # s.show(caption=scene_name+" original scene", flags={'axis': 'world'})
+# orig_scene.visual.face_colors = [255, 0, 0, 20]
+# s.add_geometry(rotated_scene)
+# # s.show(caption=scene_name+"parallel scene", flags={'axis': 'world'})
+# rotated_scene.visual.face_colors = [0, 255, 0, 20]
+# s.add_geometry(shifted_rotated_scene)
+# # s.show(caption=scene_name, flags={'axis': 'world'})
+# s.add_geometry(trimesh.points.PointCloud(scene_verts_crop_local, colors="yellow"))
+# s.show(caption=scene_name, flags={'axis': 'world'})
 
-
-
+vp=vedo.Plotter(bg="white", axes=2)
+vp.show([vedo.Spheres(scene_verts_crop_local, r=.007, c="yellow", alpha=1).lighting("plastic"),
+         vedo.utils.trimesh2vtk(shifted_rotated_scene).lighting('ambient')])
+#ambient=0.8, diffuse=0.2, specular=0.1, specularPower=1, specularColor=(1,1,1)
 
 scene_basis_set = bps_gen_ball_inside(n_bps=10000, random_seed=100)
 scene_verts_global, scene_verts_crop_global, rot_angle_2 =     augmentation_crop_scene_smplx(scene_verts_local / cube_size,
@@ -368,11 +377,12 @@ body_verts_opt_prox_s2[:, 2] = temp[:, 2]
 # body_mesh_opt_s2.triangles = o3d.utility.Vector3iVector(smplx_model.faces)
 # body_mesh_opt_s2.compute_vertex_normals()
 
+# use normal open3d visualization
+# o3d.visualization.draw_geometries([scene_trimesh, body_mesh_opt_s2])
+
 body_trimesh_opt_s2 = trimesh.Trimesh(vertices=body_verts_opt_prox_s2, faces=smplx_model.faces, face_colors=[200, 200, 200, 255])
 
 
-# use normal open3d visualization
-# o3d.visualization.draw_geometries([scene_trimesh, body_mesh_opt_s2])
 s = trimesh.Scene()
 s.add_geometry(scene_trimesh)
 s.add_geometry(body_trimesh_opt_s2)
