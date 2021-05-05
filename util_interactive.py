@@ -30,7 +30,7 @@ class Selector:
         self.is_valid_point = False
 
     def select_point_to_test(self):
-        self.vp = vedo.Plotter(bg="white", axes=9)
+        self.vp = vedo.Plotter(bg="white",size=(800,600), axes=9)
         self.vp.mouseLeftClickFunction = self.on_left_click
         self.vp.keyPressFunction = self.on_key_press
         self.vp.show(self.vedo_env, self.txt_disable)

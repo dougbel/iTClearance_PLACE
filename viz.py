@@ -73,9 +73,6 @@ if __name__ == '__main__':
                          create_transl=True
                          )
 
-    # app = QtWidgets.QApplication(sys.argv)
-    # window = uic.loadUi("window.ui")
-    # vtkWidget = QVTKRenderWindowInteractor(window.frame_vtk)
 
     vp = vedo.Plotter( bg="white", axes=2)
     # vp = vedo.Plotter(qtWidget=vtkWidget, bg="white", axes=2)
@@ -86,9 +83,6 @@ if __name__ == '__main__':
     vp.addSlider2D(None, 0, len(frame_files), value=0, pos=[(.20, .04), (.8, .04)], title="Max missing")
 
 
-    # vp.interactor.SetInteractorStyle(vtk.vtkInteractorStyleTrackballCamera())
-    # window.show()
-    # app.exec()
 
 
     count = 0
