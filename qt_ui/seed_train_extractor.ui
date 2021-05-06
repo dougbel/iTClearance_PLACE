@@ -32,7 +32,7 @@
    </widget>
    <widget class="QPushButton" name="btn_train">
     <property name="enabled">
-     <bool>false</bool>
+     <bool>true</bool>
     </property>
     <property name="geometry">
      <rect>

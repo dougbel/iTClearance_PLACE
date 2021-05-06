@@ -141,8 +141,11 @@ class CtrlPropagatorVisualizer:
         tri_mesh_body.apply_transform(self.cam2world)
         vedo_body = vedo.trimesh2vtk(tri_mesh_body)
 
+
+        vedo_text= vedo.Text2D(img_name, pos='bottom-right', c='white', bg='black', font='Arial', s=.8, alpha=1)
+        self.vp.show(self.vedo_env, vedo_body,vedo_text,  interactive=False, resetcam=(num_frame == 0))
+
         self.ui.vtk_widget.Render()
-        self.vp.show(self.vedo_env, vedo_body, interactive=False, resetcam=(num_frame == 0))
 
         if not self.ui.chk_view_rgb.isChecked() :
             self.ui.lbl_recording.setHidden(True)

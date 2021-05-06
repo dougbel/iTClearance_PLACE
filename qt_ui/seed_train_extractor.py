@@ -23,7 +23,7 @@ class Ui_MainWindow(object):
         self.vtk_widget.setStyleSheet("background-color: rgb(255, 255, 255);")
         self.vtk_widget.setObjectName("vtk_widget")
         self.btn_train = QtWidgets.QPushButton(self.centralwidget)
-        self.btn_train.setEnabled(False)
+        self.btn_train.setEnabled(True)
         self.btn_train.setGeometry(QtCore.QRect(780, 770, 101, 21))
         self.btn_train.setFocusPolicy(QtCore.Qt.WheelFocus)
         self.btn_train.setObjectName("btn_train")
