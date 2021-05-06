@@ -1,29 +1,34 @@
-import gc
+import json
 import json
 import os
 import pickle
-import re
 import sys
-import time
-from collections import Counter
-from pathlib import Path
 
 import cv2
 import numpy as np
-import open3d as o3d
 import smplx
 import torch
 import trimesh
 import vedo
-import vtk
-from PyQt5 import QtWidgets, QtCore, QtGui
-from PyQt5.QtCore import Qt
+from PyQt5 import QtWidgets, QtGui
 from PyQt5.QtGui import QPixmap
-from PyQt5.QtWidgets import QFileDialog
 from transforms3d.affines import decompose
-from vedo import Plotter, load, Points, Lines, Spheres
+from vedo import Plotter, trimesh2vtk, Lines, Spheres
+from vedo.utils import flatten
 
+import  it
+from examples import training
+from it import util
+from it.training.ibs import IBSMesh
+from it.training.maxdistancescalculator import MaxDistancesCalculator
+from it.training.sampler import OnGivenPointCloudWeightedSampler
+from it_clearance.training.agglomerator import AgglomeratorClearance
+from it_clearance.training.sampler import PropagateNormalObjectPoissonDiscSamplerClearance
+from it_clearance.training.saver import SaverClearance
+from it_clearance.training.trainer import TrainerClearance
+from it_clearance.utils import get_vtk_plotter_cv_pv, get_vtk_items_cv_pv
 from qt_ui.seed_train_extractor import Ui_MainWindow
+from util.util_mesh import remove_collision
 
 
 class CtrlPropagatorVisualizer:
@@ -46,10 +51,10 @@ class CtrlPropagatorVisualizer:
         self.ui.lbl_recording.setHidden(True)
 
         # ### BUTTON SIGNALS
-        self.ui.btn_previous.setEnabled(True)
         self.ui.btn_previous.clicked.connect(self.click_btn_previous)
-        self.ui.btn_next.setEnabled(True)
         self.ui.btn_next.clicked.connect(self.click_btn_next)
+        self.ui.btn_train.clicked.connect(self.click_btn_train)
+
 
         self.ui.horizontalSlider.setValue(0)
         self.ui.horizontalSlider.setMinimum(0)
@@ -69,6 +74,8 @@ class CtrlPropagatorVisualizer:
         self.model = None
 
         self.vedo_env = None
+        self.vedo_body = None
+        self.vedo_text = None
 
         self.BODY_N_VERTEX = 10475
 
@@ -76,6 +83,79 @@ class CtrlPropagatorVisualizer:
 
         MainWindow.show()
         sys.exit(app.exec_())
+
+    def click_btn_train(self):
+        tri_mesh_env = vedo.vtk2trimesh(self.vedo_env)
+        tri_mesh_obj = vedo.vtk2trimesh(self.vedo_body)
+        affordance_name = "pending"
+        env_name =  "environment"
+        obj_name = "human"
+
+        # for now the only option I have is to translate the body to an upper position
+        remove_collision(tri_mesh_env, tri_mesh_obj)
+
+        s = trimesh.Scene()
+        tri_mesh_env.visual.face_colors = [200, 200, 200, 250]
+        tri_mesh_obj.visual.face_colors = [0, 250, 0, 255]
+        s.add_geometry(tri_mesh_env)
+        s.add_geometry(tri_mesh_obj)
+        s.show(caption="Uncollided")
+
+        influence_radio_bb = 2
+        extension, middle_point = util.influence_sphere(tri_mesh_obj, influence_radio_bb)
+
+        tri_mesh_env_segmented = util.slide_mesh_by_bounding_box(tri_mesh_env, middle_point, extension)
+
+        ibs_init_size_sampling = 400
+        ibs_resamplings = 4
+        sampler_rate_ibs_samples = 5
+        sampler_rate_generated_random_numbers = 500
+
+        ################################
+        # GENERATING AND SEGMENTING IBS MESH
+        ################################
+        influence_radio_ratio = 1.2
+        ibs_calculator = IBSMesh(ibs_init_size_sampling, ibs_resamplings)
+        ibs_calculator.execute(tri_mesh_env_segmented, tri_mesh_obj)
+
+        tri_mesh_ibs = ibs_calculator.get_trimesh()
+
+        sphere_ro, sphere_center = util.influence_sphere(tri_mesh_obj, influence_radio_ratio)
+        tri_mesh_ibs_segmented = util.slide_mesh_by_sphere(tri_mesh_ibs, sphere_center, sphere_ro)
+
+        np_cloud_env = ibs_calculator.points[: ibs_calculator.size_cloud_env]
+
+        ################################
+        # SAMPLING IBS MESH
+        ################################
+        pv_sampler = OnGivenPointCloudWeightedSampler(np_input_cloud=np_cloud_env,
+                                                      rate_generated_random_numbers=sampler_rate_generated_random_numbers)
+
+        cv_sampler = PropagateNormalObjectPoissonDiscSamplerClearance()
+        trainer = TrainerClearance(tri_mesh_ibs=tri_mesh_ibs_segmented, tri_mesh_env=tri_mesh_env,
+                                   tri_mesh_obj=tri_mesh_obj, pv_sampler=pv_sampler, cv_sampler=cv_sampler)
+
+        agglomerator = AgglomeratorClearance(trainer, num_orientations=8)
+
+        max_distances = MaxDistancesCalculator(pv_points=trainer.pv_points, pv_vectors=trainer.pv_vectors,
+                                               tri_mesh_obj=tri_mesh_obj, consider_collision_with_object=True,
+                                               radio_ratio=influence_radio_ratio)
+
+        output_subdir = "IBSMesh_" + str(ibs_init_size_sampling) + "_" + str(ibs_resamplings) + "_"
+        output_subdir += pv_sampler.__class__.__name__ + "_" + str(sampler_rate_ibs_samples) + "_"
+        output_subdir += str(sampler_rate_generated_random_numbers) + "_"
+        output_subdir += cv_sampler.__class__.__name__ + "_" + str(cv_sampler.sample_size)
+
+        SaverClearance(affordance_name, env_name, obj_name, agglomerator,
+                       max_distances, ibs_calculator, tri_mesh_obj, output_subdir)
+
+        vedo_items = get_vtk_items_cv_pv(trainer.pv_points, trainer.pv_vectors, trainer.cv_points, trainer.cv_vectors,
+                                         trimesh_obj=tri_mesh_obj,
+                                         trimesh_ibs=tri_mesh_ibs_segmented)
+
+        self.ui.vtk_widget.Render()
+        self.vp.show( flatten([vedo_items, self.vedo_env,  self.vedo_text]), interactive=False, resetcam=False)
+
 
 
     def initialize(self,  datasets_dir, recording_name):
@@ -139,13 +219,13 @@ class CtrlPropagatorVisualizer:
         vertices = output.vertices.detach().cpu().numpy().squeeze()
         tri_mesh_body = trimesh.Trimesh(vertices=vertices, faces=self.model.faces, face_colors=[200, 200, 200, 255])
         tri_mesh_body.apply_transform(self.cam2world)
-        vedo_body = vedo.trimesh2vtk(tri_mesh_body)
+        self.vedo_body = vedo.trimesh2vtk(tri_mesh_body)
 
 
-        vedo_text= vedo.Text2D(img_name, pos='bottom-right', c='white', bg='black', font='Arial', s=.8, alpha=1)
-        self.vp.show(self.vedo_env, vedo_body,vedo_text,  interactive=False, resetcam=(num_frame == 0))
-
+        self.vedo_text= vedo.Text2D(img_name, pos='bottom-right', c='white', bg='black', font='Arial', s=.8, alpha=1)
         self.ui.vtk_widget.Render()
+        self.vp.show(self.vedo_env, self.vedo_body, self.vedo_text,  interactive=False, resetcam=(num_frame == 0))
+
 
         if not self.ui.chk_view_rgb.isChecked() :
             self.ui.lbl_recording.setHidden(True)

@@ -56,7 +56,6 @@ def define_scene_boundary_on_the_fly(scene):
 
     return rot_angle_1, scene_min_x, scene_max_x, scene_min_y, scene_max_y
 
-
 def read_full_mesh_sdf(dataset_path, dataset, scene_name):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -123,6 +122,15 @@ def read_full_mesh_sdf(dataset_path, dataset, scene_name):
 
     return scene, cur_scene_verts, s_grid_min_batch, s_grid_max_batch, s_sdf_batch
 
+def remove_collision(tri_mesh_env, tri_mesh_obj):
+    collision_tester = trimesh.collision.CollisionManager()
+    collision_tester.add_object('env', tri_mesh_env)
+
+    in_collision, contact_data = collision_tester.in_collision_single(tri_mesh_obj, return_data=True)
+
+    while in_collision:
+        tri_mesh_obj.apply_translation([0, 0, 0.003])
+        in_collision, contact_data = collision_tester.in_collision_single(tri_mesh_obj, return_data=True)
 
 
 

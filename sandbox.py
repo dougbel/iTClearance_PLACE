@@ -19,14 +19,13 @@ import warnings
 import trimesh
 import vedo.utils
 
-from util_interactive import Selector
-from util_mesh import define_scene_boundary_on_the_fly, read_full_mesh_sdf
-from util_preprocessing import crop_scene_cube_smplx_at_point
-from utils_read_data import read_mesh_sdf, define_scene_boundary
+from util.util_interactive import Selector
+from util.util_mesh import read_full_mesh_sdf
+from util.util_preprocessing import crop_scene_cube_smplx_at_point
+from utils_read_data import define_scene_boundary
 
 warnings.simplefilter("ignore", UserWarning)
 
-import open3d as o3d
 # from open3d import JVisualizer
 import torch.optim as optim
 from tqdm import tqdm
