@@ -400,6 +400,7 @@ body_trimesh_opt_s2 = trimesh.Trimesh(vertices=body_verts_opt_prox_s2, faces=smp
 s = trimesh.Scene()
 s.add_geometry(scene_trimesh)
 s.add_geometry(body_trimesh_opt_s2)
+body_trimesh_opt_s2.export(f"body{np.random.randint(10000)}.ply")
 s.show(caption=scene_name)
 
 #  # use webGL
