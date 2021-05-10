@@ -82,7 +82,7 @@
    </widget>
    <widget class="QPushButton" name="btn_next">
     <property name="enabled">
-     <bool>true</bool>
+     <bool>false</bool>
     </property>
     <property name="geometry">
      <rect>
@@ -97,6 +97,9 @@
     </property>
    </widget>
    <widget class="QSlider" name="horizontalSlider">
+    <property name="enabled">
+     <bool>false</bool>
+    </property>
     <property name="geometry">
      <rect>
       <x>10</x>
@@ -111,7 +114,7 @@
    </widget>
    <widget class="QPushButton" name="btn_previous">
     <property name="enabled">
-     <bool>true</bool>
+     <bool>false</bool>
     </property>
     <property name="geometry">
      <rect>
@@ -184,6 +187,35 @@
      </rect>
     </property>
    </widget>
+   <widget class="QProgressBar" name="prgbar_per">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>760</y>
+      <width>741</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="value">
+     <number>24</number>
+    </property>
+    <property name="textVisible">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QLabel" name="lbl_prg">
+    <property name="geometry">
+     <rect>
+      <x>760</x>
+      <y>760</y>
+      <width>381</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>**</string>
+    </property>
+   </widget>
    <zorder>vtk_widget</zorder>
    <zorder>btn_train</zorder>
    <zorder>btn_next</zorder>
@@ -195,6 +227,8 @@
    <zorder>label_2</zorder>
    <zorder>l_quanti</zorder>
    <zorder>l_quali</zorder>
+   <zorder>prgbar_per</zorder>
+   <zorder>lbl_prg</zorder>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">

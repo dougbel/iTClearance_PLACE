@@ -11,6 +11,7 @@ import torch
 import trimesh
 import vedo
 from PyQt5 import QtWidgets, QtGui
+from PyQt5.QtCore import QEventLoop
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QInputDialog
 from transforms3d.affines import decompose
@@ -50,6 +51,7 @@ class CtrlPropagatorVisualizer:
         self.vp.show([], axes=0)
 
         self.ui.lbl_recording.setHidden(True)
+        self.progresbar_hidden(True)
 
         # ### BUTTON SIGNALS
 
@@ -104,14 +106,30 @@ class CtrlPropagatorVisualizer:
         for scan in list_scene:
             self.ui.l_quali.addItem(scan)
 
+    def update_progressbar_detail(self, value, message):
+        self.ui.lbl_prg.setText(message)
+        self.ui.prgbar_per.setValue(min(100,value))
+
+    def progresbar_hidden(self, bool):
+        self.ui.prgbar_per.setHidden(bool)
+        self.ui.lbl_prg.setHidden(bool)
+
+    def controls_enabled(self, bool):
+        self.ui.btn_next.setEnabled(bool)
+        self.ui.btn_previous.setEnabled(bool)
+        self.ui.btn_train.setEnabled(bool)
+        self.ui.horizontalSlider.setEnabled(bool)
+
     def update_visualized_recording_qual(self):
         if len(self.ui.l_quali.selectedItems()) > 0 :
+           self.controls_enabled(True)
            selection =self.ui.l_quali.selectedItems()[0].text()
            self.ui.l_quanti.clearSelection()
            self.initialize(selection)
 
     def update_visualized_recording_quan(self):
-        if len(self.ui.l_quanti.selectedItems()):
+        if len(self.ui.l_quanti.selectedItems()) > 0 :
+            self.controls_enabled(True)
             selection = self.ui.l_quanti.selectedItems()[0].text()
             self.ui.l_quali.clearSelection()
             self.initialize(selection)
@@ -119,20 +137,26 @@ class CtrlPropagatorVisualizer:
 
     def click_btn_train(self):
         text, ok = QInputDialog.getText(self.ui.centralwidget, 'Train interaction', 'Interaction name:')
+        while text=="" and ok == True:
+            text, ok = QInputDialog.getText(self.ui.centralwidget, 'Train interaction', 'Interaction name:')
+
         text = text.replace(" ", "_")
 
         if ok:
-            # self.le.setText(str(text))
+            self.progresbar_hidden(False)
             self.__train(text)
 
 
     def __train(self, affordance_name):
 
+        self.update_progressbar_detail(5, "Initializing")
         tri_mesh_env = vedo.vtk2trimesh(self.vedo_env)
         tri_mesh_obj = vedo.vtk2trimesh(self.vedo_body)
         affordance_name = affordance_name
         env_name =  self.recording_name
         obj_name = self.vedo_text.GetText(1)
+
+        self.update_progressbar_detail(10, "Removing collision")
 
         # for now the only option I have is to translate the body to an upper position
         remove_collision(tri_mesh_env, tri_mesh_obj)
@@ -157,6 +181,9 @@ class CtrlPropagatorVisualizer:
         ################################
         # GENERATING AND SEGMENTING IBS MESH
         ################################
+
+        self.update_progressbar_detail(40, "Calculating IBS")
+
         influence_radio_ratio = 1.2
         ibs_calculator = IBSMesh(ibs_init_size_sampling, ibs_resamplings)
         ibs_calculator.execute(tri_mesh_env_segmented, tri_mesh_obj)
@@ -171,6 +198,10 @@ class CtrlPropagatorVisualizer:
         ################################
         # SAMPLING IBS MESH
         ################################
+
+        self.update_progressbar_detail(70, "Training iT with Clearance Vectors")
+
+
         pv_sampler = OnGivenPointCloudWeightedSampler(np_input_cloud=np_cloud_env,
                                                       rate_generated_random_numbers=sampler_rate_generated_random_numbers)
 
@@ -189,6 +220,7 @@ class CtrlPropagatorVisualizer:
         output_subdir += str(sampler_rate_generated_random_numbers) + "_"
         output_subdir += cv_sampler.__class__.__name__ + "_" + str(cv_sampler.sample_size)
 
+        self.update_progressbar_detail(90, "Saving")
         SaverClearance(affordance_name, env_name, obj_name, agglomerator,
                        max_distances, ibs_calculator, tri_mesh_obj, output_subdir)
 
@@ -199,7 +231,7 @@ class CtrlPropagatorVisualizer:
         self.ui.vtk_widget.Render()
         self.vp.show( flatten([vedo_items, self.vedo_env,  self.vedo_text]), interactive=False, resetcam=False)
 
-
+        self.update_progressbar_detail(100, "Done")
 
     def initialize(self, recording_name):
         self.recording_name = recording_name
@@ -238,11 +270,16 @@ class CtrlPropagatorVisualizer:
 
         self.set_camera(self.cam2world)
         self.ui.horizontalSlider.setValue(0)
-        self.load_frame(0)
+        self.changeValue(0)
 
 
     def changeValue(self, pos):
+        loop = QEventLoop()
+        # print(f"init pos {pos}")
+        self.progresbar_hidden(True)
         self.load_frame(pos)
+        # print(f"finish pos {pos}")
+        loop.exec_()
 
 
     def set_camera(self, cam2world):
@@ -279,7 +316,7 @@ class CtrlPropagatorVisualizer:
                 color_img = cv2.imread(frame_file)
                 color_img = cv2.flip(color_img, 1)
             else:
-                color_img =cv2.imread("../data/stand_by.jpg")
+                color_img =cv2.imread("data/stand_by.jpg")
 
             self.ui.lbl_recording.setPixmap(self.convert_cv_qt(color_img))
 
@@ -333,7 +370,3 @@ class CtrlPropagatorVisualizer:
         convert_to_Qt_format = QtGui.QImage(rgb_image.data, w, h, bytes_per_line, QtGui.QImage.Format_RGB888)
         p = convert_to_Qt_format.scaled(self.ui.lbl_recording.width(), self.ui.lbl_recording.height())  # , Qt.KeepAspectRatio)
         return QPixmap.fromImage(p)
-
-
-if __name__ == "__main__":
-   ctrl = CtrlPropagatorVisualizer(datasets_dir="/home/dougbel/Documents/UoB/5th_semestre/to_test/place_comparisson/data")
