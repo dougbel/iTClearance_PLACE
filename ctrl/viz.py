@@ -12,6 +12,7 @@ import trimesh
 import vedo
 from PyQt5 import QtWidgets, QtGui
 from PyQt5.QtGui import QPixmap
+from PyQt5.QtWidgets import QInputDialog
 from transforms3d.affines import decompose
 from vedo import Plotter, trimesh2vtk, Lines, Spheres
 from vedo.utils import flatten
@@ -33,7 +34,7 @@ from util.util_mesh import remove_collision
 
 class CtrlPropagatorVisualizer:
 
-    def __init__(self, datasets_dir, recording_name):
+    def __init__(self, datasets_dir):
 
         app = QtWidgets.QApplication(sys.argv)
         MainWindow = QtWidgets.QMainWindow()
@@ -51,10 +52,13 @@ class CtrlPropagatorVisualizer:
         self.ui.lbl_recording.setHidden(True)
 
         # ### BUTTON SIGNALS
+
+        self.ui.l_quali.itemSelectionChanged.connect(self.update_visualized_recording_qual)
+        self.ui.l_quanti.itemSelectionChanged.connect(self.update_visualized_recording_quan)
+
         self.ui.btn_previous.clicked.connect(self.click_btn_previous)
         self.ui.btn_next.clicked.connect(self.click_btn_next)
         self.ui.btn_train.clicked.connect(self.click_btn_train)
-
 
         self.ui.horizontalSlider.setValue(0)
         self.ui.horizontalSlider.setMinimum(0)
@@ -63,7 +67,7 @@ class CtrlPropagatorVisualizer:
         self.ui.chk_view_rgb.stateChanged.connect(self.change_view_rgb)
 
         # ### WORKING INDEXES
-        self.datasets_dir = None
+        self.datasets_dir = datasets_dir
         self.scene_dir = None
         self.fitting_dir = None
         self.frames_dir = None
@@ -79,17 +83,56 @@ class CtrlPropagatorVisualizer:
 
         self.BODY_N_VERTEX = 10475
 
-        self.initialize(datasets_dir, recording_name)
+        self.list_prox_scans_qual()
+        self.list_prox_scans_quan()
 
         MainWindow.show()
         sys.exit(app.exec_())
 
+
+    def list_prox_scans_quan(self):
+        l_dir = os.path.join(self.datasets_dir, "datasets/prox_quantitative", "fittings/mosh")
+        list_scene  = os.listdir(l_dir)
+        list_scene.sort()
+        for scan in list_scene:
+            self.ui.l_quanti.addItem(scan)
+
+    def list_prox_scans_qual(self):
+        l_dir = os.path.join(self.datasets_dir, "datasets/prox", "PROXD")
+        list_scene = os.listdir(l_dir)
+        list_scene.sort()
+        for scan in list_scene:
+            self.ui.l_quali.addItem(scan)
+
+    def update_visualized_recording_qual(self):
+        if len(self.ui.l_quali.selectedItems()) > 0 :
+           selection =self.ui.l_quali.selectedItems()[0].text()
+           self.ui.l_quanti.clearSelection()
+           self.initialize(selection)
+
+    def update_visualized_recording_quan(self):
+        if len(self.ui.l_quanti.selectedItems()):
+            selection = self.ui.l_quanti.selectedItems()[0].text()
+            self.ui.l_quali.clearSelection()
+            self.initialize(selection)
+
+
     def click_btn_train(self):
+        text, ok = QInputDialog.getText(self.ui.centralwidget, 'Train interaction', 'Interaction name:')
+        text = text.replace(" ", "_")
+
+        if ok:
+            # self.le.setText(str(text))
+            self.__train(text)
+
+
+    def __train(self, affordance_name):
+
         tri_mesh_env = vedo.vtk2trimesh(self.vedo_env)
         tri_mesh_obj = vedo.vtk2trimesh(self.vedo_body)
-        affordance_name = "pending"
-        env_name =  "environment"
-        obj_name = "human"
+        affordance_name = affordance_name
+        env_name =  self.recording_name
+        obj_name = self.vedo_text.GetText(1)
 
         # for now the only option I have is to translate the body to an upper position
         remove_collision(tri_mesh_env, tri_mesh_obj)
@@ -158,8 +201,7 @@ class CtrlPropagatorVisualizer:
 
 
 
-    def initialize(self,  datasets_dir, recording_name):
-        self.datasets_dir = datasets_dir
+    def initialize(self, recording_name):
         self.recording_name = recording_name
 
         scene_name = self.recording_name.split("_")[0]
@@ -195,6 +237,7 @@ class CtrlPropagatorVisualizer:
 
 
         self.set_camera(self.cam2world)
+        self.ui.horizontalSlider.setValue(0)
         self.load_frame(0)
 
 
@@ -293,5 +336,4 @@ class CtrlPropagatorVisualizer:
 
 
 if __name__ == "__main__":
-   ctrl = CtrlPropagatorVisualizer(datasets_dir="/home/dougbel/Documents/UoB/5th_semestre/to_test/place_comparisson/data",
-                   recording_name="N3Library_03403_01")
+   ctrl = CtrlPropagatorVisualizer(datasets_dir="/home/dougbel/Documents/UoB/5th_semestre/to_test/place_comparisson/data")
