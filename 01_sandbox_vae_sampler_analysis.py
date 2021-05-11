@@ -126,17 +126,6 @@ scene_verts_local, scene_verts_crop_local, shift = crop_scene_cube_smplx_at_poin
 
 print('[INFO] scene mesh cropped and shifted.')
 
-
-shifted_rotated_scene = trimesh.Trimesh(vertices=scene_verts_local, faces=scene_trimesh.faces)
-shifted_rotated_scene.visual.face_colors = scene_trimesh.visual.face_colors
-
-
-vp=vedo.Plotter(bg="white", axes=2)
-vp.show([vedo.Spheres(scene_verts_crop_local, r=.007, c="yellow", alpha=1).lighting("plastic"),
-         vedo.utils.trimesh2vtk(shifted_rotated_scene).lighting('ambient')])
-#ambient=0.8, diffuse=0.2, specular=0.1, specularPower=1, specularColor=(1,1,1)
-
-
 scene_basis_set = bps_gen_ball_inside(n_bps=10000, random_seed=100)
 scene_verts_global, scene_verts_crop_global, rot_angle_2 =     augmentation_crop_scene_smplx(scene_verts_local / cube_size,
                                   scene_verts_crop_local / cube_size,
@@ -179,6 +168,23 @@ scene_AE.eval()
 body_dec.eval()
 
 
+print('[INFO] pretrained weights loaded.')
+
+
+SHOW_OUTPUTS = True
+
+shifted_rotated_scene = trimesh.Trimesh(vertices=scene_verts_local, faces=scene_trimesh.faces)
+shifted_rotated_scene.visual.face_colors = scene_trimesh.visual.face_colors
+
+
+unselected_scene_verts_local = [scene_verts_crop_local[i] for i in range(len(scene_verts_crop_local))  if i not in selected_ind]
+vp=vedo.Plotter(bg="white", axes=2)
+vp.show([vedo.Spheres(selected_scene_verts_local, r=.007, c="green", alpha=1).lighting("plastic"),
+         vedo.Spheres(unselected_scene_verts_local, r=.002, c="yellow", alpha=1).lighting("plastic"),
+                  vedo.utils.trimesh2vtk(shifted_rotated_scene).lighting('ambient')])
+#ambient=0.8, diffuse=0.2, specular=0.1, specularPower=1, specularColor=(1,1,1)
+
+
 ######################## random sample a body  ##########################
 scene_bps_verts = scene_bps_verts / cube_size
 
@@ -196,6 +202,13 @@ body_verts_sample = body_verts_sample + body_shift.permute(0, 2, 1)
 
 print('[INFO] a random body is generated.')
 
+
+body_trimesh_sampled = trimesh.Trimesh(vertices=body_verts_sample.detach().cpu().numpy().squeeze().transpose()*cube_size, faces=smplx_model.faces, face_colors=[200, 200, 200, 255])
+
+s = trimesh.Scene()
+s.add_geometry(shifted_rotated_scene)
+s.add_geometry(body_trimesh_sampled)
+s.show(caption=scene_name)
 
 
 
@@ -277,6 +290,17 @@ for step in tqdm(range(itr_s1)):
 
 print('[INFO] optimization stage 1 finished.')
 
+body_params_opt_s1 = convert_to_3D_rot(body_params_rec)  # tensor, [bs=1, 72]
+body_pose_joint_s1 = vposer_model.decode(body_params_opt_s1[:, 16:48], output_type='aa').view(1, -1)
+body_verts_opt_s1 = gen_body_mesh(body_params_opt_s1, body_pose_joint_s1, smplx_model)[0]
+body_verts_opt_s1 = body_verts_opt_s1.detach().cpu().numpy()
+
+body_trimesh_s1 = trimesh.Trimesh(vertices=body_verts_opt_s1, faces=smplx_model.faces, face_colors=[200, 200, 200, 255])
+
+s = trimesh.Scene()
+s.add_geometry(shifted_rotated_scene)
+s.add_geometry(body_trimesh_s1)
+s.show(caption=scene_name)
 
 # ### 6. Optimization stage 2: perform advanced optimizatioin (interaction-based), with contact and collision loss
 
@@ -374,13 +398,21 @@ body_pose_joint = vposer_model.decode(body_params_opt_s2[:, 16:48], output_type=
 body_verts_opt_s2 = gen_body_mesh(body_params_opt_s2, body_pose_joint, smplx_model)[0]
 body_verts_opt_s2 = body_verts_opt_s2.detach().cpu().numpy()   # [n_body_vert, 3]
 
+body_trimesh_s2 = trimesh.Trimesh(vertices=body_verts_opt_s2, faces=smplx_model.faces, face_colors=[200, 200, 200, 255])
+
+s = trimesh.Scene()
+s.add_geometry(shifted_rotated_scene)
+s.add_geometry(body_trimesh_s2)
+s.show(caption=scene_name)
+
+
+
 # transfrom the body verts to the PROX world coordinate system
 body_verts_opt_prox_s2 = np.zeros(body_verts_opt_s2.shape)  # [10475, 3]
 temp = body_verts_opt_s2 - shift
 body_verts_opt_prox_s2[:, 0] = temp[:, 0] * math.cos(-rot_angle_1) - temp[:, 1] * math.sin(-rot_angle_1)
 body_verts_opt_prox_s2[:, 1] = temp[:, 0] * math.sin(-rot_angle_1) + temp[:, 1] * math.cos(-rot_angle_1)
 body_verts_opt_prox_s2[:, 2] = temp[:, 2]
-
 
 
 body_trimesh_opt_s2 = trimesh.Trimesh(vertices=body_verts_opt_prox_s2, faces=smplx_model.faces, face_colors=[200, 200, 200, 255])
