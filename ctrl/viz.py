@@ -297,6 +297,8 @@ class CtrlPropagatorVisualizer:
             torch_param[key] = torch.tensor(param[key])
         output = self.model(return_verts=True, **torch_param)
         vertices = output.vertices.detach().cpu().numpy().squeeze()
+        if np.isnan(vertices).all():
+            vertices =np.zeros(vertices.shape)
         tri_mesh_body = trimesh.Trimesh(vertices=vertices, faces=self.model.faces, face_colors=[200, 200, 200, 255])
         tri_mesh_body.apply_transform(self.cam2world)
         self.vedo_body = vedo.trimesh2vtk(tri_mesh_body)
