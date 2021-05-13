@@ -7,7 +7,7 @@ class Selector:
 
     def __init__(self, trimesh_scene, scene_min_x, scene_max_x, scene_min_y, scene_max_y, r=2.0):
         # this step is necesary to keep color of scene
-        trimesh_scene.visual.face_colors = trimesh_scene.visual.face_colors
+        # trimesh_scene.visual.face_colors = trimesh_scene.visual.face_colors
         self.activated = False
         self.scene_min_x = scene_min_x
         self.scene_max_x = scene_max_x

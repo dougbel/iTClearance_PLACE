@@ -108,9 +108,11 @@ print('[INFO] vposer model loaded')
 
 # rot_angle_1, scene_min_x, scene_max_x, scene_min_y, scene_max_y = define_scene_boundary('prox', scene_name)
 rot_angle_1, scene_min_x, scene_max_x, scene_min_y, scene_max_y =define_scene_boundary_on_the_fly(scene_trimesh)
+print('[INFO] calculated a)rotation to parallel, scene boundary .')
 
 
 scene_verts = rotate_scene_smplx_predefine(cur_scene_verts, rot_angle=rot_angle_1)
+print('[INFO] rotated scene mesh to parallel.')
 
 rotated_scene = trimesh.Trimesh(vertices=scene_verts, faces=scene_trimesh.faces)
 rotated_scene.visual.face_colors = scene_trimesh.visual.face_colors
@@ -118,10 +120,16 @@ rotated_scene.visual.face_colors = scene_trimesh.visual.face_colors
 
 sel_gui = Selector(rotated_scene, scene_min_x, scene_max_x, scene_min_y, scene_max_y)
 selected_p = sel_gui.select_point_to_test()
+
+print('[INFO] Position selected.')
+
+ROTATE_CUBE = True
+
+
 scene_verts_local, scene_verts_crop_local, shift = crop_scene_cube_smplx_at_point(
      scene_verts, scene_center=selected_p, r=cube_size, with_wall_ceilling=True, random_seed=np.random.randint(10000),
      scene_min_x=scene_min_x, scene_max_x=scene_max_x, scene_min_y=scene_min_y, scene_max_y=scene_max_y,
-     rotate=True)
+     rotate=ROTATE_CUBE)
 
 
 print('[INFO] scene mesh cropped and shifted.')
@@ -176,13 +184,20 @@ SHOW_OUTPUTS = True
 shifted_rotated_scene = trimesh.Trimesh(vertices=scene_verts_local, faces=scene_trimesh.faces)
 shifted_rotated_scene.visual.face_colors = scene_trimesh.visual.face_colors
 
-
 unselected_scene_verts_local = [scene_verts_crop_local[i] for i in range(len(scene_verts_crop_local))  if i not in selected_ind]
-vp=vedo.Plotter(bg="white", axes=2)
-vp.show([vedo.Spheres(selected_scene_verts_local, r=.007, c="green", alpha=1).lighting("plastic"),
-         vedo.Spheres(unselected_scene_verts_local, r=.002, c="yellow", alpha=1).lighting("plastic"),
-                  vedo.utils.trimesh2vtk(shifted_rotated_scene).lighting('ambient')])
+# vp=vedo.Plotter(bg="white", axes=2)
+# vp.show([vedo.Spheres(selected_scene_verts_local, r=.007, c="green", alpha=1).lighting("plastic"),
+#          vedo.Spheres(unselected_scene_verts_local, r=.002, c="yellow", alpha=1).lighting("plastic"),
+#                   vedo.utils.trimesh2vtk(shifted_rotated_scene).lighting('ambient')])
 #ambient=0.8, diffuse=0.2, specular=0.1, specularPower=1, specularColor=(1,1,1)
+
+s = trimesh.Scene()
+s.add_geometry(shifted_rotated_scene)
+s.add_geometry(trimesh.points.PointCloud(selected_scene_verts_local, colors=[0,255,0]))
+s.add_geometry(trimesh.points.PointCloud(unselected_scene_verts_local, colors=[255,255,0]))
+
+s.show(caption=scene_name)
+
 
 
 ######################## random sample a body  ##########################
