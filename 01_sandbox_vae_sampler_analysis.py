@@ -4,11 +4,10 @@
 # ## PLACE: Proximity Learning of Articulation and Contact in 3D Environments 
 
 # Here is a quick demo to generate random bodies given a scene mesh and visualize the results. Three steps are included:
-
 #########################################################################
-# ABEL you can pick position to test, you can use any environment to test it is not limited to those presented in paper
+# ABEL you can pick position to test,
+# with routines to study the distribution of sampled bodies
 #########################################################################
-
 # * Use the pretrained C-VAE to random generate body meshes
 # * Optimization stage 1: perform simple optimization (without interaction-based losses)
 # * Optimization stage 2: perform advanced optimizatioin (interaction-based)
@@ -24,6 +23,7 @@ import warnings
 import trimesh
 import vedo.utils
 
+from models.controled_cvae import BPS_CVAE_Sampler
 from util.util_interactive import Selector
 from util.util_mesh import read_full_mesh_sdf, define_scene_boundary_on_the_fly
 from util.util_preprocessing import crop_scene_cube_smplx_at_point
@@ -157,9 +157,9 @@ scene_bps_AE = BPSRecMLP(n_bps=10000, n_bps_feat=1, hsize1=1024, hsize2=512).to(
 weights = torch.load(scene_bps_AE_path, map_location=lambda storage, loc: storage)
 scene_bps_AE.load_state_dict(weights)
 
-c_VAE = BPS_CVAE(n_bps=10000, n_bps_feat=1, hsize1=1024, hsize2=512, eps_d=32).to(device)
+c_VAE_sampler = BPS_CVAE_Sampler(n_bps=10000, n_bps_feat=1, hsize1=1024, hsize2=512, eps_d=32).to(device)
 weights = torch.load(cVAE_path, map_location=lambda storage, loc: storage)
-c_VAE.load_state_dict(weights)
+c_VAE_sampler.load_state_dict(weights)
 
 scene_AE = Verts_AE(n_bps=10000, hsize1=1024, hsize2=512).to(device)
 weights = torch.load(scene_verts_AE_path, map_location=lambda storage, loc: storage)
@@ -171,7 +171,7 @@ weights = torch.load(bodyDec_path, map_location=lambda storage, loc: storage)
 body_dec.load_state_dict(weights)
 
 scene_bps_AE.eval()
-c_VAE.eval()
+c_VAE_sampler.eval()
 scene_AE.eval()
 body_dec.eval()
 
@@ -207,7 +207,7 @@ _, scene_bps_feat = scene_bps_AE(scene_bps)
 _, scene_bps_verts_feat = scene_AE(scene_bps_verts)
 
 # [1, 1, 10000]
-body_bps_sample = c_VAE.sample(1, scene_bps_feat)
+body_bps_sample, eps = c_VAE_sampler.sample(1, scene_bps_feat)
 # [1, 3, 10475], unit ball scale, local coordinate
 body_verts_sample, body_shift = body_dec(body_bps_sample, scene_bps_verts_feat)
 # [bs, 10475, 3]
@@ -224,6 +224,9 @@ s = trimesh.Scene()
 s.add_geometry(shifted_rotated_scene)
 s.add_geometry(body_trimesh_sampled)
 s.show(caption=scene_name)
+
+
+
 
 # ### 5. Optimization stage 1: perform simple optimization (without interaction-based losses)
 
