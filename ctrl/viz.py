@@ -237,7 +237,7 @@ class CtrlPropagatorVisualizer:
         self.recording_name = recording_name
 
         scene_name = self.recording_name.split("_")[0]
-        model_folder = os.path.join(self.datasets_dir, "pretained/body_models/smpl")
+        model_folder = os.path.join(self.datasets_dir, "pretrained/body_models/smpl")
         gender = "male"  # "female", "neutral"
         base_dir = os.path.join(self.datasets_dir, "datasets/prox_quantitative")
         pseudo_fitting_dir = os.path.join(base_dir, "fittings/mosh", self.recording_name)
