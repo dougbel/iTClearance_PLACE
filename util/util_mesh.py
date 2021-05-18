@@ -122,6 +122,26 @@ def read_full_mesh_sdf(dataset_path, dataset, scene_name):
 
     return scene, cur_scene_verts, s_grid_min_batch, s_grid_max_batch, s_sdf_batch
 
+def read_full_mesh(datasets_path, scene_name):
+
+    trimesh_scene=None
+
+    prox_scene_path = os.path.join(datasets_path, 'prox', 'scenes')
+    if scene_name+".ply" in os.listdir(prox_scene_path):
+        trimesh_scene = trimesh.load(os.path.join(prox_scene_path, scene_name + '.ply'))
+
+    mp3d_scene_path = os.path.join(datasets_path, 'mp3d')
+    if scene_name + ".ply" in os.listdir(mp3d_scene_path):
+        trimesh_scene = trimesh.load(os.path.join(mp3d_scene_path, scene_name + '.ply'))
+
+    replica_scene_path = os.path.join(datasets_path, 'replica')
+    if scene_name in os.listdir(replica_scene_path):
+        trimesh_scene = trimesh.load(os.path.join(replica_scene_path, 'mesh.ply'))
+
+
+    return trimesh_scene
+
+
 def remove_collision(tri_mesh_env, tri_mesh_obj):
     collision_tester = trimesh.collision.CollisionManager()
     collision_tester.add_object('env', tri_mesh_env)
@@ -131,6 +151,16 @@ def remove_collision(tri_mesh_env, tri_mesh_obj):
     while in_collision:
         tri_mesh_obj.apply_translation([0, 0, 0.003])
         in_collision, contact_data = collision_tester.in_collision_single(tri_mesh_obj, return_data=True)
+
+
+def shift_rotate_vertices(np_vertices, rot_angle, shift):
+    np_rotated_verts = np.zeros(np_vertices.shape)  # [10475, 3]
+    temp = np_vertices - shift
+    np_rotated_verts[:, 0] = temp[:, 0] * math.cos(-rot_angle) - temp[:, 1] * math.sin(-rot_angle)
+    np_rotated_verts[:, 1] = temp[:, 0] * math.sin(-rot_angle) + temp[:, 1] * math.cos(-rot_angle)
+    np_rotated_verts[:, 2] = temp[:, 2]
+    return np_rotated_verts
+
 
 
 

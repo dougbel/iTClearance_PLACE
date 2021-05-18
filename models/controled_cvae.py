@@ -15,7 +15,8 @@ class BPS_CVAE_Sampler(BPS_CVAE):
     def __init__(self, n_bps=10000, n_bps_feat=1, hsize1=1024,  hsize2=512, eps_d=32):
         super(BPS_CVAE_Sampler, self).__init__( n_bps=n_bps, n_bps_feat=n_bps_feat, hsize1=hsize1,  hsize2=hsize2, eps_d=eps_d)
 
-    def sample_fixed(self, eps, scene_feat):
+    def sample_fixed(self, np_eps, scene_feat):
+        eps = torch.Tensor(np_eps).reshape(1,1,len(np_eps)).to(device)
         x = F.relu(self.bn3(self.fc3(eps)))  # eps_d-->512, [bs, 1, 512]
         x = F.relu(self.bn_resblc3(self.fc_resblc3(torch.cat([x, scene_feat[0]], dim=-1))))  # 1024-->512
         x = self.res_block3(x)  # [bs, 1, 512]
@@ -23,7 +24,7 @@ class BPS_CVAE_Sampler(BPS_CVAE):
         x = self.res_block4(x)  # [bs, 1, 512]
         x = F.relu(self.bn4(self.fc4(torch.cat([x, scene_feat[2]], dim=-1))))  # 1024-->1024 [bs, 1, 1024]
         sample = F.relu(self.bn5(self.fc5(x)))  # 1024 --> 10000, [bs, 1, 10000]
-        return sample
+        return sample, eps
 
     def sample(self, batch_size, scene_feat):
         eps = torch.randn([batch_size, self.n_bps_feat, self.eps_d], dtype=torch.float32).to(device)
