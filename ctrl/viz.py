@@ -274,12 +274,12 @@ class CtrlPropagatorVisualizer:
 
 
     def changeValue(self, pos):
-        loop = QEventLoop()
+        # loop = QEventLoop()
         # print(f"init pos {pos}")
         self.progresbar_hidden(True)
         self.load_frame(pos)
         # print(f"finish pos {pos}")
-        loop.exec_()
+        # loop.exec_()
 
 
     def set_camera(self, cam2world):
