@@ -36,9 +36,9 @@
     </property>
     <property name="geometry">
      <rect>
-      <x>1030</x>
-      <y>720</y>
-      <width>101</width>
+      <x>1000</x>
+      <y>740</y>
+      <width>131</width>
       <height>21</height>
      </rect>
     </property>
@@ -132,7 +132,7 @@
     <property name="geometry">
      <rect>
       <x>900</x>
-      <y>720</y>
+      <y>710</y>
       <width>131</width>
       <height>23</height>
      </rect>
@@ -216,6 +216,25 @@
      <string>**</string>
     </property>
    </widget>
+   <widget class="QPushButton" name="btn_avoid_collision">
+    <property name="enabled">
+     <bool>true</bool>
+    </property>
+    <property name="geometry">
+     <rect>
+      <x>1000</x>
+      <y>710</y>
+      <width>131</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="focusPolicy">
+     <enum>Qt::WheelFocus</enum>
+    </property>
+    <property name="text">
+     <string>AVOID COLLISION</string>
+    </property>
+   </widget>
    <zorder>vtk_widget</zorder>
    <zorder>btn_train</zorder>
    <zorder>btn_next</zorder>
@@ -229,6 +248,7 @@
    <zorder>l_quali</zorder>
    <zorder>prgbar_per</zorder>
    <zorder>lbl_prg</zorder>
+   <zorder>btn_avoid_collision</zorder>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">

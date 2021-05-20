@@ -1,4 +1,4 @@
-import json
+import gc
 import json
 import os
 import pickle
@@ -11,15 +11,12 @@ import torch
 import trimesh
 import vedo
 from PyQt5 import QtWidgets, QtGui
-from PyQt5.QtCore import QEventLoop
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QInputDialog
 from transforms3d.affines import decompose
-from vedo import Plotter, trimesh2vtk, Lines, Spheres
+from vedo import Plotter
 from vedo.utils import flatten
 
-import  it
-from examples import training
 from it import util
 from it.training.ibs import IBSMesh
 from it.training.maxdistancescalculator import MaxDistancesCalculator
@@ -28,7 +25,7 @@ from it_clearance.training.agglomerator import AgglomeratorClearance
 from it_clearance.training.sampler import PropagateNormalObjectPoissonDiscSamplerClearance
 from it_clearance.training.saver import SaverClearance
 from it_clearance.training.trainer import TrainerClearance
-from it_clearance.utils import get_vtk_plotter_cv_pv, get_vtk_items_cv_pv
+from it_clearance.utils import get_vtk_items_cv_pv
 from qt_ui.seed_train_extractor import Ui_MainWindow
 from util.util_mesh import remove_collision
 
@@ -61,6 +58,7 @@ class CtrlPropagatorVisualizer:
         self.ui.btn_previous.clicked.connect(self.click_btn_previous)
         self.ui.btn_next.clicked.connect(self.click_btn_next)
         self.ui.btn_train.clicked.connect(self.click_btn_train)
+        self.ui.btn_avoid_collision.clicked.connect(self.click_btn_avoid_collision)
 
         self.ui.horizontalSlider.setValue(0)
         self.ui.horizontalSlider.setMinimum(0)
@@ -77,7 +75,7 @@ class CtrlPropagatorVisualizer:
 
         self.recording_name = None
         self.cam2world = None
-        self.model = None
+        self.smplx_model = None
 
         self.vedo_env = None
         self.vedo_body = None
@@ -91,10 +89,9 @@ class CtrlPropagatorVisualizer:
         MainWindow.show()
         sys.exit(app.exec_())
 
-
     def list_prox_scans_quan(self):
         l_dir = os.path.join(self.datasets_dir, "datasets/prox_quantitative", "fittings/mosh")
-        list_scene  = os.listdir(l_dir)
+        list_scene = os.listdir(l_dir)
         list_scene.sort()
         for scan in list_scene:
             self.ui.l_quanti.addItem(scan)
@@ -108,7 +105,7 @@ class CtrlPropagatorVisualizer:
 
     def update_progressbar_detail(self, value, message):
         self.ui.lbl_prg.setText(message)
-        self.ui.prgbar_per.setValue(min(100,value))
+        self.ui.prgbar_per.setValue(min(100, value))
 
     def progresbar_hidden(self, bool):
         self.ui.prgbar_per.setHidden(bool)
@@ -121,23 +118,23 @@ class CtrlPropagatorVisualizer:
         self.ui.horizontalSlider.setEnabled(bool)
 
     def update_visualized_recording_qual(self):
-        if len(self.ui.l_quali.selectedItems()) > 0 :
-           self.controls_enabled(True)
-           selection =self.ui.l_quali.selectedItems()[0].text()
-           self.ui.l_quanti.clearSelection()
-           self.initialize(selection)
+        if len(self.ui.l_quali.selectedItems()) > 0:
+            self.controls_enabled(True)
+            selection = self.ui.l_quali.selectedItems()[0].text()
+            self.ui.l_quanti.clearSelection()
+            self.initialize(selection)
 
     def update_visualized_recording_quan(self):
-        if len(self.ui.l_quanti.selectedItems()) > 0 :
+        if len(self.ui.l_quanti.selectedItems()) > 0:
             self.controls_enabled(True)
             selection = self.ui.l_quanti.selectedItems()[0].text()
             self.ui.l_quali.clearSelection()
             self.initialize(selection)
 
-
     def click_btn_train(self):
+        gc.collect()
         text, ok = QInputDialog.getText(self.ui.centralwidget, 'Train interaction', 'Interaction name:')
-        while text=="" and ok == True:
+        while text == "" and ok == True:
             text, ok = QInputDialog.getText(self.ui.centralwidget, 'Train interaction', 'Interaction name:')
 
         text = text.replace(" ", "_")
@@ -146,6 +143,27 @@ class CtrlPropagatorVisualizer:
             self.progresbar_hidden(False)
             self.__train(text)
 
+    def click_btn_avoid_collision(self):
+        self.progresbar_hidden(False)
+        self.update_progressbar_detail(5, "Initializing")
+        tri_mesh_env = vedo.vtk2trimesh(self.vedo_env)
+        tri_mesh_obj = vedo.vtk2trimesh(self.vedo_body)
+        env_name = self.recording_name
+        obj_name = self.vedo_text.GetText(1)
+
+        self.update_progressbar_detail(50, "Removing collision")
+
+        # for now the only option I have is to translate the body to an upper position
+        remove_collision(tri_mesh_env, tri_mesh_obj)
+
+        self.update_progressbar_detail(50, "Collision eliminated")
+        s = trimesh.Scene()
+        tri_mesh_env.visual.face_colors = [200, 200, 200, 250]
+        tri_mesh_obj.visual.face_colors = [0, 250, 0, 255]
+        s.add_geometry(tri_mesh_env)
+        s.add_geometry(tri_mesh_obj)
+        s.show(caption="Uncollided")
+        self.progresbar_hidden(True)
 
     def __train(self, affordance_name):
 
@@ -153,7 +171,7 @@ class CtrlPropagatorVisualizer:
         tri_mesh_env = vedo.vtk2trimesh(self.vedo_env)
         tri_mesh_obj = vedo.vtk2trimesh(self.vedo_body)
         affordance_name = affordance_name
-        env_name =  self.recording_name
+        env_name = self.recording_name
         obj_name = self.vedo_text.GetText(1)
 
         self.update_progressbar_detail(10, "Removing collision")
@@ -201,7 +219,6 @@ class CtrlPropagatorVisualizer:
 
         self.update_progressbar_detail(70, "Training iT with Clearance Vectors")
 
-
         pv_sampler = OnGivenPointCloudWeightedSampler(np_input_cloud=np_cloud_env,
                                                       rate_generated_random_numbers=sampler_rate_generated_random_numbers)
 
@@ -229,7 +246,7 @@ class CtrlPropagatorVisualizer:
                                          trimesh_ibs=tri_mesh_ibs_segmented)
 
         self.ui.vtk_widget.Render()
-        self.vp.show( flatten([vedo_items, self.vedo_env,  self.vedo_text]), interactive=False, resetcam=False)
+        self.vp.show(flatten([vedo_items, self.vedo_env, self.vedo_text]), interactive=False, resetcam=False)
 
         self.update_progressbar_detail(100, "Done")
 
@@ -261,17 +278,15 @@ class CtrlPropagatorVisualizer:
         self.frames_dir = os.path.join(base_dir, 'recordings', self.recording_name, 'Color')
         self.frames_file_names = sorted(os.listdir(self.fitting_dir))
 
-        self.model = self.load_model(model_folder, gender)
+        self.smplx_model = self.load_smplx_model(model_folder, gender)
         self.cam2world = self.load_cam2world(json_scene_conf)
         self.vedo_env = vedo.load(os.path.join(self.scene_dir, scene_name + '.ply')).lighting('ambient')
 
-        self.ui.horizontalSlider.setMaximum(len(self.frames_file_names)-1)
-
+        self.ui.horizontalSlider.setMaximum(len(self.frames_file_names) - 1)
 
         self.set_camera(self.cam2world)
         self.ui.horizontalSlider.setValue(0)
         self.changeValue(0)
-
 
     def changeValue(self, pos):
         # loop = QEventLoop()
@@ -281,12 +296,10 @@ class CtrlPropagatorVisualizer:
         # print(f"finish pos {pos}")
         # loop.exec_()
 
-
     def set_camera(self, cam2world):
         T, R, Z, S = decompose(cam2world)
         self.vp.camera.SetPosition(T)
         self.vp.camera.SetViewUp(np.matmul(R, [0, -1, 0]))
-
 
     def load_frame(self, num_frame):
         img_name = self.frames_file_names[num_frame]
@@ -295,21 +308,19 @@ class CtrlPropagatorVisualizer:
         torch_param = {}
         for key in param.keys():
             torch_param[key] = torch.tensor(param[key])
-        output = self.model(return_verts=True, **torch_param)
+        output = self.smplx_model(return_verts=True, **torch_param)
         vertices = output.vertices.detach().cpu().numpy().squeeze()
         if np.isnan(vertices).all():
-            vertices =np.zeros(vertices.shape)
-        tri_mesh_body = trimesh.Trimesh(vertices=vertices, faces=self.model.faces, face_colors=[200, 200, 200, 255])
+            vertices = np.zeros(vertices.shape)
+        tri_mesh_body = trimesh.Trimesh(vertices=vertices, faces=self.smplx_model.faces, face_colors=[200, 200, 200, 255])
         tri_mesh_body.apply_transform(self.cam2world)
         self.vedo_body = vedo.trimesh2vtk(tri_mesh_body)
 
-
-        self.vedo_text= vedo.Text2D(img_name, pos='bottom-right', c='white', bg='black', font='Arial', s=.8, alpha=1)
+        self.vedo_text = vedo.Text2D(img_name, pos='bottom-right', c='white', bg='black', font='Arial', s=.8, alpha=1)
         self.ui.vtk_widget.Render()
-        self.vp.show(self.vedo_env, self.vedo_body, self.vedo_text,  interactive=False, resetcam=(num_frame == 0))
+        self.vp.show(self.vedo_env, self.vedo_body, self.vedo_text, interactive=False, resetcam=(num_frame == 0))
 
-
-        if not self.ui.chk_view_rgb.isChecked() :
+        if not self.ui.chk_view_rgb.isChecked():
             self.ui.lbl_recording.setHidden(True)
         else:
             self.ui.lbl_recording.setHidden(False)
@@ -318,20 +329,17 @@ class CtrlPropagatorVisualizer:
                 color_img = cv2.imread(frame_file)
                 color_img = cv2.flip(color_img, 1)
             else:
-                color_img =cv2.imread("data/stand_by.jpg")
+                color_img = cv2.imread("data/stand_by.jpg")
 
             self.ui.lbl_recording.setPixmap(self.convert_cv_qt(color_img))
-
-
 
     def load_cam2world(self, json_scene_conf):
         with open(json_scene_conf, 'r') as f:
             trans = np.array(json.load(f))
         return trans
 
-
-    def load_model(self, model_folder , gender):
-        model = smplx.create(model_folder, model_type='smplx',
+    def load_smplx_model(self, model_folder, gender):
+        smplx_model = smplx.create(model_folder, model_type='smplx',
                              gender=gender, ext='npz',
                              num_pca_comps=12,
                              create_global_orient=True,
@@ -345,24 +353,22 @@ class CtrlPropagatorVisualizer:
                              create_reye_pose=True,
                              create_transl=True
                              )
-        return model
+        return smplx_model
 
     def change_view_rgb(self):
         self.load_frame(self.ui.horizontalSlider.value())
 
     def click_btn_previous(self):
-        pos =  self.ui.horizontalSlider.value()
-        next_pos = max(pos-1, self.ui.horizontalSlider.minimum())
+        pos = self.ui.horizontalSlider.value()
+        next_pos = max(pos - 1, self.ui.horizontalSlider.minimum())
         self.ui.horizontalSlider.setValue(next_pos)
         self.load_frame(next_pos)
-
 
     def click_btn_next(self):
-        pos =  self.ui.horizontalSlider.value()
-        next_pos = min(pos+1, self.ui.horizontalSlider.maximum())
+        pos = self.ui.horizontalSlider.value()
+        next_pos = min(pos + 1, self.ui.horizontalSlider.maximum())
         self.ui.horizontalSlider.setValue(next_pos)
         self.load_frame(next_pos)
-
 
     def convert_cv_qt(self, cv_img):
         """Convert from an opencv image to QPixmap"""
@@ -370,5 +376,6 @@ class CtrlPropagatorVisualizer:
         h, w, ch = rgb_image.shape
         bytes_per_line = ch * w
         convert_to_Qt_format = QtGui.QImage(rgb_image.data, w, h, bytes_per_line, QtGui.QImage.Format_RGB888)
-        p = convert_to_Qt_format.scaled(self.ui.lbl_recording.width(), self.ui.lbl_recording.height())  # , Qt.KeepAspectRatio)
+        p = convert_to_Qt_format.scaled(self.ui.lbl_recording.width(),
+                                        self.ui.lbl_recording.height())  # , Qt.KeepAspectRatio)
         return QPixmap.fromImage(p)
