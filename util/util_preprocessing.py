@@ -1,12 +1,15 @@
 
 import random
+import time
+
 import numpy as np
 import math
 
-def crop_scene_cube_smplx_at_point(scene_verts, scene_center, r=2.0, with_wall_ceilling=True, random_seed=None,
-                                    scene_min_x=None, scene_max_x=None, scene_min_y=None, scene_max_y=None,
-                                    rotate=False):
-    random.seed(random_seed)
+def crop_scene_cube_smplx_at_point(scene_verts, scene_center, r=2.0, with_wall_ceilling=True, random_seed=None, rotate=False):
+    if random_seed is None:
+        random.seed(time.time())
+    else:
+        random.seed(random_seed)
 
     min_x = scene_center[0] - r / 2
     max_x = scene_center[0] + r / 2
@@ -34,7 +37,7 @@ def crop_scene_cube_smplx_at_point(scene_verts, scene_center, r=2.0, with_wall_c
     scene_verts_crop = scene_verts_crop - scene_center
     scene_verts_crop = scene_verts_crop[
         np.where(scene_verts_crop[:, 2] <= 1.0)]  # remove points higher than virtual veiling
-    scene_verts = scene_verts - scene_center
+    scene_verts_local = scene_verts - scene_center
 
     if with_wall_ceilling:
         # add ceiling/walls to scene_verts_crop
@@ -116,4 +119,4 @@ def crop_scene_cube_smplx_at_point(scene_verts, scene_center, r=2.0, with_wall_c
                                                wall4_points_rotate), axis=0)
 
     shift = -scene_center
-    return scene_verts, scene_verts_crop, shift  # shifted by scene_center
+    return scene_verts_local, scene_verts_crop, shift  # shifted by scene_center

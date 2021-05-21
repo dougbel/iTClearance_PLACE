@@ -17,6 +17,7 @@ from transforms3d.affines import decompose
 from vedo import Plotter
 from vedo.utils import flatten
 
+from human_body_prior.tools.model_loader import load_vposer
 from it import util
 from it.training.ibs import IBSMesh
 from it.training.maxdistancescalculator import MaxDistancesCalculator
@@ -26,9 +27,13 @@ from it_clearance.training.sampler import PropagateNormalObjectPoissonDiscSample
 from it_clearance.training.saver import SaverClearance
 from it_clearance.training.trainer import TrainerClearance
 from it_clearance.utils import get_vtk_items_cv_pv
+from models.optimizer import adjust_body_mesh_to_raw_guess
 from qt_ui.seed_train_extractor import Ui_MainWindow
 from util.util_mesh import remove_collision
+from utils import convert_to_3D_rot, gen_body_mesh
 
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class CtrlPropagatorVisualizer:
 
@@ -146,22 +151,43 @@ class CtrlPropagatorVisualizer:
     def click_btn_avoid_collision(self):
         self.progresbar_hidden(False)
         self.update_progressbar_detail(5, "Initializing")
+
+        vposer_model_path = f'{self.datasets_dir}/pretrained/body_models/vposer_v1_0'
+        vposer_model, _ = load_vposer(vposer_model_path, vp_model='snapshot')
+        vposer_model = vposer_model.to(device)
+
+        body_verts_sample = self.vedo_body.points()
+        scene_verts = self.vedo_env.points()
+
+        self.update_progressbar_detail(30, "Generating body mesh")
+        body_params_rec, shift = adjust_body_mesh_to_raw_guess(body_verts_sample, scene_verts, vposer_model, self.smplx_model, vedo_env=self.vedo_env, body_faces= self.vedo_body.faces())
+        body_params_opt_s1 = convert_to_3D_rot(body_params_rec)  # tensor, [bs=1, 72]
+        body_pose_joint_s1 = vposer_model.decode(body_params_opt_s1[:, 16:48], output_type='aa').view(1, -1)
+        body_verts_opt_s1 = gen_body_mesh(body_params_opt_s1, body_pose_joint_s1, self.smplx_model)[0]
+        body_verts_opt_s1 = body_verts_opt_s1.detach().cpu().numpy()
+
+        body_trimesh_s1 = trimesh.Trimesh(vertices=body_verts_opt_s1, faces=self.smplx_model.faces,
+                                          face_colors=[200, 200, 200, 255])
+        body_trimesh_s1.visual.face_colors = [200, 200, 200, 255]
+
+
         tri_mesh_env = vedo.vtk2trimesh(self.vedo_env)
         tri_mesh_obj = vedo.vtk2trimesh(self.vedo_body)
-        env_name = self.recording_name
-        obj_name = self.vedo_text.GetText(1)
+        # env_name = self.recording_name
+        # obj_name = self.vedo_text.GetText(1)
 
         self.update_progressbar_detail(50, "Removing collision")
 
         # for now the only option I have is to translate the body to an upper position
-        remove_collision(tri_mesh_env, tri_mesh_obj)
+        # remove_collision(tri_mesh_env, tri_mesh_obj)
 
         self.update_progressbar_detail(50, "Collision eliminated")
         s = trimesh.Scene()
         tri_mesh_env.visual.face_colors = [200, 200, 200, 250]
-        tri_mesh_obj.visual.face_colors = [0, 250, 0, 255]
+        tri_mesh_obj.visual.face_colors = [0, 250, 0, 100]
         s.add_geometry(tri_mesh_env)
         s.add_geometry(tri_mesh_obj)
+        s.add_geometry(body_trimesh_s1.apply_translation(-shift))
         s.show(caption="Uncollided")
         self.progresbar_hidden(True)
 
@@ -279,6 +305,7 @@ class CtrlPropagatorVisualizer:
         self.frames_file_names = sorted(os.listdir(self.fitting_dir))
 
         self.smplx_model = self.load_smplx_model(model_folder, gender)
+        self.smplx_model.to(device)
         self.cam2world = self.load_cam2world(json_scene_conf)
         self.vedo_env = vedo.load(os.path.join(self.scene_dir, scene_name + '.ply')).lighting('ambient')
 
@@ -307,7 +334,7 @@ class CtrlPropagatorVisualizer:
             param = pickle.load(f, encoding='latin1')
         torch_param = {}
         for key in param.keys():
-            torch_param[key] = torch.tensor(param[key])
+            torch_param[key] = torch.tensor(param[key]).to(device)
         output = self.smplx_model(return_verts=True, **torch_param)
         vertices = output.vertices.detach().cpu().numpy().squeeze()
         if np.isnan(vertices).all():
