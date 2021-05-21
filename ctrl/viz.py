@@ -27,7 +27,7 @@ from it_clearance.training.sampler import PropagateNormalObjectPoissonDiscSample
 from it_clearance.training.saver import SaverClearance
 from it_clearance.training.trainer import TrainerClearance
 from it_clearance.utils import get_vtk_items_cv_pv
-from models.optimizer import adjust_body_mesh_to_raw_guess
+from models.optimizer import adjust_body_mesh_to_raw_guess, get_scaledShifted_bps_sets
 from qt_ui.seed_train_extractor import Ui_MainWindow
 from util.util_mesh import remove_collision
 from utils import convert_to_3D_rot, gen_body_mesh
@@ -64,6 +64,8 @@ class CtrlPropagatorVisualizer:
         self.ui.btn_next.clicked.connect(self.click_btn_next)
         self.ui.btn_train.clicked.connect(self.click_btn_train)
         self.ui.btn_avoid_collision.clicked.connect(self.click_btn_avoid_collision)
+        self.ui.btn_view_place_optim.clicked.connect(self.click_view_place_optim)
+        self.ui.btn_run_place_optim.clicked.connect(self.click_run_place_optim)
 
         self.ui.horizontalSlider.setValue(0)
         self.ui.horizontalSlider.setMinimum(0)
@@ -87,6 +89,7 @@ class CtrlPropagatorVisualizer:
         self.vedo_text = None
 
         self.BODY_N_VERTEX = 10475
+        self.CUBE_SIZE = 2
 
         self.list_prox_scans_qual()
         self.list_prox_scans_quan()
@@ -151,6 +154,111 @@ class CtrlPropagatorVisualizer:
     def click_btn_avoid_collision(self):
         self.progresbar_hidden(False)
         self.update_progressbar_detail(5, "Initializing")
+        tri_mesh_env = vedo.vtk2trimesh(self.vedo_env)
+        tri_mesh_obj = vedo.vtk2trimesh(self.vedo_body)
+        env_name = self.recording_name
+        obj_name = self.vedo_text.GetText(1)
+
+        self.update_progressbar_detail(50, "Removing collision")
+
+        # for now the only option I have is to translate the body to an upper position
+        remove_collision(tri_mesh_env, tri_mesh_obj)
+
+        self.update_progressbar_detail(50, "Collision eliminated")
+        s = trimesh.Scene()
+        tri_mesh_env.visual.face_colors = [200, 200, 200, 250]
+        tri_mesh_obj.visual.face_colors = [0, 250, 0, 255]
+        s.add_geometry(tri_mesh_env)
+        s.add_geometry(tri_mesh_obj)
+        s.show(caption="Uncollided")
+        self.progresbar_hidden(True)
+
+    def click_view_place_optim(self):
+        self.progresbar_hidden(False)
+        self.update_progressbar_detail(5, "Initializing")
+
+        np_body_verts_sample = self.vedo_body.points()
+        np_body_faces = self.vedo_body.faces()
+        np_scene_verts = self.vedo_env.points()
+        cube_size = self.CUBE_SIZE
+
+        scene_verts_crop_scaled, bps, scene_bps_feat, scene_bps_verts, body_bps_feat, body_bps_verts, shift = get_scaledShifted_bps_sets(
+            np_body_verts_sample, np_scene_verts, cube_size)
+
+        import trimesh
+        import vedo
+        trimesh_env = vedo.vtk2trimesh(self.vedo_env)
+        trimesh_body = trimesh.Trimesh(np_body_verts_sample, np_body_faces)
+        trimesh_body.visual.face_colors = [0, 255, 0, 255]
+        trimesh_bps = trimesh.points.PointCloud(bps * cube_size - shift, colors=[0, 255, 255, 100])
+        trimesh_scene_crop = trimesh.points.PointCloud(scene_verts_crop_scaled * cube_size - shift,
+                                                       colors=[255, 255, 0, 100])
+
+
+        self.update_progressbar_detail(20, "Showing Crop scene")
+        s = trimesh.Scene()
+        s.add_geometry(trimesh_env)
+        s.add_geometry(trimesh_body)
+        s.add_geometry(trimesh_scene_crop)
+        s.show(caption="Crop scene", resolution=(1024,768))
+
+
+        self.update_progressbar_detail(40, "Showing Basis point set (randomly generated)")
+        s = trimesh.Scene()
+        s.add_geometry(trimesh_env)
+        s.add_geometry(trimesh_body)
+        s.add_geometry(trimesh_bps)
+        s.show(caption="Basis point set (randomly generated)", resolution=(1024,768))
+
+        import random
+        indxs = random.sample(range(0, 10000), 500)
+        trimesh_bpsenv_reduced = trimesh.points.PointCloud(scene_bps_verts[indxs] * cube_size - shift,
+                                                           colors=[255, 255, 0, 100])
+        rays_bps2env = np.hstack((scene_bps_verts[indxs] * cube_size - shift, bps[indxs] * cube_size - shift))
+        trimesh_rays_bps2env = trimesh.load_path(rays_bps2env.reshape(-1, 2, 3))
+        trimesh_rays_bps2env.colors = np.ones((len(trimesh_rays_bps2env.entities), 4)) * [0, 255, 255, 200]
+
+        self.update_progressbar_detail(60, "Showing From basis point set to environment")
+        s = trimesh.Scene()
+        s.add_geometry(trimesh_env)
+        s.add_geometry(trimesh_body)
+        s.add_geometry(trimesh_bpsenv_reduced)
+        s.add_geometry(trimesh_rays_bps2env)
+        s.show(caption="From basis point set to environment", resolution=(1024,768))
+
+        rays_env2body = np.hstack(
+            (scene_bps_verts[indxs] * cube_size - shift, body_bps_verts[indxs] * cube_size - shift))
+        trimesh_ray_env2body = trimesh.load_path(rays_env2body.reshape(-1, 2, 3))
+        trimesh_ray_env2body.colors = np.ones((len(trimesh_ray_env2body.entities), 4)) * [255, 255, 0, 100]
+        trimesh_bpsbody_reduced = trimesh.points.PointCloud(body_bps_verts[indxs] * cube_size - shift,
+                                                            colors=[0, 255, 0])
+
+        self.update_progressbar_detail(80, "Showing From env_bps to body")
+        s = trimesh.Scene()
+        s.add_geometry(trimesh_env)
+        s.add_geometry(trimesh_body)
+        s.add_geometry(trimesh_bpsbody_reduced)
+        s.add_geometry(trimesh_ray_env2body)
+        s.show(caption="From env_bps to body", resolution=(1024,768))
+
+        full_rays_env2body = np.hstack((scene_bps_verts * cube_size - shift, body_bps_verts * cube_size - shift))
+        trimesh_full_rays_env2body = trimesh.load_path(full_rays_env2body.reshape(-1, 2, 3))
+        trimesh_full_rays_env2body.colors = np.ones((len(trimesh_full_rays_env2body.entities), 4)) * [255, 255, 0, 100]
+
+        self.update_progressbar_detail(95, "Showing FULL From env_bps to body")
+
+        s = trimesh.Scene()
+        s.add_geometry(trimesh_env)
+        s.add_geometry(trimesh_body)
+        s.add_geometry(trimesh_full_rays_env2body)
+        s.show(caption="FULL From env_bps to body", resolution=(1024,768))
+
+
+        self.progresbar_hidden(True)
+
+    def click_run_place_optim(self):
+        self.progresbar_hidden(False)
+        self.update_progressbar_detail(5, "Initializing")
 
         vposer_model_path = f'{self.datasets_dir}/pretrained/body_models/vposer_v1_0'
         vposer_model, _ = load_vposer(vposer_model_path, vp_model='snapshot')
@@ -159,8 +267,10 @@ class CtrlPropagatorVisualizer:
         body_verts_sample = self.vedo_body.points()
         scene_verts = self.vedo_env.points()
 
-        self.update_progressbar_detail(30, "Generating body mesh")
-        body_params_rec, shift = adjust_body_mesh_to_raw_guess(body_verts_sample, scene_verts, vposer_model, self.smplx_model, vedo_env=self.vedo_env, body_faces= self.vedo_body.faces())
+        self.update_progressbar_detail(30, "Adjust body params to body mesh")
+        body_params_rec, shift = adjust_body_mesh_to_raw_guess(body_verts_sample, scene_verts, vposer_model, self.smplx_model)
+
+        self.update_progressbar_detail(60, "Transforming body params to mesh")
         body_params_opt_s1 = convert_to_3D_rot(body_params_rec)  # tensor, [bs=1, 72]
         body_pose_joint_s1 = vposer_model.decode(body_params_opt_s1[:, 16:48], output_type='aa').view(1, -1)
         body_verts_opt_s1 = gen_body_mesh(body_params_opt_s1, body_pose_joint_s1, self.smplx_model)[0]
@@ -176,12 +286,7 @@ class CtrlPropagatorVisualizer:
         # env_name = self.recording_name
         # obj_name = self.vedo_text.GetText(1)
 
-        self.update_progressbar_detail(50, "Removing collision")
-
-        # for now the only option I have is to translate the body to an upper position
-        # remove_collision(tri_mesh_env, tri_mesh_obj)
-
-        self.update_progressbar_detail(50, "Collision eliminated")
+        self.update_progressbar_detail(95, "Parameters adjusted to body mesh")
         s = trimesh.Scene()
         tri_mesh_env.visual.face_colors = [200, 200, 200, 250]
         tri_mesh_obj.visual.face_colors = [0, 250, 0, 100]
