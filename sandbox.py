@@ -119,7 +119,6 @@ sel_gui = Selector(rotated_scene, scene_min_x, scene_max_x, scene_min_y, scene_m
 selected_p = sel_gui.select_point_to_test()
 scene_verts_local, scene_verts_crop_local, shift = crop_scene_cube_smplx_at_point(
      scene_verts, scene_center=selected_p, r=cube_size, with_wall_ceilling=True, random_seed=np.random.randint(10000),
-     scene_min_x=scene_min_x, scene_max_x=scene_max_x, scene_min_y=scene_min_y, scene_max_y=scene_max_y,
      rotate=True)
 
 

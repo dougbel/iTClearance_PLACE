@@ -18,7 +18,7 @@ import warnings
 warnings.simplefilter("ignore", UserWarning)
 
 # from open3d import JVisualizer
-from open3d.j_visualizer import JVisualizer
+# from open3d.j_visualizer import JVisualizer
 import torch
 import torch.optim as optim
 from tqdm import tqdm
