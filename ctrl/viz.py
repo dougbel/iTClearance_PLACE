@@ -340,10 +340,10 @@ class CtrlPropagatorVisualizer:
 
         tri_mesh_env_segmented = util.slide_mesh_by_bounding_box(tri_mesh_env, middle_point, extension)
 
-        ibs_init_size_sampling = 400
-        ibs_resamplings = 4
+        ibs_init_size_sampling = self.ui.sbox_ibs_init_sampling.value()#400
+        ibs_resamplings = self.ui.sbox_ibs_resampling.value()#4
         sampler_rate_ibs_samples = 5
-        sampler_rate_generated_random_numbers = 500
+        sampler_rate_generated_random_numbers = self.ui.sbox_pv_rate_rolls.value()
 
         ################################
         # GENERATING AND SEGMENTING IBS MESH
