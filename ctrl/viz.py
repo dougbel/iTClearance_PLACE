@@ -27,11 +27,10 @@ from it_clearance.training.sampler import PropagateNormalObjectPoissonDiscSample
 from it_clearance.training.saver import SaverClearance
 from it_clearance.training.trainer import TrainerClearance
 from it_clearance.utils import get_vtk_items_cv_pv
-from models.optimizer import adjust_body_mesh_to_raw_guess, get_scaledShifted_bps_sets
+from models.optimizer import adjust_body_mesh_to_raw_guess, get_scaledShifted_bps_sets, optimization_stage_2
 from qt_ui.seed_train_extractor import Ui_MainWindow
 from util.util_mesh import remove_collision
-from utils import convert_to_3D_rot, gen_body_mesh
-
+from utils import convert_to_3D_rot, gen_body_mesh, get_contact_id
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -76,6 +75,8 @@ class CtrlPropagatorVisualizer:
         # ### WORKING INDEXES
         self.datasets_dir = datasets_dir
         self.scene_dir = None
+        self.sdf_dir = None
+        self.body_segments_dir = None
         self.fitting_dir = None
         self.frames_dir = None
         self.frames_file_names = None
@@ -267,18 +268,34 @@ class CtrlPropagatorVisualizer:
         body_verts_sample = self.vedo_body.points()
         scene_verts = self.vedo_env.points()
 
-        self.update_progressbar_detail(30, "Adjust body params to body mesh")
+        self.update_progressbar_detail(20, "Adjust body params to body mesh")
         body_params_rec, shift = adjust_body_mesh_to_raw_guess(body_verts_sample, scene_verts, vposer_model, self.smplx_model)
 
-        self.update_progressbar_detail(60, "Transforming body params to mesh")
+        self.update_progressbar_detail(50, "Transforming body params to mesh")
         body_params_opt_s1 = convert_to_3D_rot(body_params_rec)  # tensor, [bs=1, 72]
         body_pose_joint_s1 = vposer_model.decode(body_params_opt_s1[:, 16:48], output_type='aa').view(1, -1)
         body_verts_opt_s1 = gen_body_mesh(body_params_opt_s1, body_pose_joint_s1, self.smplx_model)[0]
         body_verts_opt_s1 = body_verts_opt_s1.detach().cpu().numpy()
 
-        body_trimesh_s1 = trimesh.Trimesh(vertices=body_verts_opt_s1, faces=self.smplx_model.faces,
-                                          face_colors=[200, 200, 200, 255])
-        body_trimesh_s1.visual.face_colors = [200, 200, 200, 255]
+        body_trimesh_s1 = trimesh.Trimesh(vertices=body_verts_opt_s1, faces=self.smplx_model.faces)
+        body_trimesh_s1.visual.face_colors = [255, 161, 53, 200]
+
+        self.update_progressbar_detail(80, "Adjusting body mesh with collision losses")
+        s_grid_min_batch, s_grid_max_batch, s_sdf_batch = self.load_sdf()
+        # 'L_Leg', 'R_Leg', 'back', 'gluteus', 'L_Hand', 'R_Hand', 'thighs'
+        contact_part = ['L_Leg', 'R_Leg']
+        id_contact_vertices, _ = get_contact_id(self.body_segments_dir, contact_part)
+        body_params_rec, shift = optimization_stage_2(body_verts_sample, scene_verts, vposer_model, self.smplx_model,
+                                                      body_params_rec, s_grid_min_batch, s_grid_max_batch, s_sdf_batch,
+                                                      id_contact_vertices)
+        self.update_progressbar_detail(90, "Transforming body params to mesh")
+        body_params_opt_s2 = convert_to_3D_rot(body_params_rec)  # tensor, [bs=1, 72]
+        body_pose_joint_s2 = vposer_model.decode(body_params_opt_s2[:, 16:48], output_type='aa').view(1, -1)
+        body_verts_opt_s2 = gen_body_mesh(body_params_opt_s2, body_pose_joint_s2, self.smplx_model)[0]
+        body_verts_opt_s2 = body_verts_opt_s2.detach().cpu().numpy()
+
+        body_trimesh_s2 = trimesh.Trimesh(vertices=body_verts_opt_s2, faces=self.smplx_model.faces)
+        body_trimesh_s2.visual.face_colors = [255, 0, 0, 255]
 
 
         tri_mesh_env = vedo.vtk2trimesh(self.vedo_env)
@@ -293,6 +310,7 @@ class CtrlPropagatorVisualizer:
         s.add_geometry(tri_mesh_env)
         s.add_geometry(tri_mesh_obj)
         s.add_geometry(body_trimesh_s1.apply_translation(-shift))
+        s.add_geometry(body_trimesh_s2.apply_translation(-shift))
         s.show(caption="Uncollided")
         self.progresbar_hidden(True)
 
@@ -406,6 +424,8 @@ class CtrlPropagatorVisualizer:
 
         self.fitting_dir = os.path.join(pseudo_fitting_dir, 'results')
         self.scene_dir = os.path.join(base_dir, 'scenes')
+        self.sdf_dir =  os.path.join(base_dir, 'sdf')
+        self.body_segments_dir =  os.path.join(base_dir, 'body_segments')
         self.frames_dir = os.path.join(base_dir, 'recordings', self.recording_name, 'Color')
         self.frames_file_names = sorted(os.listdir(self.fitting_dir))
 
@@ -486,6 +506,22 @@ class CtrlPropagatorVisualizer:
                              create_transl=True
                              )
         return smplx_model
+
+    def load_sdf(self):
+        ## read scene sdf
+        scene_name = self.recording_name.split("_")[0]
+        with open(os.path.join(self.sdf_dir, scene_name + '.json')) as f:
+            sdf_data = json.load(f)
+            grid_min = np.array(sdf_data['min'])
+            grid_max = np.array(sdf_data['max'])
+            grid_dim = sdf_data['dim']
+        sdf = np.load(os.path.join(self.sdf_dir, scene_name + '_sdf.npy')).reshape(grid_dim, grid_dim, grid_dim)
+        s_grid_min_batch = torch.tensor(grid_min, dtype=torch.float32, device=device).unsqueeze(0).unsqueeze(1)
+        s_grid_max_batch = torch.tensor(grid_max, dtype=torch.float32, device=device).unsqueeze(0).unsqueeze(1)
+        s_sdf_batch = torch.tensor(sdf, dtype=torch.float32, device=device).unsqueeze(0)
+        s_sdf_batch = s_sdf_batch.repeat(1, 1, 1, 1)  # [1, 256, 256, 256]
+
+        return s_grid_min_batch, s_grid_max_batch, s_sdf_batch
 
     def change_view_rgb(self):
         self.load_frame(self.ui.horizontalSlider.value())
