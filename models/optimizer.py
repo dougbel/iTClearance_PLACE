@@ -150,8 +150,7 @@ def optimization_stage_2(np_body_verts_sample: np.ndarray, np_scene_verts:np.arr
                          weight_loss_shape = 0.01, weight_loss_hand = 0.01, weight_collision = 8.0,
                          weight_loss_contact = 0.5,
                          itr_s2 = 100, cube_size = 2):
-    #TODO transform to  body_params_rec=None
-    #TODO generate this as a generic optimization stage
+    #TODO a) transform to  body_params_rec=None permiting this perform from scratch b)generate this as a generic optimization stage
 
     _, bps, scene_bps_feat, scene_bps_verts,body_bps_feat, body_bps_verts, shift = get_scaledShifted_bps_sets(np_body_verts_sample, np_scene_verts, cube_size)
 

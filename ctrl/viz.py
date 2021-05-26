@@ -260,50 +260,63 @@ class CtrlPropagatorVisualizer:
     def click_run_place_optim(self):
         self.progresbar_hidden(False)
         self.update_progressbar_detail(5, "Initializing")
-
         vposer_model_path = f'{self.datasets_dir}/pretrained/body_models/vposer_v1_0'
         vposer_model, _ = load_vposer(vposer_model_path, vp_model='snapshot')
         vposer_model = vposer_model.to(device)
-
         body_verts_sample = self.vedo_body.points()
         scene_verts = self.vedo_env.points()
 
+
         self.update_progressbar_detail(20, "Adjust body params to body mesh")
-        body_params_rec, shift = adjust_body_mesh_to_raw_guess(body_verts_sample, scene_verts, vposer_model, self.smplx_model)
+        body_params_rec, shift = adjust_body_mesh_to_raw_guess(body_verts_sample, scene_verts,
+                                                            vposer_model, self.smplx_model,
+                                                            weight_loss_rec_verts= self.ui.sbox_rec_vertices.value(), # 1.0
+                                                            weight_loss_rec_bps = self.ui.sbox_rec_bps.value(), # 3.0
+                                                            weight_loss_vposer = self.ui.sbox_v_poser.value(),  # 0.02
+                                                            weight_loss_shape = self.ui.sbox_shape.value(),  # 0.01
+                                                            weight_loss_hand = self.ui.sbox_hand.value(),  # 0.01
+                                                            itr_s1 = self.ui.sbox_its1.value()  # 200
+                                                            )
+
 
         self.update_progressbar_detail(50, "Transforming body params to mesh")
         body_params_opt_s1 = convert_to_3D_rot(body_params_rec)  # tensor, [bs=1, 72]
         body_pose_joint_s1 = vposer_model.decode(body_params_opt_s1[:, 16:48], output_type='aa').view(1, -1)
         body_verts_opt_s1 = gen_body_mesh(body_params_opt_s1, body_pose_joint_s1, self.smplx_model)[0]
         body_verts_opt_s1 = body_verts_opt_s1.detach().cpu().numpy()
-
         body_trimesh_s1 = trimesh.Trimesh(vertices=body_verts_opt_s1, faces=self.smplx_model.faces)
         body_trimesh_s1.visual.face_colors = [255, 161, 53, 200]
 
+
         self.update_progressbar_detail(80, "Adjusting body mesh with collision losses")
         s_grid_min_batch, s_grid_max_batch, s_sdf_batch = self.load_sdf()
-        # 'L_Leg', 'R_Leg', 'back', 'gluteus', 'L_Hand', 'R_Hand', 'thighs'
-        contact_part = ['L_Leg', 'R_Leg']
+        contact_part = self.get_cofigured_contact_regions() # 'L_Leg', 'R_Leg', 'back', 'gluteus', 'L_Hand', 'R_Hand', 'thighs'
         id_contact_vertices, _ = get_contact_id(self.body_segments_dir, contact_part)
         body_params_rec, shift = optimization_stage_2(body_verts_sample, scene_verts, vposer_model, self.smplx_model,
                                                       body_params_rec, s_grid_min_batch, s_grid_max_batch, s_sdf_batch,
-                                                      id_contact_vertices)
+                                                      id_contact_vertices,
+                                                      weight_loss_rec_verts = self.ui.sbox_rec_vertices.value(), # 1.0
+                                                      weight_loss_rec_bps = self.ui.sbox_rec_bps.value(), # 3.0
+                                                      weight_loss_vposer = self.ui.sbox_v_poser.value(), # 0.02
+                                                      weight_loss_shape = self.ui.sbox_shape.value(), # 0.01
+                                                      weight_loss_hand = self.ui.sbox_hand.value(), # 0.01
+                                                      weight_collision = self.ui.sbox_collision.value(), # 8.0
+                                                      weight_loss_contact = self.ui.sbox_contact.value(), # 0.5
+                                                      itr_s2 = self.ui.sbox_its2.value() # 100
+                                                      )
+
+
         self.update_progressbar_detail(90, "Transforming body params to mesh")
         body_params_opt_s2 = convert_to_3D_rot(body_params_rec)  # tensor, [bs=1, 72]
         body_pose_joint_s2 = vposer_model.decode(body_params_opt_s2[:, 16:48], output_type='aa').view(1, -1)
         body_verts_opt_s2 = gen_body_mesh(body_params_opt_s2, body_pose_joint_s2, self.smplx_model)[0]
         body_verts_opt_s2 = body_verts_opt_s2.detach().cpu().numpy()
-
         body_trimesh_s2 = trimesh.Trimesh(vertices=body_verts_opt_s2, faces=self.smplx_model.faces)
         body_trimesh_s2.visual.face_colors = [255, 0, 0, 255]
 
-
+        self.update_progressbar_detail(95, "Parameters adjusted to body mesh")
         tri_mesh_env = vedo.vtk2trimesh(self.vedo_env)
         tri_mesh_obj = vedo.vtk2trimesh(self.vedo_body)
-        # env_name = self.recording_name
-        # obj_name = self.vedo_text.GetText(1)
-
-        self.update_progressbar_detail(95, "Parameters adjusted to body mesh")
         s = trimesh.Scene()
         tri_mesh_env.visual.face_colors = [200, 200, 200, 250]
         tri_mesh_obj.visual.face_colors = [0, 250, 0, 100]
@@ -537,6 +550,27 @@ class CtrlPropagatorVisualizer:
         next_pos = min(pos + 1, self.ui.horizontalSlider.maximum())
         self.ui.horizontalSlider.setValue(next_pos)
         self.load_frame(next_pos)
+
+    def get_cofigured_contact_regions(self):
+        configured_regions=[]
+        if(self.ui.chk_hand_left):
+            configured_regions.append('L_Hand')
+        if(self.ui.chk_hand_right):
+            configured_regions.append('R_Hand')
+        if(self.ui.chk_foot_left):
+            configured_regions.append('L_Leg')
+        if(self.ui.chk_foot_right):
+            configured_regions.append('R_Leg')
+        if(self.ui.chk_back):
+            configured_regions.append('back')
+        if(self.ui.chk_gluteus):
+            configured_regions.append('gluteus')
+        if(self.ui.chk_thighs):
+            configured_regions.append('thighs')
+        return configured_regions
+
+
+
 
     def convert_cv_qt(self, cv_img):
         """Convert from an opencv image to QPixmap"""
