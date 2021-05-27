@@ -119,6 +119,22 @@ selected_scene_verts_local = scene_verts_crop_local[selected_ind]
 print('[INFO] bps encoding computed.')
 
 
+
+import trimesh
+s = trimesh.Scene()
+import random
+indxs = random.sample(range(0, 10000), 100)
+rays_bps = np.hstack((selected_scene_verts_global[indxs] * cube_size - shift, scene_basis_set[indxs] * cube_size - shift))
+rays_bps_visualize = trimesh.load_path(rays_bps.reshape(-1, 2, 3))
+
+s.add_geometry(trimesh.points.PointCloud(selected_scene_verts_global*cube_size-shift, colors=[0, 255, 0]))
+s.add_geometry(trimesh.points.PointCloud(scene_basis_set[indxs]*cube_size-shift, colors=[255, 255, 0]))
+s.add_geometry(trimesh.points.PointCloud(scene_basis_set*cube_size-shift, colors=[0, 255, 255,100]))
+s.add_geometry(rays_bps_visualize)
+
+s.show(caption="test")
+
+
 # ### 4. load trained checkpoints, and random generate a body inside the selected area
 
 # In[5]:

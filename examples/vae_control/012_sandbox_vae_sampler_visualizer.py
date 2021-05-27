@@ -21,7 +21,7 @@ if __name__ == "__main__":
     # #Stand up with open arms
     # to_explore = ['L_Leg_R_Leg20210514003015']
 
-    output_dir = "./output/N3Office"
+    output_dir = "../../output/N3Office"
     # #Reaching out mid up
     # to_explore = ['L_Leg_R_Leg20210518135205', 'L_Leg_R_Leg20210518135504', 'L_Leg_R_Leg20210518135718']
     # #Reaching out up

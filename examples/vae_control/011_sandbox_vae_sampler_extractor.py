@@ -414,7 +414,7 @@ for i in range(PAR_NUM_SAMPLES_TO_GENERATE):
     if PAR_SAVING_OUPUTS:
         str_contact_parts = "_".join(contact_part)
         str_time = dt.now().strftime("%Y%m%d%H%M%S")
-        output_dir = opj("output", str_contact_parts + str_time)
+        output_dir = opj("../../output", str_contact_parts + str_time)
         os.makedirs(output_dir)
         body_trimesh_s1.export(opj(output_dir, "body_s1.ply"))
         body_trimesh_s2.export(opj(output_dir, "body_s2.ply"))
