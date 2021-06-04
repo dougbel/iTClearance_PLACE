@@ -1,0 +1,17 @@
+{
+  "parameters":{
+    "num_orientations": 8,
+    "num_pv": 512,
+    "num_cv": 256,
+    "sample_on_test": 50,
+    "Debug": 1,
+    "Descriptor":  13,
+    "VectorDiff":  40,
+    "LocalResponse":  0,
+    "PredictionT":  50
+  },
+  "interactions":[
+    {"affordance_name":"name","object_name":"name"}
+  ]
+  
+}

@@ -445,7 +445,8 @@ class CtrlPropagatorVisualizer:
         self.smplx_model = self.load_smplx_model(model_folder, gender)
         self.smplx_model.to(device)
         self.cam2world = self.load_cam2world(json_scene_conf)
-        self.vedo_env = vedo.load(os.path.join(self.scene_dir, scene_name + '.ply')).lighting('ambient')
+        self.vedo_env = vedo.load(os.path.join(self.scene_dir, scene_name + '.ply'))
+        self.vedo_env.lighting(ambient=0.8, diffuse=0.2, specular=0.1, specularPower=1, specularColor=(1, 1, 1))
 
         self.ui.horizontalSlider.setMaximum(len(self.frames_file_names) - 1)
 

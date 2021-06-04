@@ -68,6 +68,62 @@ class Selector:
                 self.vp.add(self.txt_disable)
 
 
+class SelectorITClearanceReferencePoint:
+
+    def __init__(self, vedo_env, vedo_body, provenance_vectors,  vedo_ibs = None):
+        # this step is necesary to keep color of scene
+        # trimesh_scene.visual.face_colors = trimesh_scene.visual.face_colors
+        self.activated = False
+
+        self.txt_enable = vedo.Text2D('Left click selection enabled ("c")', pos='bottom-right', c='steelblue', bg='black',
+                            font='ImpactLabel', alpha=1)
+        self.txt_disable = vedo.Text2D('Left click selection disabled ("c")', pos='bottom-right', c='darkred', bg='black',
+                             font='ImpactLabel', alpha=1)
+
+        self.vedo_body = vedo_body
+        self.vedo_env = vedo_env
+        self.vedo_ibs = vedo_ibs
+        self.provenance_vectors = provenance_vectors
+
+        self.vp = None
+
+        self.vedo_testing_point = None
+        self.np_testing_point = None
+
+    def select_reference_point_to_train(self):
+        self.vp = vedo.Plotter(bg="white",size=(800,600), axes=9)
+        self.vp.mouseLeftClickFunction = self.on_left_click
+        self.vp.keyPressFunction = self.on_key_press
+        self.vp.add(self.vedo_body)
+        self.vp.add(self.vedo_env)
+        self.vp.add(self.provenance_vectors)
+        self.vp.add(self.txt_disable)
+        if self.vedo_ibs is not None:
+            self.vp.add(self.vedo_ibs)
+        self.vp.show()
+        self.vp.close()
+        return self.np_testing_point
+
+    def on_left_click(self, mesh):
+        if self.activated:
+            if self.vedo_testing_point is not None:
+                self.vp.clear(self.vedo_testing_point)
+
+            self.np_testing_point = np.asarray(mesh.picked3d)
+
+            self.vedo_testing_point = vedo.Point(self.np_testing_point, c='orange')
+
+            self.vp.add(self.vedo_testing_point)
+
+    def on_key_press(self, key):
+        if key == 'c':
+            self.activated = not self.activated
+            if self.activated:
+                self.vp.add(self.txt_enable)
+                self.vp.clear(self.txt_disable)
+            else:
+                self.vp.clear(self.txt_enable)
+                self.vp.add(self.txt_disable)
 
 
 
