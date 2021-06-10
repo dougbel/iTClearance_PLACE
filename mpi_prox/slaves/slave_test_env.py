@@ -10,6 +10,7 @@ import trimesh
 import numpy as np
 from mpi4py import MPI
 from vedo import write, merge
+import vedo
 
 from it_clearance.preprocessing.bubble_filler import BubbleFiller
 from it_clearance.testing.envirotester import EnviroTesterClearance
@@ -41,7 +42,7 @@ class SlaveEnviroTester(Slave):
             env_file = os.path.join(self.dataset_scans_path, dataset, "scenes",  scene+'.ply')
             env_file_filled = os.path.join(self.dataset_scans_path, dataset, "scenes_filled",  scene+'.ply')
             tri_mesh_env = trimesh.load_mesh(env_file)
-            tri_mesh_env_filled = trimesh.load_mesh(env_file_filled)
+            tri_mesh_env_filled = vedo.vtk2trimesh(vedo.load(env_file_filled).triangulate())
 
 
             test_points_file = os.path.join(self.work_directory,"samples", scene, "sample_points.npy")
