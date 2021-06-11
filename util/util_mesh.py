@@ -109,16 +109,20 @@ def read_full_mesh_sdf(dataset_path, dataset, scene_name):
 
         ## read scene sdf
         scene_sdf_path = os.path.join(dataset_path, 'sdf')
-        with open(os.path.join(scene_sdf_path, scene_name + '.json')) as f:
-            sdf_data = json.load(f)
-            grid_min = np.array(sdf_data['min'])
-            grid_max = np.array(sdf_data['max'])
-            grid_dim = sdf_data['dim']
-        sdf = np.load(os.path.join(scene_sdf_path, scene_name + '_sdf.npy')).reshape(grid_dim, grid_dim, grid_dim)
-        s_grid_min_batch = torch.tensor(grid_min, dtype=torch.float32, device=device).unsqueeze(0).unsqueeze(1)
-        s_grid_max_batch = torch.tensor(grid_max, dtype=torch.float32, device=device).unsqueeze(0).unsqueeze(1)
-        s_sdf_batch = torch.tensor(sdf, dtype=torch.float32, device=device).unsqueeze(0)
-        s_sdf_batch = s_sdf_batch.repeat(1, 1, 1, 1)
+        json_file = os.path.join(scene_sdf_path, scene_name + '.json')
+        if os.path.exists(json_file):
+            with open(json_file) as f:
+                sdf_data = json.load(f)
+                grid_min = np.array(sdf_data['min'])
+                grid_max = np.array(sdf_data['max'])
+                grid_dim = sdf_data['dim']
+            sdf = np.load(os.path.join(scene_sdf_path, scene_name + '_sdf.npy')).reshape(grid_dim, grid_dim, grid_dim)
+            s_grid_min_batch = torch.tensor(grid_min, dtype=torch.float32, device=device).unsqueeze(0).unsqueeze(1)
+            s_grid_max_batch = torch.tensor(grid_max, dtype=torch.float32, device=device).unsqueeze(0).unsqueeze(1)
+            s_sdf_batch = torch.tensor(sdf, dtype=torch.float32, device=device).unsqueeze(0)
+            s_sdf_batch = s_sdf_batch.repeat(1, 1, 1, 1)
+        else:
+            s_grid_min_batch= s_grid_max_batch= s_sdf_batch = None
 
     return scene, cur_scene_verts, s_grid_min_batch, s_grid_max_batch, s_sdf_batch
 
