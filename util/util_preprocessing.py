@@ -5,7 +5,8 @@ import time
 import numpy as np
 import math
 
-def crop_scene_cube_smplx_at_point(scene_verts, scene_center, r=2.0, with_wall_ceilling=True, random_seed=None, rotate=False):
+def crop_scene_cube_smplx_at_point(scene_verts, picked_point, r=2.0, with_wall_ceilling=True, random_seed=None, rotate=False):
+    scene_center = np.copy(picked_point)
     if random_seed is None:
         random.seed(time.time())
     else:
@@ -35,8 +36,8 @@ def crop_scene_cube_smplx_at_point(scene_verts, scene_center, r=2.0, with_wall_c
     scene_center[2] = np.min(scene_verts[:, 2]) + 1.0  # fix dist from origin to floor
 
     scene_verts_crop = scene_verts_crop - scene_center
-    scene_verts_crop = scene_verts_crop[
-        np.where(scene_verts_crop[:, 2] <= 1.0)]  # remove points higher than virtual veiling
+    # remove points higher than virtual veiling
+    scene_verts_crop = scene_verts_crop[np.where(scene_verts_crop[:, 2] <= 1.0)]
     scene_verts_local = scene_verts - scene_center
 
     if with_wall_ceilling:

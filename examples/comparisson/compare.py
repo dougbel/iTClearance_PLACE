@@ -131,7 +131,7 @@ ROTATE_CUBE = True
 
 
 scene_verts_local, scene_verts_crop_local, shift = crop_scene_cube_smplx_at_point(
-     scene_verts, scene_center=selected_p, r=cube_size, with_wall_ceilling=True, random_seed=np.random.randint(10000),
+     scene_verts, picked_point=selected_p, r=cube_size, with_wall_ceilling=True, random_seed=np.random.randint(10000),
      rotate=ROTATE_CUBE)
 
 

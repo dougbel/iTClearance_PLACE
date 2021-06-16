@@ -55,7 +55,7 @@ def get_scaledShifted_bps_sets(np_body_verts_sample: np.ndarray, np_scene_verts:
     p_cage_center = np.average(np_body_verts_sample, axis=0)
 
     _, scene_verts_crop, shift = crop_scene_cube_smplx_at_point(
-        scene_verts=np_scene_verts, scene_center=p_cage_center, r=cube_size, with_wall_ceilling=True)
+        scene_verts=np_scene_verts, picked_point=p_cage_center, r=cube_size, with_wall_ceilling=True)
 
     body_verts_global = (np_body_verts_sample + shift) / cube_size
     scene_verts_crop_scaled = scene_verts_crop / cube_size

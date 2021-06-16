@@ -1,7 +1,7 @@
 import warnings
 from os.path import join as opj
 from shutil import copyfile
-
+import gc
 import pandas as pd
 import trimesh
 
@@ -38,7 +38,7 @@ def shift_rotate_mesh(body_verts, body_faces, shift, rotation):
     return trimesh.Trimesh(vertices=new_verts, faces=body_faces, face_colors=[200, 200, 200, 255])
 
 
-def execute_place_in_picked_point(data_dir, dataset_name, scene_name, np_point):
+def execute_place_in_picked_point(data_dir, dataset_name, scene_name, np_point, visualize = True):
     # set optimization hype-parameters
     weight_loss_rec_verts = 1.0
     weight_loss_rec_bps = 3.0
@@ -66,11 +66,26 @@ def execute_place_in_picked_point(data_dir, dataset_name, scene_name, np_point):
     # ### 2. Load scene mesh, scene SDF, smplx model, vposer model
 
     # In[2]:
-    prox_dataset_path = opj(data_dir, "datasets", dataset_name)
+    dataset_path = opj(data_dir, "datasets", dataset_name)
+    prox_dataset_path = opj(data_dir, "datasets", "prox")
     # read scen mesh/sdf
-    # scene_mesh, cur_scene_verts, s_grid_min_batch, s_grid_max_batch, s_sdf_batch = read_mesh_sdf(prox_dataset_path,'prox',scene_name)
+    # scene_mesh, cur_scene_verts, s_grid_min_batch, s_grid_max_batch, s_sdf_batch = read_mesh_sdf(dataset_path,'prox',scene_name)
     scene_trimesh, cur_scene_verts, s_grid_min_batch, s_grid_max_batch, s_sdf_batch = read_full_mesh_sdf(
-        prox_dataset_path, dataset_name, scene_name)
+        dataset_path, dataset_name, scene_name)
+
+    if visualize:
+        # vp = vedo.Plotter(bg="white", axes=2)
+        # vp.show([vedo.Sphere(np_point, r=.2, c="blue", alpha=1).lighting("plastic"),
+        #          vedo.utils.trimesh2vtk(scene_trimesh).lighting('ambient')])
+        s = trimesh.Scene()
+        s.add_geometry(scene_trimesh)
+        point_trimesh = trimesh.primitives.Sphere(radius=0.1, center=np_point)
+        point_trimesh.visual.face_colors = [0, 0, 255]
+        s.add_geometry(point_trimesh)
+
+        s.show(caption=scene_name)
+
+
     smplx_model = smplx.create(smplx_model_path, model_type='smplx',
                                gender='neutral', ext='npz',
                                num_pca_comps=12,
@@ -102,22 +117,21 @@ def execute_place_in_picked_point(data_dir, dataset_name, scene_name, np_point):
     print('[INFO] calculated a)rotation to parallel, scene boundary .')
 
     scene_verts = rotate_scene_smplx_predefine(cur_scene_verts, rot_angle=rot_angle_1)
+
+    np_point_rotated = rotate_scene_smplx_predefine(np.expand_dims(np_point, axis=0), rot_angle=rot_angle_1)[0]
     print('[INFO] rotated scene mesh to parallel.')
 
-    # rotated_scene = trimesh.Trimesh(vertices=scene_verts, faces=scene_trimesh.faces)
-    # rotated_scene.visual.face_colors = scene_trimesh.visual.face_colors
-
-    # sel_gui = Selector(rotated_scene, scene_min_x, scene_max_x, scene_min_y, scene_max_y)
-    # selected_p = sel_gui.select_point_to_test()
-
-    print('[INFO] Position selected.')
 
     ROTATE_CUBE = True
 
     scene_verts_local, scene_verts_crop_local, shift = crop_scene_cube_smplx_at_point(
-        scene_verts, scene_center=np_point, r=cube_size, with_wall_ceilling=True,
-        random_seed=np.random.randint(10000),
+        scene_verts, picked_point=np_point_rotated, r=cube_size, with_wall_ceilling=True,
+        random_seed=None, #np.random.randint(10000),
         rotate=ROTATE_CUBE)
+
+
+    np_point_rotated_and_shifted = np_point_rotated + shift
+
 
     print('[INFO] scene mesh cropped and shifted.')
 
@@ -166,23 +180,25 @@ def execute_place_in_picked_point(data_dir, dataset_name, scene_name, np_point):
 
     # SHOW_OUTPUTS = True
 
-    # shifted_rotated_scene = trimesh.Trimesh(vertices=scene_verts_local, faces=scene_trimesh.faces)
-    # shifted_rotated_scene.visual.face_colors = scene_trimesh.visual.face_colors
+    if visualize:
+        shifted_rotated_scene_trimesh = trimesh.Trimesh(vertices=scene_verts_local, faces=scene_trimesh.faces)
+        shifted_rotated_scene_trimesh.visual.face_colors = scene_trimesh.visual.face_colors
 
-    # unselected_scene_verts_local = [scene_verts_crop_local[i] for i in range(len(scene_verts_crop_local)) if
-    #                                 i not in selected_ind]
-    # vp=vedo.Plotter(bg="white", axes=2)
-    # vp.show([vedo.Spheres(selected_scene_verts_local, r=.007, c="green", alpha=1).lighting("plastic"),
-    #          vedo.Spheres(unselected_scene_verts_local, r=.002, c="yellow", alpha=1).lighting("plastic"),
-    #                   vedo.utils.trimesh2vtk(shifted_rotated_scene).lighting('ambient')])
-    # ambient=0.8, diffuse=0.2, specular=0.1, specularPower=1, specularColor=(1,1,1)
+        unselected_scene_verts_local = [scene_verts_crop_local[i] for i in range(len(scene_verts_crop_local)) if
+                                        i not in selected_ind]
 
-    # s = trimesh.Scene()
-    # s.add_geometry(shifted_rotated_scene)
-    # s.add_geometry(trimesh.points.PointCloud(selected_scene_verts_local, colors=[0, 255, 0]))
-    # s.add_geometry(trimesh.points.PointCloud(unselected_scene_verts_local, colors=[255, 255, 0]))
-    #
-    # s.show(caption=scene_name)
+        point_rotated_and_shifted_trimesh = trimesh.primitives.Sphere(radius=0.1, center=np_point_rotated_and_shifted)
+        point_rotated_and_shifted_trimesh.visual.face_colors = [0, 0, 255]
+        selected_scene_verts_local_trimesh = trimesh.points.PointCloud(selected_scene_verts_local, colors=[0, 255, 0])
+        unselected_scene_verts_local_trimesh = trimesh.points.PointCloud(unselected_scene_verts_local, colors=[255, 255, 0])
+
+        s = trimesh.Scene()
+        s.add_geometry(shifted_rotated_scene_trimesh)
+        s.add_geometry(point_rotated_and_shifted_trimesh)
+        s.add_geometry(selected_scene_verts_local_trimesh)
+        # s.add_geometry(unselected_scene_verts_local_trimesh)
+
+        s.show(caption=scene_name)
 
     ######################## random sample a body  ##########################
     scene_bps_verts = scene_bps_verts / cube_size
@@ -201,14 +217,18 @@ def execute_place_in_picked_point(data_dir, dataset_name, scene_name, np_point):
 
     print('[INFO] a random body is generated.')
 
-    # body_trimesh_sampled = trimesh.Trimesh(
-    #     vertices=body_verts_sample.detach().cpu().numpy().squeeze().transpose() * cube_size, faces=smplx_model.faces,
-    #     face_colors=[200, 200, 200, 255])
-    #
-    # s = trimesh.Scene()
-    # s.add_geometry(shifted_rotated_scene)
-    # s.add_geometry(body_trimesh_sampled)
-    # s.show(caption=scene_name)
+    if visualize:
+        body_trimesh_sampled = trimesh.Trimesh(
+            vertices=body_verts_sample.detach().cpu().numpy().squeeze().transpose() * cube_size, faces=smplx_model.faces,
+            face_colors=[200, 200, 200, 255])
+
+        s = trimesh.Scene()
+        s.add_geometry(body_trimesh_sampled)
+        s.add_geometry(shifted_rotated_scene_trimesh)
+        s.add_geometry(point_rotated_and_shifted_trimesh)
+        s.add_geometry(selected_scene_verts_local_trimesh)
+        # s.add_geometry(unselected_scene_verts_local_trimesh)
+        s.show(caption=scene_name)
 
     # ### 5. Optimization stage 1: perform simple optimization (without interaction-based losses)
 
@@ -293,13 +313,17 @@ def execute_place_in_picked_point(data_dir, dataset_name, scene_name, np_point):
     body_verts_opt_s1 = gen_body_mesh(body_params_opt_s1, body_pose_joint_s1, smplx_model)[0]
     body_verts_opt_s1 = body_verts_opt_s1.detach().cpu().numpy()
 
-    # body_trimesh_s1 = trimesh.Trimesh(vertices=body_verts_opt_s1, faces=smplx_model.faces,
-    #                                   face_colors=[200, 200, 200, 255])
-    #
-    # s = trimesh.Scene()
-    # s.add_geometry(shifted_rotated_scene)
-    # s.add_geometry(body_trimesh_s1)
-    # s.show(caption=scene_name)
+    if visualize:
+        body_trimesh_s1 = trimesh.Trimesh(vertices=body_verts_opt_s1, faces=smplx_model.faces,
+                                          face_colors=[200, 200, 200, 255])
+        s = trimesh.Scene()
+        s.add_geometry(body_trimesh_s1)
+        s.add_geometry(shifted_rotated_scene_trimesh)
+        s.add_geometry(point_rotated_and_shifted_trimesh)
+        s.add_geometry(selected_scene_verts_local_trimesh)
+        # s.add_geometry(unselected_scene_verts_local_trimesh)
+
+        s.show(caption=scene_name)
 
     # ### 6. Optimization stage 2: perform advanced optimizatioin (interaction-based), with contact and collision loss
 
@@ -399,13 +423,16 @@ def execute_place_in_picked_point(data_dir, dataset_name, scene_name, np_point):
     body_verts_opt_s2 = gen_body_mesh(body_params_opt_s2, body_pose_joint, smplx_model)[0]
     body_verts_opt_s2 = body_verts_opt_s2.detach().cpu().numpy()  # [n_body_vert, 3]
 
-    # body_trimesh_s2 = trimesh.Trimesh(vertices=body_verts_opt_s2, faces=smplx_model.faces,
-    #                                   face_colors=[200, 200, 200, 255])
-    #
-    # s = trimesh.Scene()
-    # s.add_geometry(shifted_rotated_scene)
-    # s.add_geometry(body_trimesh_s2)
-    # s.show(caption=scene_name)
+    if visualize:
+        body_trimesh_s2 = trimesh.Trimesh(vertices=body_verts_opt_s2, faces=smplx_model.faces,
+                                          face_colors=[200, 200, 200, 255])
+        s = trimesh.Scene()
+        s.add_geometry(body_trimesh_s2)
+        s.add_geometry(shifted_rotated_scene_trimesh)
+        s.add_geometry(point_rotated_and_shifted_trimesh)
+        s.add_geometry(selected_scene_verts_local_trimesh)
+        # s.add_geometry(unselected_scene_verts_local_trimesh)
+        s.show(caption=scene_name)
 
     # transfrom the body verts to the PROX world coordinate system
     # body_verts_opt_prox_s2 = np.zeros(body_verts_opt_s2.shape)  # [10475, 3]
@@ -425,12 +452,14 @@ def execute_place_in_picked_point(data_dir, dataset_name, scene_name, np_point):
     body_trimesh_opt_s1.visual.face_colors = [200, 200, 200, 150]
     body_trimesh_opt_s2.visual.face_colors = [200, 200, 200, 255]
 
-    # s = trimesh.Scene()
-    # s.add_geometry(scene_trimesh)
-    # s.add_geometry(body_trimesh_no_opt)
-    # s.add_geometry(body_trimesh_opt_s1)
-    # s.add_geometry(body_trimesh_opt_s2)
-    # s.show(caption=scene_name)
+    if visualize:
+        s = trimesh.Scene()
+        s.add_geometry(scene_trimesh)
+        s.add_geometry(body_trimesh_no_opt)
+        s.add_geometry(body_trimesh_opt_s1)
+        s.add_geometry(body_trimesh_opt_s2)
+        s.add_geometry(trimesh.primitives.Sphere(radius=0.1, center=np_point))
+        s.show(caption=scene_name)
     return body_trimesh_no_opt, body_trimesh_opt_s1, body_trimesh_opt_s2
 
 if __name__ == '__main__':
@@ -489,3 +518,4 @@ if __name__ == '__main__':
         follow_up_data.at[(dataset_name, scene_name, interaction), current_follow_up_column] = True
         follow_up_data.to_csv(follow_up_file)
         print(f"UPDATE: total {num_total_task}, done {num_completed_task}, pendings {num_pending_tasks}")
+        gc.collect()
