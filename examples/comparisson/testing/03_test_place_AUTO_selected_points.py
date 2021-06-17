@@ -478,12 +478,12 @@ if __name__ == '__main__':
 
     directory_datasets = opj(base_dir, "datasets")
 
-    general_points_dir = opj(base_dir, 'test', 'picked_it_clearance')
-    output_dir = opj(base_dir, 'test', 'picked_place_exec')
+    general_points_dir = opj(base_dir, 'test', 'sampled_it_clearance')
+    output_dir = opj(base_dir, 'test', 'sampled_place_exec')
 
     follow_up_file = opj(base_dir,'test', 'follow_up_process.csv')
-    current_follow_up_column = "place_samples_extracted"
-    previus_follow_up_column = "it_samples_extracted"
+    current_follow_up_column = "place_auto_samples_extracted"
+    previus_follow_up_column = "it_auto_samples"
 
     follow_up_data = pd.read_csv(follow_up_file, index_col=[0, 1, 2])
     if not current_follow_up_column in follow_up_data.columns:
