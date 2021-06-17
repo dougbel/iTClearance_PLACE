@@ -79,12 +79,13 @@ def read_full_mesh_sdf(dataset_path, dataset, scene_name):
 
 
     elif dataset == 'mp3d':
-        scene = trimesh.load(os.path.join(dataset_path, scene_name + '.ply'))
+        scene = trimesh.load(os.path.join(dataset_path, 'scenes', scene_name + '.ply'))
+        cur_scene_verts = np.asarray(scene.vertices)
         # swap z, y axis
-        cur_scene_verts = np.zeros(np.asarray(scene.vertices).shape)
-        cur_scene_verts[:, 0] = np.asarray(scene.vertices)[:, 0]
-        cur_scene_verts[:, 1] = np.asarray(scene.vertices)[:, 2]
-        cur_scene_verts[:, 2] = np.asarray(scene.vertices)[:, 1]
+        # cur_scene_verts = np.zeros(np.asarray(scene.vertices).shape)
+        # cur_scene_verts[:, 0] = np.asarray(scene.vertices)[:, 0]
+        # cur_scene_verts[:, 1] = np.asarray(scene.vertices)[:, 2]
+        # cur_scene_verts[:, 2] = np.asarray(scene.vertices)[:, 1]
 
         ## read scene sdf
         scene_sdf_path = os.path.join(dataset_path, 'sdf')
