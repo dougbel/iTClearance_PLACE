@@ -3,14 +3,18 @@ import os
 from collections import Counter
 
 import pandas as pd
+import random
 import numpy as np
+import vedo.shapes
+from sklearn.cluster import KMeans
 from  os.path import join as opj
 
-from vedo import load, Points, Plotter
+from distinctipy import distinctipy
+from vedo import load, Points, Plotter, Sphere
 
 from it_clearance.testing.tester import TesterClearance
 from si.fulldataclearancescores import FullDataClearanceScores
-from view.sampler import ViewSampler
+
 
 
 class CtrlPropagatorSampler:
@@ -22,19 +26,15 @@ class CtrlPropagatorSampler:
         self.affordance_name = self.tester.affordances[0][0]
         affordance_object = self.tester.affordances[0][1]
         subdir_name = self.affordance_name + "_" + affordance_object
-        env_test_results = opj(directory_env_test_results, self.affordance_name)
         self.file_mesh_env = file_mesh_env
         self.json_file_propagation = opj(directory_of_prop_configs, subdir_name, 'propagation_data.json')
         self.ply_obj_file = opj(directory_of_trainings, self.affordance_name, subdir_name + "_object.ply")
         self.csv_file_scores = opj(directory_env_test_results,self.affordance_name,  "test_scores.csv")
 
-        self.np_pc_tested, self.np_scores = self.map_scores()
-
-
-        self.votes = None
-        self.pd_best_scores = None
+        self.np_pc_tested, self.np_mapped_scores = self.map_scores()
+        self.pd_best_scores = self.get_best_score_by_tested_point()
+        self.votes = self.generate_votes(self.np_mapped_scores)
         self.idx_votes = -1
-        self.vtk_samples = []
 
     def map_scores(self):
 
@@ -44,28 +44,26 @@ class CtrlPropagatorSampler:
         max_limit_score = propagation_settings['max_limit_score']
         max_limit_missing = propagation_settings['max_limit_missing']
         max_limit_cv_collided = propagation_settings['max_limit_cv_collided']
-        epsilon = propagation_settings['epsilon']
-        function = propagation_settings['function']
 
         results_it_test = pd.read_csv(self.csv_file_scores)
 
         scores_data = FullDataClearanceScores(results_it_test, self.affordance_name)
 
-        bad_normal_points = scores_data.np_bad_normal_points
-        bad_normal_scores = np.zeros(scores_data.np_bad_normal_points.shape[0])
+        # bad_normal_points = scores_data.np_bad_normal_points
+        # bad_normal_scores = np.zeros(scores_data.np_bad_normal_points.shape[0])
 
         np_filtered_ps, np_filtered_scores, __, __ = scores_data.filter_data_scores(max_limit_score,
                                                                                     max_limit_missing,
                                                                                     max_limit_cv_collided)
         # MAPPING SCORES TO [0,1]
-        np_filtered_scores_mapped = [-value_in / max_limit_score + 1 for value_in in np_filtered_scores]
+        np_filtered_scores_mapped = np.asarray([-value_in / max_limit_score + 1 for value_in in np_filtered_scores])
 
-        np_full_points = np.concatenate((np_filtered_ps, bad_normal_points), axis=0)
-        np_full_scores = np.concatenate((np_filtered_scores_mapped, bad_normal_scores), axis=0)
+        # np_full_points = np.concatenate((np_filtered_ps, bad_normal_points), axis=0)
+        # np_full_mapped_scores = np.concatenate((np_filtered_scores_mapped, bad_normal_scores), axis=0)
 
-        return np_full_points, np_full_scores
+        return np_filtered_ps, np_filtered_scores_mapped
 
-    def filter_data_scores(self):
+    def get_best_score_by_tested_point(self):
         with open(self.json_file_propagation) as f:
             propagation_data = json.load(f)
 
@@ -83,45 +81,15 @@ class CtrlPropagatorSampler:
 
         return filtered_df.loc[filtered_df.groupby(['point_x', 'point_y', 'point_z'])['score'].idxmin()]
 
-    def get_sample(self, visualize = True):
-        if self.votes is None:
-            self.pd_best_scores = self.filter_data_scores()
-            self.votes = self.generate_votes()
-
-        while True:
-            self.idx_votes += 1
-            idx_sample = self.votes[self.idx_votes][0]
-            point_sample = self.np_pc_tested[idx_sample]
-            angle_sample = self.angle_with_best_score(x=point_sample[0], y=point_sample[1], z=point_sample[2])
-            vtk_object = None
-            if angle_sample != -1:
-                vtk_object = load(self.ply_obj_file)
-                vtk_object.c([200,200,200])
-                vtk_object.rotate(angle_sample, axis=(0, 0, 1), rad=True)
-                print(point_sample, " at ", angle_sample)
-                vtk_object.pos(x=point_sample[0], y=point_sample[1], z=point_sample[2])
-                self.vtk_samples.append(vtk_object)
-                break
-
-        if visualize:
-            vp = Plotter(verbose=0, title="Scores", bg="white", size=(1200, 800))
-            vedo_file_env = load(self.file_mesh_env)
-            vp.add(vedo_file_env)
-            pts = Points(self.np_pc_tested, r=5)
-            pts.cellColors(self.np_scores, cmap='jet_r', vmin=0, vmax=1)
-            pts.addScalarBar(c='jet_r', nlabels=5, pos=(0.8, 0.25))
-            vp.add(pts)
-            vp.add(vtk_object)
-            vp.show()
-
-        return vtk_object, point_sample
-
-    def generate_votes(self):
-        sum_mapped_norms = sum(self.np_scores)
-        probabilities = [float(score) / sum_mapped_norms for score in self.np_scores]
-        n_rolls = 10 * self.np_scores.shape[0]
-        rolls = np.random.choice(self.np_scores.shape[0], n_rolls, p=probabilities)
-        return Counter(rolls).most_common()
+    def generate_votes(self, np_mapped_scores):
+        sum_mapped_norms = sum(np_mapped_scores)
+        if sum_mapped_norms > 0:
+            probabilities = [float(score) / sum_mapped_norms for score in np_mapped_scores]
+            n_rolls = 10 * np_mapped_scores.shape[0]
+            rolls = np.random.choice(np_mapped_scores.shape[0], n_rolls, p=probabilities)
+            return Counter(rolls).most_common()
+        else:
+            return None
 
     def angle_with_best_score(self, x, y, z):
         angles = self.pd_best_scores[(self.pd_best_scores['point_x'].round(decimals=5) == round(x, 5)) &
@@ -129,3 +97,160 @@ class CtrlPropagatorSampler:
                                      (self.pd_best_scores['point_z'].round(decimals=5) == round(z, 5))].angle
 
         return angles.array[0] if (angles.shape[0] == 1) else -1
+
+
+    def get_sample(self, visualize = True):
+        """
+        Get a sample by using a votes system, the highest similarity the best possibilities of votes
+        :param visualize:
+        :return: a vedo object and the point
+        """
+        vtk_object = None
+        point_sample = None
+
+        while True:
+            self.idx_votes += 1
+            if self.votes is None:
+                break
+            idx_sample = self.votes[self.idx_votes][0]
+            point_sample = self.np_pc_tested[idx_sample]
+            angle_sample = self.angle_with_best_score(x=point_sample[0], y=point_sample[1], z=point_sample[2])
+            if angle_sample != -1:
+                vtk_object = load(self.ply_obj_file)
+                vtk_object.c([200,200,200])
+                vtk_object.rotate(angle_sample, axis=(0, 0, 1), rad=True)
+                print(point_sample, " at ", angle_sample)
+                vtk_object.pos(x=point_sample[0], y=point_sample[1], z=point_sample[2])
+                break
+
+        if visualize:
+            vp = Plotter(verbose=0, title="Scores", bg="white", size=(1200, 800))
+            vedo_file_env = load(self.file_mesh_env)
+            vedo_file_env.backFaceCulling(True)
+            vp.add(vedo_file_env)
+            pts = Points(self.np_pc_tested, r=5)
+            pts.cellColors(self.np_mapped_scores, cmap='jet_r', vmin=0, vmax=1)
+            pts.addScalarBar(c='jet_r', nlabels=5, pos=(0.8, 0.25))
+            vp.add(pts)
+            vp.add(vtk_object)
+            vp.show()
+            vp.close()
+
+        return vtk_object, point_sample
+
+    def get_n_sample_clustered(self, min_score, n_samples, best_in_cluster=False,  visualize=False):
+        """
+          Get n samples from tested cluster_points where a minimum score is achieved (inclusive). Selection is performed used a cluster
+        representation. If no enough point it choose all of them
+        :param min_score: look for cluster_points with a minimum score
+        :param n_samples: number of samples to extract
+        :param best_in_cluster: if true the best is cluster is selected it not a vote system  is used
+        :param visualize:
+        :return:
+        """
+        selected_mapped_scores = self.np_mapped_scores[self.np_mapped_scores >= min_score]
+        selected_tested_points = self.np_pc_tested[self.np_mapped_scores >= min_score]
+
+        samples_point =[]
+        samples_vedo_obj = []
+
+        if len(selected_mapped_scores)>=n_samples:
+            samples_vedo_obj, samples_point =  self.sample_n_by_k_means(selected_tested_points, selected_mapped_scores,
+                                                                        n_samples, best_in_cluster, visualize)
+        elif len(selected_mapped_scores)>0:
+            samples_vedo_obj, samples_point =self.sample_all(selected_tested_points, visualize)
+
+
+
+
+        return samples_vedo_obj, samples_point
+
+
+    def sample_n_by_k_means(self, selected_tested_points, selected_mapped_scores, n_samples, best_in_cluster, visualize ):
+        samples_point =[]
+        samples_vedo_obj =[]
+        kmeans = KMeans(init="random", n_clusters=n_samples, n_init=10, max_iter=300)
+        kmeans.fit(selected_tested_points)
+        distances = np.transpose([np.linalg.norm(selected_tested_points - c, axis=1) for c in kmeans.cluster_centers_])
+        classes = np.argmin(distances, axis=1)
+
+        for i in range(n_samples):
+            cluster_scores = selected_mapped_scores[classes == i]
+            cluster_points = selected_tested_points[classes == i]
+
+            if best_in_cluster:
+                idx_selected = random.choice(np.where(cluster_scores == np.amax(cluster_scores)))[0]
+            else:
+                cluster_votes = self.generate_votes(cluster_scores)
+                if cluster_votes is None:
+                    break
+                idx_selected = cluster_votes[0][0]  # the most voted in cluster
+
+            point_sample = cluster_points[idx_selected]
+            angle_sample = self.angle_with_best_score(x=point_sample[0], y=point_sample[1], z=point_sample[2])
+            if angle_sample != -1:
+                vtk_object = load(self.ply_obj_file)
+                vtk_object.c([200, 200, 200])
+                vtk_object.rotate(angle_sample, axis=(0, 0, 1), rad=True)
+                # print(angle_sample, " at ", point_sample)
+                vtk_object.pos(x=point_sample[0], y=point_sample[1], z=point_sample[2])
+                samples_point.append(point_sample)
+                samples_vedo_obj.append(vtk_object)
+
+        if visualize:
+            vp = Plotter(verbose=0, title="Similarity", bg="white", size=(1200, 800))
+            vedo_file_env = load(self.file_mesh_env)
+            vedo_file_env.backFaceCulling(True)
+            vp.add(vedo_file_env)
+            pts = Points(self.np_pc_tested, r=5)
+            pts.cellColors(self.np_mapped_scores, cmap='jet_r', vmin=0, vmax=1)
+            pts.addScalarBar(c='jet_r', title="Similarity", nlabels=5, pos=(0.8, 0.25))
+            vp.add(pts)
+            for centroid in kmeans.cluster_centers_:
+                vedo_centroid = vedo.Cone(centroid,r=.01, height=.03, c=[255, 255, 255])
+                vp.add(vedo_centroid)
+            colors = distinctipy.get_colors(n_samples)
+            for i in range(n_samples):
+                vp.add(samples_vedo_obj[i])
+                r = np.max(distances[classes == i, i])
+                vp.add(Sphere(pos=kmeans.cluster_centers_[i], r=r, c=colors[i], alpha=.2))
+            vp.show()
+            vp.close()
+
+        return samples_vedo_obj, samples_point
+
+
+    def sample_all(self, selected_tested_points, visualize ):
+        samples_point =[]
+        samples_vedo_obj =[]
+
+        n_selected_points = len(selected_tested_points)
+
+        for i in range(n_selected_points):
+
+            point_sample = selected_tested_points[i]
+            angle_sample = self.angle_with_best_score(x=point_sample[0], y=point_sample[1], z=point_sample[2])
+            if angle_sample != -1:
+                vtk_object = load(self.ply_obj_file)
+                vtk_object.c([200, 200, 200])
+                vtk_object.rotate(angle_sample, axis=(0, 0, 1), rad=True)
+                # print(angle_sample, " at ", point_sample)
+                vtk_object.pos(x=point_sample[0], y=point_sample[1], z=point_sample[2])
+                samples_point.append(point_sample)
+                samples_vedo_obj.append(vtk_object)
+
+        if visualize:
+            vp = Plotter(verbose=0, title="Similarity", bg="white", size=(1200, 800))
+            vedo_file_env = load(self.file_mesh_env)
+            vedo_file_env.backFaceCulling(True)
+            vp.add(vedo_file_env)
+            pts = Points(self.np_pc_tested, r=5)
+            pts.cellColors(self.np_mapped_scores, cmap='jet_r', vmin=0, vmax=1)
+            pts.addScalarBar(c='jet_r', title="Similarity", nlabels=5, pos=(0.8, 0.25))
+            vp.add(pts)
+            for i in range(n_selected_points):
+                vp.add(samples_vedo_obj[i])
+            vp.show()
+            vp.close()
+
+        return samples_vedo_obj, samples_point

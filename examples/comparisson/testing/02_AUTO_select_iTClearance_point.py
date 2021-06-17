@@ -26,8 +26,6 @@ def find_files_mesh_env(datasets_dir, env_name):
 
 
 if __name__ == '__main__':
-
-
     # [ 'reaching_out_mid_up', 'reaching_out_mid_down', 'reaching_out_on_table', 'reaching_out_mid',
     # 'sitting_looking_to_right', 'sitting_compact', 'reachin_out_ontable_one_hand'
     # 'sitting_comfortable', 'sitting_stool', 'sitting_stool_one_foot_floor', 'sitting', 'sitting_bit_open_arms',
@@ -52,10 +50,13 @@ if __name__ == '__main__':
 
     follow_up_file = opj(base_dir,'test', 'follow_up_process.csv')
     follow_up_column = "it_auto_samples"
+    counter_column = "num_it_auto_samples"
 
     follow_up_data = pd.read_csv(follow_up_file, index_col=[0, 1, 2])
     if not follow_up_column in follow_up_data.columns:
         follow_up_data[follow_up_column] = False
+    if not counter_column in follow_up_data.columns:
+        follow_up_data[counter_column] = 0
 
     num_total_task = follow_up_data.index.size
     pending_tasks = list(follow_up_data[follow_up_data[follow_up_column] == False].index)
@@ -80,28 +81,29 @@ if __name__ == '__main__':
         scores_ctrl = CtrlPropagatorSampler(directory_descriptors, file_json_conf_execution,
                                     directory_env_test, directory_of_prop_configs, file_mesh_env)
 
-        vtk_object, point_sample = scores_ctrl.get_sample()
-
         N_SAMPLES = 3
+        MIN_SCORE = 0.2
+        vtk_objects, point_samples = scores_ctrl.get_n_sample_clustered(MIN_SCORE, N_SAMPLES,best_in_cluster=False, visualize=True)
 
-        for i in range(N_SAMPLES):
+        output_suddir = opj(output_dir, env_name, interaction)
+        if not os.path.exists(output_suddir):
+            os.makedirs(output_suddir)
 
-            output_suddir = opj(output_dir, env_name, interaction)
-            if not os.path.exists(output_suddir):
-                os.makedirs(output_suddir)
+        if len( vtk_objects ) > 0:
+            for i in range(len( vtk_objects )):
+                vtk_object = vtk_objects[i]
+                point_sample = point_samples[i]
 
-            np.save(opj(output_suddir, f"point_{i}"), point_sample)
-            vtk2trimesh(vtk_object).export(opj(output_suddir,f"body_{i}.ply"))
-
-
-
+                np.save(opj(output_suddir, f"point_{i}"), point_sample)
+                vtk2trimesh(vtk_object).export(opj(output_suddir,f"body_{i}.ply"))
 
 
-
-        # if len( scores_ctrl.points_selected ) >= 3:
-        #     num_completed_task += 1
-        #     num_pending_tasks -= 1
-        #     copyfile(follow_up_file, follow_up_file + "_backup")
-        #     follow_up_data.at[(dataset, env_name, interaction), follow_up_column] = True
-        #     follow_up_data.to_csv(follow_up_file)
-        #     print(f"UPDATE: total {num_total_task}, done {num_completed_task}, pendings {num_pending_tasks}")
+            num_completed_task += 1
+            num_pending_tasks -= 1
+            copyfile(follow_up_file, follow_up_file + "_backup")
+            follow_up_data.at[(dataset, env_name, interaction), follow_up_column] = True
+            follow_up_data.at[(dataset, env_name, interaction), counter_column] = len(vtk_objects)
+            follow_up_data.to_csv(follow_up_file)
+            print(f"UPDATE: total {num_total_task}, done {num_completed_task}, pendings {num_pending_tasks}")
+        else:
+            print(f"Not enough selected points. {dataset}, {env_name}, {interaction} Selected points: {len(vtk_objects)}")
