@@ -1,3 +1,7 @@
+"""
+This code is used to generate sdf files using the
+"""
+
 import os
 
 import numpy as np
@@ -14,7 +18,7 @@ if __name__ == "__main__":
     grid_dim= 1024
     output_dir = f"output/sdf_generation/{dataset_name}/sdf_{grid_dim}"
 
-    #TODO experiment with different grim_dim
+    
     #TODO experiment with a low resolution mesh
 
     if not os.path.exists(output_dir):
