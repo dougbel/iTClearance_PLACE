@@ -18,7 +18,7 @@ import warnings
 warnings.simplefilter("ignore", UserWarning)
 
 # from open3d import JVisualizer
-# from open3d.j_visualizer import JVisualizer
+from open3d.j_visualizer import JVisualizer
 import torch
 import torch.optim as optim
 from tqdm import tqdm
@@ -33,13 +33,13 @@ from preprocess.bps_encoding import *
 from utils import *
 from utils_read_data import *
 
-data_dir = "/home/dougbel/Documents/UoB/5th_semestre/to_test/place_comparisson/data"
+data_dir = "/media/dougbel/Tezcatlipoca/PLACE_trainings"
 
-prox_dataset_path = f'{data_dir}/datasets/prox'
+prox_dataset_path = f'{data_dir}/datasets_raw/prox'
 scene_name = 'N3OpenArea'
 # smplx/vpose model path
-smplx_model_path = f'{data_dir}/pretrained/body_models/smpl'
-vposer_model_path = f'{data_dir}/pretrained/body_models/vposer_v1_0'
+smplx_model_path = f'{data_dir}/pretrained_place/body_models/smpl'
+vposer_model_path = f'{data_dir}/pretrained_place/body_models/vposer_v1_0'
 
 # set optimization hype-parameters
 weight_loss_rec_verts = 1.0
@@ -56,10 +56,10 @@ cube_size = 2.0  # 3D cage size
 optimize = True  # optimize or not
 
 # trained model path
-scene_bps_AE_path =  f'{data_dir}/pretrained/aes/sceneBpsAE_last_model.pkl'
-cVAE_path = f'{data_dir}/pretrained/aes/cVAE_last_model.pkl'
-scene_verts_AE_path = f'{data_dir}/pretrained/aes/sceneBpsVertsAE_last_model.pkl'
-bodyDec_path = f'{data_dir}/pretrained/aes/body_dec_last_model.pkl'
+scene_bps_AE_path =  f'{data_dir}/pretrained_place/aes/sceneBpsAE_last_model.pkl'
+cVAE_path = f'{data_dir}/pretrained_place/aes/cVAE_last_model.pkl'
+scene_verts_AE_path = f'{data_dir}/pretrained_place/aes/sceneBpsVertsAE_last_model.pkl'
+bodyDec_path = f'{data_dir}/pretrained_place/aes/body_dec_last_model.pkl'
 
 
 # ### 2. Load scene mesh, scene SDF, smplx model, vposer model
@@ -117,22 +117,6 @@ scene_bps, selected_scene_verts_global, selected_ind = bps_encode_scene(scene_ba
                                                                         scene_verts_crop_global)  # [n_feat, n_bps]
 selected_scene_verts_local = scene_verts_crop_local[selected_ind]
 print('[INFO] bps encoding computed.')
-
-
-
-import trimesh
-s = trimesh.Scene()
-import random
-indxs = random.sample(range(0, 10000), 100)
-rays_bps = np.hstack((selected_scene_verts_global[indxs] * cube_size - shift, scene_basis_set[indxs] * cube_size - shift))
-rays_bps_visualize = trimesh.load_path(rays_bps.reshape(-1, 2, 3))
-
-s.add_geometry(trimesh.points.PointCloud(selected_scene_verts_global*cube_size-shift, colors=[0, 255, 0]))
-s.add_geometry(trimesh.points.PointCloud(scene_basis_set[indxs]*cube_size-shift, colors=[255, 255, 0]))
-s.add_geometry(trimesh.points.PointCloud(scene_basis_set*cube_size-shift, colors=[0, 255, 255,100]))
-s.add_geometry(rays_bps_visualize)
-
-s.show(caption="test")
 
 
 # ### 4. load trained checkpoints, and random generate a body inside the selected area
