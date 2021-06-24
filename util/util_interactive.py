@@ -133,7 +133,7 @@ class SelectorITClearanceReferencePoint:
 if __name__ == '__main__':
     import os
     import trimesh
-    dataset_prox_dir = "/home/dougbel/Documents/UoB/5th_semestre/to_test/place_comparisson/data/datasets/prox/scenes"
+    dataset_prox_dir = "/media/dougbel/Tezcatlipoca/PLACE_trainings/datasets_raw/prox/scenes"
     scene_name = 'MPH16.ply'
 
     thimesh_scn = trimesh.load(os.path.join(dataset_prox_dir, scene_name))

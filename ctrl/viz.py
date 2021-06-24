@@ -99,14 +99,14 @@ class CtrlPropagatorVisualizer:
         sys.exit(app.exec_())
 
     def list_prox_scans_quan(self):
-        l_dir = os.path.join(self.datasets_dir, "datasets/prox_quantitative", "fittings/mosh")
+        l_dir = os.path.join(self.datasets_dir, "datasets_raw/prox_quantitative", "fittings/mosh")
         list_scene = os.listdir(l_dir)
         list_scene.sort()
         for scan in list_scene:
             self.ui.l_quanti.addItem(scan)
 
     def list_prox_scans_qual(self):
-        l_dir = os.path.join(self.datasets_dir, "datasets/prox", "PROXD")
+        l_dir = os.path.join(self.datasets_dir, "datasets_raw/prox", "PROXD")
         list_scene = os.listdir(l_dir)
         list_scene.sort()
         for scan in list_scene:
@@ -260,7 +260,7 @@ class CtrlPropagatorVisualizer:
     def click_run_place_optim(self):
         self.progresbar_hidden(False)
         self.update_progressbar_detail(5, "Initializing")
-        vposer_model_path = f'{self.datasets_dir}/pretrained/body_models/vposer_v1_0'
+        vposer_model_path = f'{self.datasets_dir}/pretrained_place/body_models/vposer_v1_0'
         vposer_model, _ = load_vposer(vposer_model_path, vp_model='snapshot')
         vposer_model = vposer_model.to(device)
         body_verts_sample = self.vedo_body.points()
@@ -416,15 +416,15 @@ class CtrlPropagatorVisualizer:
         self.recording_name = recording_name
 
         scene_name = self.recording_name.split("_")[0]
-        model_folder = os.path.join(self.datasets_dir, "pretrained/body_models/smpl")
+        model_folder = os.path.join(self.datasets_dir, "pretrained_place/body_models/smpl")
         gender = "male"  # "female", "neutral"
-        base_dir = os.path.join(self.datasets_dir, "datasets/prox_quantitative")
+        base_dir = os.path.join(self.datasets_dir, "datasets_raw/prox_quantitative")
         pseudo_fitting_dir = os.path.join(base_dir, "fittings/mosh", self.recording_name)
 
         if os.path.isdir(pseudo_fitting_dir):
             json_scene_conf = os.path.join(base_dir, 'vicon2scene.json')
         else:
-            base_dir = os.path.join(self.datasets_dir, "datasets/prox")
+            base_dir = os.path.join(self.datasets_dir, "datasets_raw/prox")
             female_subjects_ids = [162, 3452, 159, 3403]
             subject_id = int(self.recording_name.split('_')[1])
             if subject_id in female_subjects_ids:

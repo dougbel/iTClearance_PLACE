@@ -1,5 +1,5 @@
 """
-This code is used to generate sdf files using the
+This code is used to generate sdf files using the approach in https://github.com/marian42/mesh_to_sdf
 """
 
 import os
@@ -18,8 +18,6 @@ if __name__ == "__main__":
     grid_dim= 1024
     output_dir = f"output/sdf_generation/{dataset_name}/sdf_{grid_dim}"
 
-    
-    #TODO experiment with a low resolution mesh
 
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)

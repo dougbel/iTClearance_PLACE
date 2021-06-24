@@ -8,7 +8,7 @@ from util.util_mesh import read_full_mesh
 
 if __name__ == "__main__":
 
-    datasets_dir = "/home/dougbel/Documents/UoB/5th_semestre/to_test/place_comparisson/data/datasets/"
+    datasets_dir = "/home/dougbel/Documents/UoB/5th_semestre/to_test/place_comparisson/data/datasets_raw/"
     to_explore = None
 
     # output_dir = "./output/MPH11"

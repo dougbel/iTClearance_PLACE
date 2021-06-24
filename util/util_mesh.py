@@ -171,7 +171,7 @@ def shift_rotate_vertices(np_vertices, rot_angle, shift):
 
 if __name__ == '__main__':
     import os
-    dataset_prox_dir = "/home/dougbel/Documents/UoB/5th_semestre/to_test/place_comparisson/data/datasets/prox/scenes"
+    dataset_prox_dir = "/media/dougbel/Tezcatlipoca/PLACE_trainings/datasets_raw/prox/scenes"
 
     for scene_name in os.listdir(dataset_prox_dir):
 

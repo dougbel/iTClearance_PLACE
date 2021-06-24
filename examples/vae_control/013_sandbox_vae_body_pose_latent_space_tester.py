@@ -45,7 +45,7 @@ from utils import *
 
 data_dir = "/home/dougbel/Documents/UoB/5th_semestre/to_test/place_comparisson/data"
 
-prox_dataset_path = f'{data_dir}/datasets/prox'
+prox_dataset_path = f'{data_dir}/datasets_raw/prox'
 
 # some test scenes
 scene_name = 'MPH1Library'
