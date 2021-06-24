@@ -386,6 +386,9 @@ def execute_place_in_picked_point(data_dir, dataset_name, scene_name, np_point, 
 
         ### sdf collision loss
         if (s_grid_min_batch is None):
+            print("--- --- --- --- --- --- --- --- --- --- --- --- ")
+            print("WARNING: Collision loss set to 0")
+            print("--- --- --- --- --- --- --- --- --- --- --- --- ")
             loss_collision = torch.tensor(0.0, dtype=torch.float32).to(device)
         else:
             norm_verts_batch = (body_verts_rec_prox - s_grid_min_batch) / (s_grid_max_batch - s_grid_min_batch) * 2 - 1

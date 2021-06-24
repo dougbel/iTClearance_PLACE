@@ -1,3 +1,5 @@
+"""I moved some milimeters up some training cause the gap between the bodies and teh environment was so small for a
+cosidered GOD TRAINING, then a training process is performed one more time """
 import json
 import os
 
