@@ -1,20 +1,15 @@
 import gc
 import os
-import json
 import random
 from os.path import join as opj
 from shutil import copyfile
 
-import numpy
-import numpy as np
 import pandas as pd
-import vedo
-from vedo import vtk2trimesh
 import trimesh
+import vedo
 
-from ctrl.point_selection import ControlPointSelection
-from ctrl.sampler import CtrlPropagatorSampler
 import it
+from it import util
 
 
 def find_files_mesh_env(datasets_dir, env_name):
@@ -29,30 +24,23 @@ def find_files_mesh_env(datasets_dir, env_name):
 
 
 
+
+
 if __name__ == '__main__':
-    # [ 'reaching_out_mid_up', 'reaching_out_mid_down', 'reaching_out_on_table', 'reaching_out_mid',
-    # 'sitting_looking_to_right', 'sitting_compact', 'reachin_out_ontable_one_hand'
-    # 'sitting_comfortable', 'sitting_stool', 'sitting_stool_one_foot_floor', 'sitting', 'sitting_bit_open_arms',
-    # 'sitting_chair', 'sitting_hands_on_device', 'sitting_small_table'
-    # 'laying_bed', 'laying_hands_up', 'laying_on_sofa', 'laying_sofa_foot_on_floor'
-    # 'standing_up', 'standup_hand_on_furniture'
-    # 'walking_left_foot']
 
-    # interaction = 'reaching_out_mid_up'
-
-    visualize= True
-    shuffle_order = True
-    save_results = False
+    visualize= False
+    shuffle_order = False # if shuffle is True then execution would be SLOWER
+    save_results = True
 
     base_dir = "/media/dougbel/Tezcatlipoca/PLACE_trainings"
 
     directory_datasets = opj(base_dir, "datasets")
 
     samples_dir = opj(base_dir,'test', 'sampled_it_clearance')
-    output_dir = opj(base_dir, 'test', 'sampled_it_clearance_opti_icp')
+    output_dir = opj(base_dir, 'test', 'sampled_it_clearance_opti_down_trans')
 
     follow_up_file = opj(base_dir,'test', 'follow_up_process.csv')
-    current_follow_up_column = "it_auto_samples_opti_icp"
+    current_follow_up_column = "it_auto_samples_opti_down_trans"
     previus_follow_up_column = "it_auto_samples"
 
     follow_up_data = pd.read_csv(follow_up_file, index_col=[0, 1, 2])
@@ -71,6 +59,7 @@ if __name__ == '__main__':
         random.shuffle(pending_tasks)
 
     last_env_used=None
+    trimesh_decimated_env=None
 
     for dataset, env_name, interaction in pending_tasks:
         print(dataset, env_name, interaction)
@@ -85,28 +74,36 @@ if __name__ == '__main__':
                 trimesh_decimated_env = vedo.vtk2trimesh(vedo.load(file_mesh_env).decimate(fraction=.3))
 
             influence_radio_bb = 1.5
-            extension, middle_point = it.util.influence_sphere(it_body, influence_radio_bb)
-            tri_mesh_env_cropped = it.util.slide_mesh_by_bounding_box(trimesh_decimated_env, middle_point, extension)
+            extension, middle_point = util.influence_sphere(it_body, influence_radio_bb)
+            tri_mesh_env_cropped = util.slide_mesh_by_bounding_box(trimesh_decimated_env, middle_point, extension)
 
-            matrix, transformation, cost =trimesh.registration.icp(it_body.vertices, tri_mesh_env_cropped,
-                                                                   max_iterations=1, reflection= False,scale= False )
-            print("matrix", matrix)
-            print("cost", cost)
+
+            collision_tester = trimesh.collision.CollisionManager()
+            collision_tester.add_object('env', tri_mesh_env_cropped)
+
+            in_collision, contact_data = collision_tester.in_collision_single(it_body, return_data=True)
+
+            while in_collision == False:
+                it_body.apply_translation([0, 0, -0.003])
+                in_collision, contact_data = collision_tester.in_collision_single(it_body, return_data=True)
+
 
             if visualize:
                 s = trimesh.Scene()
-                body_transf = trimesh.Trimesh(vertices=transformation, faces=it_body.faces)
-                it_body.visual.face_colors = [200, 200, 200, 150]
-                body_transf.visual.face_colors = [200, 200, 200, 255]
+                it_body_orig=trimesh.load(opj(directory_bodies, f"body_{i}.ply"))
+                it_body_orig.visual.face_colors = [200, 200, 200, 150]
+                it_body.visual.face_colors = [200, 200, 200, 255]
+                s.add_geometry(it_body_orig)
                 s.add_geometry(it_body)
-                s.add_geometry(body_transf)
                 s.add_geometry(tri_mesh_env_cropped)
                 s.show()
 
             if save_results:
+
                 output_subdir = opj(output_dir, env_name, interaction)
                 if not os.path.exists(output_subdir):
                     os.makedirs(output_subdir)
+
                 it_body.export(opj(output_subdir, f"body_{i}.ply"))
 
         if save_results:
@@ -116,4 +113,5 @@ if __name__ == '__main__':
             follow_up_data.at[(dataset, env_name, interaction), current_follow_up_column] = True
             follow_up_data.to_csv(follow_up_file)
             print(f"UPDATE: total {num_total_task}, done {num_completed_task}, pendings {num_pending_tasks}")
+
         gc.collect()
