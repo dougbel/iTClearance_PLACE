@@ -18,8 +18,8 @@ if __name__ == '__main__':
     samples_place_dir = opj(base_dir, "test", "sampled_place_exec")
 
     follow_up_file = opj(base_dir,'test', 'follow_up_process.csv')
-    place_follow_up_column = "place_samples_extracted"
-    itC_follow_up_column = "it_samples_extracted"
+    place_follow_up_column = "place_auto_samples_extracted"
+    itC_follow_up_column = "it_auto_samples"
     current_follow_up_column ='turk_sample_extracted'
 
     follow_up_data = pd.read_csv(follow_up_file, index_col=[0, 1, 2])

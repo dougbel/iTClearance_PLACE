@@ -40,8 +40,8 @@ if __name__ == '__main__':
     output_dir = opj(base_dir, 'test', 'sampled_it_clearance_opti_down_trans')
 
     follow_up_file = opj(base_dir,'test', 'follow_up_process.csv')
-    current_follow_up_column = "it_auto_samples_opti_down_trans"
     previus_follow_up_column = "it_auto_samples"
+    current_follow_up_column = "it_auto_samples_opti_down_trans"
 
     follow_up_data = pd.read_csv(follow_up_file, index_col=[0, 1, 2])
     if not current_follow_up_column in follow_up_data.columns:
