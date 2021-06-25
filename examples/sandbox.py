@@ -42,8 +42,8 @@ data_dir = "/home/dougbel/Documents/UoB/5th_semestre/to_test/place_comparisson/d
 prox_dataset_path = f'{data_dir}/datasets_raw/prox'
 scene_name = 'N3OpenArea'
 # smplx/vpose model path
-smplx_model_path = f'{data_dir}/pretrained/body_models/smpl'
-vposer_model_path = f'{data_dir}/pretrained/body_models/vposer_v1_0'
+smplx_model_path = f'{data_dir}/pretrained_place/body_models/smpl'
+vposer_model_path = f'{data_dir}/pretrained_place/body_models/vposer_v1_0'
 
 # set optimization hype-parameters
 weight_loss_rec_verts = 1.0
@@ -60,10 +60,10 @@ cube_size = 2.0  # 3D cage size
 optimize = True  # optimize or not
 
 # trained model path
-scene_bps_AE_path =  f'{data_dir}/pretrained/aes/sceneBpsAE_last_model.pkl'
-cVAE_path = f'{data_dir}/pretrained/aes/cVAE_last_model.pkl'
-scene_verts_AE_path = f'{data_dir}/pretrained/aes/sceneBpsVertsAE_last_model.pkl'
-bodyDec_path = f'{data_dir}/pretrained/aes/body_dec_last_model.pkl'
+scene_bps_AE_path =  f'{data_dir}/pretrained_place/aes/sceneBpsAE_last_model.pkl'
+cVAE_path = f'{data_dir}/pretrained_place/aes/cVAE_last_model.pkl'
+scene_verts_AE_path = f'{data_dir}/pretrained_place/aes/sceneBpsVertsAE_last_model.pkl'
+bodyDec_path = f'{data_dir}/pretrained_place/aes/body_dec_last_model.pkl'
 
 
 # ### 2. Load scene mesh, scene SDF, smplx model, vposer model

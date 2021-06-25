@@ -59,7 +59,7 @@ def define_scene_boundary_on_the_fly(scene):
 def read_full_mesh_sdf(dataset_path, dataset, scene_name):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    if dataset == 'prox':
+    if dataset == 'prox' or dataset == 'mp3d':
         scene_mesh_path = os.path.join(dataset_path, 'scenes')
         scene = trimesh.load(os.path.join(scene_mesh_path, scene_name + '.ply'))
         cur_scene_verts = np.asarray(scene.vertices)
@@ -78,30 +78,30 @@ def read_full_mesh_sdf(dataset_path, dataset, scene_name):
         s_sdf_batch = s_sdf_batch.repeat(1, 1, 1, 1)  # [1, 256, 256, 256]
 
 
-    elif dataset == 'mp3d':
-        scene = trimesh.load(os.path.join(dataset_path, 'scenes', scene_name + '.ply'))
-        cur_scene_verts = np.asarray(scene.vertices)
-        # swap z, y axis
-        # cur_scene_verts = np.zeros(np.asarray(scene.vertices).shape)
-        # cur_scene_verts[:, 0] = np.asarray(scene.vertices)[:, 0]
-        # cur_scene_verts[:, 1] = np.asarray(scene.vertices)[:, 2]
-        # cur_scene_verts[:, 2] = np.asarray(scene.vertices)[:, 1]
-
-        ## read scene sdf
-        scene_sdf_path = os.path.join(dataset_path, 'sdf')
-        with open(os.path.join(scene_sdf_path, scene_name + '.json')) as f:
-            sdf_data = json.load(f)
-            grid_min = np.array(sdf_data['min'])
-            grid_max = np.array(sdf_data['max'])
-            grid_min = np.array([grid_min[0], grid_min[2], grid_min[1]])
-            grid_max = np.array([grid_max[0], grid_max[2], grid_max[1]])
-            grid_dim = sdf_data['dim']
-        sdf = np.load(os.path.join(scene_sdf_path, scene_name + '_sdf.npy')).reshape(grid_dim, grid_dim, grid_dim)
-        sdf = sdf.transpose(0, 2, 1)  # swap y,z axis
-        s_grid_min_batch = torch.tensor(grid_min, dtype=torch.float32, device=device).unsqueeze(0).unsqueeze(1)
-        s_grid_max_batch = torch.tensor(grid_max, dtype=torch.float32, device=device).unsqueeze(0).unsqueeze(1)
-        s_sdf_batch = torch.tensor(sdf, dtype=torch.float32, device=device).unsqueeze(0)
-        s_sdf_batch = s_sdf_batch.repeat(1, 1, 1, 1)
+    # elif dataset == 'mp3d':
+    #     scene = trimesh.load(os.path.join(dataset_path, 'scenes', scene_name + '.ply'))
+    #     cur_scene_verts = np.asarray(scene.vertices)
+    #     # swap z, y axis
+    #     cur_scene_verts = np.zeros(np.asarray(scene.vertices).shape)
+    #     cur_scene_verts[:, 0] = np.asarray(scene.vertices)[:, 0]
+    #     cur_scene_verts[:, 1] = np.asarray(scene.vertices)[:, 2]
+    #     cur_scene_verts[:, 2] = np.asarray(scene.vertices)[:, 1]
+    #
+    #     ## read scene sdf
+    #     scene_sdf_path = os.path.join(dataset_path, 'sdf')
+    #     with open(os.path.join(scene_sdf_path, scene_name + '.json')) as f:
+    #         sdf_data = json.load(f)
+    #         grid_min = np.array(sdf_data['min'])
+    #         grid_max = np.array(sdf_data['max'])
+    #         grid_min = np.array([grid_min[0], grid_min[2], grid_min[1]])
+    #         grid_max = np.array([grid_max[0], grid_max[2], grid_max[1]])
+    #         grid_dim = sdf_data['dim']
+    #     sdf = np.load(os.path.join(scene_sdf_path, scene_name + '_sdf.npy')).reshape(grid_dim, grid_dim, grid_dim)
+    #     sdf = sdf.transpose(0, 2, 1)  # swap y,z axis
+    #     s_grid_min_batch = torch.tensor(grid_min, dtype=torch.float32, device=device).unsqueeze(0).unsqueeze(1)
+    #     s_grid_max_batch = torch.tensor(grid_max, dtype=torch.float32, device=device).unsqueeze(0).unsqueeze(1)
+    #     s_sdf_batch = torch.tensor(sdf, dtype=torch.float32, device=device).unsqueeze(0)
+    #     s_sdf_batch = s_sdf_batch.repeat(1, 1, 1, 1)
 
 
     elif dataset == 'replica':

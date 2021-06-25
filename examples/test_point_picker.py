@@ -42,13 +42,14 @@ from preprocess.preprocess_optimize import *
 from preprocess.bps_encoding import *
 from utils import *
 
-data_dir = "/home/dougbel/Documents/UoB/5th_semestre/to_test/place_comparisson/data"
+data_dir = "/media/dougbel/Tezcatlipoca/PLACE_trainings"
 
-prox_dataset_path = f'{data_dir}/datasets_raw/prox'
-scene_name = 'N3OpenArea'
+prox_dataset_path = f'{data_dir}/datasets/prox'
+dataset_path = f'{data_dir}/datasets/mp3d'
+scene_name = '17DRP5sb8fy-livingroom'
 # smplx/vpose model path
-smplx_model_path = f'{data_dir}/pretrained/body_models/smpl'
-vposer_model_path = f'{data_dir}/pretrained/body_models/vposer_v1_0'
+smplx_model_path = f'{data_dir}/pretrained_place/body_models/smpl'
+vposer_model_path = f'{data_dir}/pretrained_place/body_models/vposer_v1_0'
 
 # set optimization hype-parameters
 weight_loss_rec_verts = 1.0
@@ -65,10 +66,10 @@ cube_size = 2.0  # 3D cage size
 optimize = True  # optimize or not
 
 # trained model path
-scene_bps_AE_path =  f'{data_dir}/pretrained/aes/sceneBpsAE_last_model.pkl'
-cVAE_path = f'{data_dir}/pretrained/aes/cVAE_last_model.pkl'
-scene_verts_AE_path = f'{data_dir}/pretrained/aes/sceneBpsVertsAE_last_model.pkl'
-bodyDec_path = f'{data_dir}/pretrained/aes/body_dec_last_model.pkl'
+scene_bps_AE_path =  f'{data_dir}/pretrained_place/aes/sceneBpsAE_last_model.pkl'
+cVAE_path = f'{data_dir}/pretrained_place/aes/cVAE_last_model.pkl'
+scene_verts_AE_path = f'{data_dir}/pretrained_place/aes/sceneBpsVertsAE_last_model.pkl'
+bodyDec_path = f'{data_dir}/pretrained_place/aes/body_dec_last_model.pkl'
 
 
 # ### 2. Load scene mesh, scene SDF, smplx model, vposer model
@@ -78,7 +79,7 @@ bodyDec_path = f'{data_dir}/pretrained/aes/body_dec_last_model.pkl'
 
 # read scen mesh/sdf
 # scene_mesh, cur_scene_verts, s_grid_min_batch, s_grid_max_batch, s_sdf_batch = read_mesh_sdf(prox_dataset_path,'prox',scene_name)
-scene_trimesh, cur_scene_verts, s_grid_min_batch, s_grid_max_batch, s_sdf_batch = read_full_mesh_sdf(prox_dataset_path,'prox',scene_name)
+scene_trimesh, cur_scene_verts, s_grid_min_batch, s_grid_max_batch, s_sdf_batch = read_full_mesh_sdf(dataset_path,'mp3d',scene_name)
 smplx_model = smplx.create(smplx_model_path, model_type='smplx',
                            gender='neutral', ext='npz',
                            num_pca_comps=12,

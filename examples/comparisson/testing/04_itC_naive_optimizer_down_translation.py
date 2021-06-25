@@ -71,7 +71,8 @@ if __name__ == '__main__':
 
             if last_env_used != env_name:
                 last_env_used = env_name
-                trimesh_decimated_env = vedo.vtk2trimesh(vedo.load(file_mesh_env).decimate(fraction=.3))
+                # trimesh_decimated_env = vedo.vtk2trimesh(vedo.load(file_mesh_env).decimate(fraction=.3))
+                trimesh_decimated_env = trimesh.load(file_mesh_env)
 
             influence_radio_bb = 1.5
             extension, middle_point = util.influence_sphere(it_body, influence_radio_bb)
