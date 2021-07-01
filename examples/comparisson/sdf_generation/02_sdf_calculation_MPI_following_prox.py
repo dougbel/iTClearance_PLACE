@@ -1,4 +1,5 @@
 import argparse
+import json
 import logging
 import time
 import gc
@@ -17,16 +18,20 @@ class MasterRoutines(object):
     THIS ROUTINE WORKS ONLY ONE TYPE AT A TIME
     """
 
-    def __init__(self, slaves, dataset_dir, scene,  grid_dim):
+    def __init__(self, slaves, scans_dir, scene_name, grid_dim, output_dir):
         # when creating the Master we tell it what slaves it can handle
         self.master = Master(slaves)
         # WorkQueue is a convenient class that run slaves on a tasks queue
         self.work_queue = WorkQueue(self.master)
-        self.dataset_dir = dataset_dir
-        self.scene = scene
+        self.scans_dir = scans_dir
+        self.scene_name = scene_name
         self.grid_dim = grid_dim
+        self.output_dir = output_dir
 
-        logging_file = os.path.join(dataset_dir, f'process_sdf_{scene}.log')
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+
+        logging_file = os.path.join(output_dir, f'process_sdf_{scene_name}.log')
         logging.basicConfig(filename=logging_file, filemode='a', level=logging.INFO,
                             format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
 
@@ -50,7 +55,7 @@ class MasterRoutines(object):
         # but it can also be added later as more work become available
         #
 
-        mesh_decimated = trimesh.load(os.path.join(self.dataset_dir, self.scene+".ply"))
+        mesh_decimated = trimesh.load(os.path.join(self.scans_dir, self.scene_name + ".ply"))
 
         bb_padded_vertices = mesh_decimated.bounding_box.vertices * 1.7
 
@@ -98,8 +103,17 @@ class MasterRoutines(object):
             # sleep some time
             time.sleep(0.3)
 
-        np.save(os.path.join(self.dataset_dir, self.scene+"_sdf.npy"), sdf_data)
 
+        # Saving results
+        sdf_data_reshaped = sdf_data.reshape(self.grid_dim * self.grid_dim * self.grid_dim)
+        np.save(os.path.join(self.output_dir, self.scene_name + "_sdf.npy"), sdf_data_reshaped)
+        dictionary = {
+            "max": list(np_max),
+            "dim": self.grid_dim,
+            "min": list(np_min)
+        }
+        with open(os.path.join(self.output_dir, self.scene_name + ".json"), "w") as outfile:
+            json.dump(dictionary, outfile)
 
 
 
@@ -110,11 +124,11 @@ class SlaveEnviroTester(Slave):
      A slave process extends Slave class, overrides the 'do_work' method
      and calls 'Slave.run'. The Master will do the rest
      """
-    def __init__(self, dataset_dir, scene ):
+    def __init__(self, scans_dir, scene ):
         super().__init__()
-        self.dataset_dir = dataset_dir
+        self.scans_dir = scans_dir
         self.scene = scene
-        self.mesh_decimated = trimesh.load(os.path.join(self.dataset_dir, self.scene+".ply"))
+        self.mesh_decimated = trimesh.load(os.path.join(self.scans_dir, self.scene+".ply"))
 
         self.rank = MPI.COMM_WORLD.Get_rank()
         self.name = MPI.Get_processor_name()
@@ -148,8 +162,10 @@ class SlaveEnviroTester(Slave):
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--dataset_dir', required=True, help='Path to decimated meshes')
+parser.add_argument('--scans_dir', required=True, help='Path to decimated meshes')
 parser.add_argument('--scene', required=True, help='scene')
+parser.add_argument('--grid_dim', required=True, help='Dimesion of grid used')
+parser.add_argument('--output_dir', required=True, help='Dimesion of grid used')
 opt = parser.parse_args()
 print(opt)
 
@@ -159,12 +175,10 @@ if __name__ == "__main__":
     rank = MPI.COMM_WORLD.Get_rank()
     size = MPI.COMM_WORLD.Get_size()
 
-    GRID_DIM = 10
-
     # activate it with debug purposes
-    # mpiexec -n 2 python comparisson/sdf_generation/02_sdf_calculation_MPI_following_prox.py --dataset_dir /media/dougbel/Tezcatlipoca/PLACE_trainings/datasets/replica_v1/scenes_downsampled  --scene apartment_1
+    # mpiexec -n 2 python comparisson/sdf_generation/02_sdf_calculation_MPI_following_prox.py --scans_dir /media/dougbel/Tezcatlipoca/PLACE_trainings/datasets/replica_v1/scenes_downsampled  --scene apartment_1 --grid_dim 10 --output_dir /media/dougbel/Tezcatlipoca/PLACE_trainings/datasets/replica_v1/sdf_tmp
     import pydevd_pycharm
-    port_mapping = [40823, 36775]
+    port_mapping = [44563, 41831]
     pydevd_pycharm.settrace('localhost', port=port_mapping[rank], stdoutToServer=True, stderrToServer=True)
     print(os.getpid())
 
@@ -174,11 +188,11 @@ if __name__ == "__main__":
 
     if rank == 0:  # Master
 
-        app = MasterRoutines(slaves=range(1, size), dataset_dir=opt.dataset_dir, scene=opt.scene,  grid_dim=GRID_DIM)
+        app = MasterRoutines(slaves=range(1, size), scans_dir=opt.scans_dir, scene_name=opt.scene, grid_dim=int(opt.grid_dim), output_dir=opt.output_dir)
         app.run()
         app.terminate_slaves()
 
     else:  # Any slave
-        SlaveEnviroTester(dataset_dir=opt.dataset_dir, scene=opt.scene).run()
+        SlaveEnviroTester(scans_dir=opt.scans_dir, scene=opt.scene).run()
 
     print('Task completed')
