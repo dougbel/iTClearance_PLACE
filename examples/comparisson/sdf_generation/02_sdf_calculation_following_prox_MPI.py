@@ -176,7 +176,7 @@ if __name__ == "__main__":
     size = MPI.COMM_WORLD.Get_size()
 
     # activate it with debug purposes
-    # mpiexec -n 2 python comparisson/sdf_generation/02_sdf_calculation_MPI_following_prox.py --scans_dir /media/dougbel/Tezcatlipoca/PLACE_trainings/datasets/replica_v1/scenes_downsampled  --scene apartment_1 --grid_dim 10 --output_dir /media/dougbel/Tezcatlipoca/PLACE_trainings/datasets/replica_v1/sdf_tmp
+    # mpiexec -n 2 python comparisson/sdf_generation/02_sdf_calculation_following_prox_MPI.py --scans_dir /media/dougbel/Tezcatlipoca/PLACE_trainings/datasets/replica_v1/scenes_downsampled  --scene apartment_1 --grid_dim 10 --output_dir /media/dougbel/Tezcatlipoca/PLACE_trainings/datasets/replica_v1/sdf_tmp
     import pydevd_pycharm
     port_mapping = [44563, 41831]
     pydevd_pycharm.settrace('localhost', port=port_mapping[rank], stdoutToServer=True, stderrToServer=True)

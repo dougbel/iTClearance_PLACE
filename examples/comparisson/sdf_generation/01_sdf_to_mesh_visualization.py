@@ -18,7 +18,7 @@ if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     grid_dim = 256
-    dataset_name = "prox"
+    dataset_name = "replica_v1"
 
     scenes_dir = f"/media/dougbel/Tezcatlipoca/PLACE_trainings/datasets/{dataset_name}/scenes"
 
