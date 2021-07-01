@@ -24,7 +24,7 @@ if __name__ == "__main__":
     dataset_name = "replica_v1"
     dataset_dir = f"/media/dougbel/Tezcatlipoca/PLACE_trainings/datasets/{dataset_name}"
     scenes_dir = f"{dataset_dir}/scenes_downsampled"
-    sdf_dir = f"{dataset_dir}/sdf_tmp"
+    output_dir = f"{dataset_dir}/sdf_tmp"
 
     for scene_file in os.listdir(scenes_dir): # ['MPH1Library.ply']:
 
@@ -92,17 +92,17 @@ if __name__ == "__main__":
 
 
         if save_results:
-            if not os.path.exists(sdf_dir):
-                os.makedirs(sdf_dir)
+            if not os.path.exists(output_dir):
+                os.makedirs(output_dir)
 
-            np.save(os.path.join(sdf_dir, scene_name+"_sdf.npy"), sdf_values)
+            np.save(os.path.join(output_dir, scene_name + "_sdf.npy"), sdf_values)
             dictionary = {
                 "max": list(np_max),
                 "dim": grid_dim,
                 "min": list(np_min)
             }
 
-            with open(os.path.join(sdf_dir, scene_name+".json"), "w") as outfile:
+            with open(os.path.join(output_dir, scene_name + ".json"), "w") as outfile:
                 json.dump(dictionary, outfile)
 
         # sdf_data = np.load(os.path.join(sdf_dir, scene_name+"_sdf.npy")).reshape(grid_dim, grid_dim, grid_dim)
