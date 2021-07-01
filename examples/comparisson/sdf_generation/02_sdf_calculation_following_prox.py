@@ -33,15 +33,16 @@ if __name__ == "__main__":
         scene_name = scene_file[:scene_file.find(".ply")]
 
         mesh_orig = trimesh.load(os.path.join(scenes_dir, scene_file))
+        # vedo_orig = vedo.vtk2trimesh(vedo_orig.decimate(N=50000, method='pro', boundaries=True))
         vedo_orig = vedo.load(os.path.join(scenes_dir, scene_file))
-        mesh_decimated = vedo.vtk2trimesh(vedo_orig.decimate(N=50000, method='pro', boundaries=True))
 
-        bb_padded_vertices = mesh_orig.bounding_box.vertices*1.7
+        transform = np.eye(4)
+        # translate to center of axis aligned bounds
+        transform[:3, 3] = mesh_orig.bounds.mean(axis=0)
+        bb_padded = trimesh.primitives.Box(transform=transform, extents=mesh_orig.extents*1.5,mutable=False)
 
-        bigger_bb= vedo.Points(bb_padded_vertices, c="red")
-
-        np_min = np.array(bb_padded_vertices.min(axis=0))
-        np_max = np.array(bb_padded_vertices.max(axis=0))
+        np_min = np.array(bb_padded.vertices.min(axis=0))
+        np_max = np.array(bb_padded.vertices.max(axis=0))
 
         step_x, step_y, step_z = (np_max - np_min) / grid_dim
         init_x = step_x/2 + np_min[0]
@@ -60,20 +61,20 @@ if __name__ == "__main__":
         start = time.time()
         voxel_points = points.reshape(grid_dim * grid_dim * grid_dim, 3)
         sdf_values = np.empty(voxel_points.shape[0])
-        (closest_points_in_env, norms, id_triangle) = mesh_decimated.nearest.on_surface(voxel_points)
+        (closest_points_in_env, norms, id_triangle) = mesh_orig.nearest.on_surface(voxel_points)
 
         if visualize:
             v = vedo.Plotter()
             vedo_orig.backFaceCulling(True)
             v.add(vedo_orig)
-            v.add(bigger_bb)
+            v.add(vedo.trimesh2vtk(bb_padded.as_outline()))
             v.add(vedo.Points(voxel_points, c="green"))
 
 
         for i in range(len(id_triangle)):
             v_p = voxel_points[i]
             s_p = closest_points_in_env[i]
-            s_n = mesh_decimated.face_normals[id_triangle[i]]
+            s_n = mesh_orig.face_normals[id_triangle[i]]
             sign = -1 if np.dot( (v_p - s_p ), s_n ) < 0 else 1
             sdf_values[i] =  sign * norms[i]
 
