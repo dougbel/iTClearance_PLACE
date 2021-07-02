@@ -10,7 +10,7 @@ if __name__ == '__main__':
 
     base_dir = "/media/dougbel/Tezcatlipoca/PLACE_trainings"
 
-    filter_dataset = "mp3d"
+    filter_dataset = "replica_v1"
 
     dataset_path = opj(base_dir, "datasets")
 
