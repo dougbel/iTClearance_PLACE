@@ -48,8 +48,8 @@ class CtrlPropagatorVisualizer:
 
         self.available_interactions = []
 
-        self.vp = Plotter(qtWidget=self.ui.vtk_widget, bg="white")
-        self.vp.show([], axes=0)
+        self.vp = Plotter(qtWidget=self.ui.vtk_widget, bg="white", axes=4)
+        self.vp.show([])
 
         self.ui.lbl_recording.setHidden(True)
         self.progresbar_hidden(True)

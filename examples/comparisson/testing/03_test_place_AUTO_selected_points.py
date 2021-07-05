@@ -70,8 +70,8 @@ def execute_place_in_picked_point(data_dir, dataset_name, scene_name, np_point, 
     prox_dataset_path = opj(data_dir, "datasets", "prox")
     # read scen mesh/sdf
     # scene_mesh, cur_scene_verts, s_grid_min_batch, s_grid_max_batch, s_sdf_batch = read_mesh_sdf(dataset_path,'prox',scene_name)
-    scene_trimesh, cur_scene_verts, s_grid_min_batch, s_grid_max_batch, s_sdf_batch = read_full_mesh_sdf(
-        dataset_path, dataset_name, scene_name)
+    scene_trimesh, cur_scene_verts, s_grid_min_batch, s_grid_max_batch, s_sdf_batch = read_full_mesh_sdf(dataset_path,
+                                                                                                         scene_name)
 
     if visualize:
         # vp = vedo.Plotter(bg="white", axes=2)

@@ -73,7 +73,8 @@ bodyDec_path = f'{data_dir}/pretrained_place/aes/body_dec_last_model.pkl'
 
 # read scen mesh/sdf
 # scene_mesh, cur_scene_verts, s_grid_min_batch, s_grid_max_batch, s_sdf_batch = read_mesh_sdf(prox_dataset_path,'prox',scene_name)
-scene_trimesh, cur_scene_verts, s_grid_min_batch, s_grid_max_batch, s_sdf_batch = read_full_mesh_sdf(prox_dataset_path,'prox',scene_name)
+scene_trimesh, cur_scene_verts, s_grid_min_batch, s_grid_max_batch, s_sdf_batch = read_full_mesh_sdf(prox_dataset_path,
+                                                                                                     scene_name)
 smplx_model = smplx.create(smplx_model_path, model_type='smplx',
                            gender='neutral', ext='npz',
                            num_pca_comps=12,

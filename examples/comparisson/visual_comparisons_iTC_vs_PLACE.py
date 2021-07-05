@@ -63,7 +63,7 @@ if __name__ == '__main__':
         it_b2_opti_down = vedo.load(opj(samples_it_optim_down_dir, scene_name, interaction, "body_2.ply" )).color("green")
 
 
-        plt = vedo.Plotter(shape=(3,5), title=f"{dataset_name}/{scene_name}", size=(1800,1000), axes=0)
+        plt = vedo.Plotter(shape=(3,5), title=f"{dataset_name}/{scene_name}", size=(1800,1000), axes=4)
 
         plt.show(vedo_scene+place_b0_orig, "PLACE, No optimization" ,at=0)
         plt.show(vedo_scene+place_b0_opt1, "PLACE SimOptim", at=1)

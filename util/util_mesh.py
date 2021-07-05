@@ -56,7 +56,7 @@ def define_scene_boundary_on_the_fly(scene):
 
     return rot_angle_1, scene_min_x, scene_max_x, scene_min_y, scene_max_y
 
-def read_full_mesh_sdf(dataset_path, dataset, scene_name):
+def read_full_mesh_sdf(dataset_path, scene_name):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # if dataset == 'prox' or dataset == 'mp3d':
