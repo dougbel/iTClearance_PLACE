@@ -63,6 +63,26 @@ class CtrlPropagatorSampler:
 
         return np_filtered_ps, np_filtered_scores_mapped
 
+    def get_n_samples_around_point(self, min_score, n_samples, np_point, r, best_in_cluster=False,  visualize=False):
+
+        mapped_scores = self.np_mapped_scores[self.np_mapped_scores >= min_score]
+        tested_points = self.np_pc_tested[self.np_mapped_scores >= min_score]
+
+        filter_pts_inside_r = np.linalg.norm((tested_points-np_point)[:,:2], axis=1) < r
+        selected_mapped_scores = mapped_scores[filter_pts_inside_r]
+        selected_tested_points = tested_points[filter_pts_inside_r]
+
+        samples_point =[]
+        samples_vedo_obj = []
+
+        if len(selected_mapped_scores)>0:
+            samples_vedo_obj, samples_point = self.sample_n_by_k_means(selected_tested_points,
+                                                                           selected_mapped_scores,
+                                                                           n_samples, best_in_cluster, visualize)
+
+        return samples_vedo_obj, samples_point
+
+
     def get_best_score_by_tested_point(self):
         with open(self.json_file_propagation) as f:
             propagation_data = json.load(f)
