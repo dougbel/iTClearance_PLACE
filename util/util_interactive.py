@@ -21,7 +21,8 @@ class Selector:
                              font='ImpactLabel', alpha=1)
         self.txt_invalid = vedo.Text2D(f'Invalid point, necessary a distance of {r/2} from  scene limits', pos='top-right', c='darkred',
                                        bg='black', font='ImpactLabel', alpha=1)
-        self.vedo_env = vedo.utils.trimesh2vtk(trimesh_scene).lighting('ambient')
+        self.vedo_env = vedo.utils.trimesh2vtk(trimesh_scene)
+        self.vedo_env.lighting(ambient=0.8, diffuse=0.2, specular=0.1, specularPower=1, specularColor=(1, 1, 1))
 
         self.vp = None
 
@@ -30,7 +31,7 @@ class Selector:
         self.is_valid_point = False
 
     def select_point_to_test(self):
-        self.vp = vedo.Plotter(bg="white",size=(800,600), axes=9)
+        self.vp = vedo.Plotter(bg="white",size=(1200,800), axes=9)
         self.vp.mouseLeftClickFunction = self.on_left_click
         self.vp.keyPressFunction = self.on_key_press
         self.vp.show(self.vedo_env, self.txt_disable)
