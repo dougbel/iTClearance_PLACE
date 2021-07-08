@@ -1,3 +1,4 @@
+import argparse
 import warnings
 from os.path import join as opj
 from shutil import copyfile
@@ -465,7 +466,17 @@ def execute_place_in_picked_point(data_dir, dataset_name, scene_name, np_point, 
         s.show(caption=scene_name)
     return body_trimesh_no_opt, body_trimesh_opt_s1, body_trimesh_opt_s2
 
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--base_dir', required=True, help='Information directory (dataset, pretrained models, etc)')
+opt = parser.parse_args()
+print(opt)
+
+
 if __name__ == '__main__':
+
+    # python examples/comparisson/testing/03_test_place_selected_points.py --base_dir /media/apacheco/Ehecatl/PLACE_comparisson
+
 
     # [ 'reaching_out_mid_up', 'reaching_out_mid_down', 'reaching_out_on_table', 'reaching_out_mid',
     # 'sitting_looking_to_right', 'sitting_compact', 'reachin_out_ontable_one_hand'
@@ -477,7 +488,7 @@ if __name__ == '__main__':
 
     # interaction = 'reaching_out_mid_up'
 
-    base_dir = "/media/dougbel/Tezcatlipoca/PLACE_trainings"
+    base_dir = opt.base_dir
 
     directory_datasets = opj(base_dir, "datasets")
 
