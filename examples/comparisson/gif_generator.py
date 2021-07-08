@@ -1,3 +1,4 @@
+import argparse
 import gc
 import os
 import random
@@ -76,14 +77,27 @@ def generate_gif(trimesh_env, trimesh_body, view_center,  save_on_file=None):
         v.save_gif(save_on_file)
 
 
+parser = argparse.ArgumentParser()
+# data paths
+parser.add_argument('--base_dir', required=True, help='Information directory (dataset, pretrained models, etc)')
+parser.add_argument('--dataset', required=True, help='Dataset name')
+parser.add_argument('--env_name', required=True, help='Environment name')
+parser.add_argument('--interaction', required=True, help='Interaction name')
+
+opt = parser.parse_args()
+print(opt)
 
 if __name__ == '__main__':
 
-    visualize = True
-    shuffle_order = True
-    save_results = False
+    # python examples/comparisson/gif_generator.py --base_dir /media/apacheco/Ehecatl/PLACE_comparisson --dataset prox --env_name MPH16 --interaction sitting_compact
+    # python examples/comparisson/gif_generator.py --base_dir /media/apacheco/Ehecatl/PLACE_comparisson --dataset prox --env_name MPH16 --interaction sitting_hands_on_device
 
-    base_dir = "/media/dougbel/Tezcatlipoca/PLACE_trainings"
+    register_results = True
+    base_dir = opt.base_dir
+    dataset_name = opt.dataset
+    env_name = opt.env_name
+    interaction = opt.interaction
+
 
     directory_datasets = opj(base_dir, "datasets")
 
@@ -111,14 +125,10 @@ if __name__ == '__main__':
 
     print('STARTING TASKS: total %d, done %d, pendings %d' % (num_total_task, num_completed_task, num_pending_tasks))
 
-    if shuffle_order:
-        random.shuffle(pending_tasks)
 
-    for dataset_name, env_name, interaction in pending_tasks:
-
-        # if not( env_name == "zsNo4HB9uLZ-bedroom0_0" and interaction == "standing_up"):
-        #      continue
-
+    if (dataset_name, env_name, interaction) not in pending_tasks:
+        print(f"PREVIOUSLY PERFORMED TASK NOTHING TO DO: base_dir {base_dir}, dataset {dataset_name}, env_name {env_name}, interaction {interaction}")
+    else:
         print( dataset_name, env_name, interaction)
         it_subdir = opj(samples_it_dir, env_name, interaction)
         it_opti_down_subdir = opj(samples_it_opti_down_dir, env_name, interaction)
@@ -145,10 +155,13 @@ if __name__ == '__main__':
 
             trimesh_body = trimesh.load(opj(place_subdir, f"body_{n}_orig.ply"))
             generate_gif(trimesh_env, trimesh_body, view_center, opj(output_subdir, f"body_{n}_orig.gif"))
+            gc.collect()
             trimesh_body = trimesh.load(opj(place_subdir, f"body_{n}_opt1.ply"))
             generate_gif(trimesh_env, trimesh_body, view_center, opj(output_subdir, f"body_{n}_opt1.gif"))
+            gc.collect()
             trimesh_body = trimesh.load(opj(place_subdir, f"body_{n}_opt2.ply"))
             generate_gif(trimesh_env, trimesh_body, view_center, opj(output_subdir, f"body_{n}_opt2.gif"))
+            gc.collect()
 
             output_subdir = opj(output_dir, env_name, interaction, "it")
             if not os.path.exists(output_subdir):
@@ -156,11 +169,13 @@ if __name__ == '__main__':
 
             trimesh_body = trimesh.load(opj(it_subdir, f"body_{n}.ply"))
             generate_gif(trimesh_env, trimesh_body, view_center, opj(output_subdir, f"body_{n}.gif"))
+            gc.collect()
             trimesh_body = trimesh.load(opj(it_opti_down_subdir, f"body_{n}.ply"))
             generate_gif(trimesh_env, trimesh_body, view_center, opj(output_subdir, f"body_{n}_opti_down.gif"))
+            gc.collect()
 
 
-        if save_results:
+        if register_results:
             num_completed_task += 1
             num_pending_tasks -= 1
             copyfile(follow_up_file, follow_up_file + "_backup")
@@ -169,3 +184,4 @@ if __name__ == '__main__':
             print(f"UPDATE: total {num_total_task}, done {num_completed_task}, pendings {num_pending_tasks}")
 
         gc.collect()
+        print(f"TASK DONE: base_dir {base_dir}, dataset {dataset_name}, env_name {env_name}, interaction {interaction}")
