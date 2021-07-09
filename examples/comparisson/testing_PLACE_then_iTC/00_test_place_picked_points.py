@@ -546,7 +546,10 @@ if __name__ == '__main__':
 
             d={"1":"laying", "2":"reaching_out", "3":"sitting", "4":"standing_up", "5":"walking"}
             with open(opj(output_subdir,"interactions.txt"), 'a') as file:
-                file.write(f"{i},{d[inter_type]}\n")
+                if i == 0:
+                    file.write(f"{i},{d[inter_type]}")
+                else:
+                    file.write(f"\n{i},{d[inter_type]}")
 
             np.save(opj(output_subdir, f"point_{i}"), selected_p)
 
