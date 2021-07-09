@@ -38,7 +38,7 @@ def shift_rotate_mesh(body_verts, body_faces, shift, rotation):
 def execute_place_in_picked_point(data_dir, dataset_name, scene_name, np_point, num_point, interaction_type, output_subdir, visualize = True):
 
     dataset_path = opj(data_dir, "datasets", dataset_name)
-    test_results_dir = opj(data_dir, 'test', 'env_test', scene_name)
+    it_test_results_dir = opj(data_dir, 'test', 'env_test', scene_name)
     directory_json_conf_execution = opj(base_dir, "config", "json_execution")
     directory_descriptors = opj(base_dir, "config", "descriptors_repository")
     directory_of_prop_configs = opj(base_dir, "config", "propagators_configs")
@@ -57,7 +57,7 @@ def execute_place_in_picked_point(data_dir, dataset_name, scene_name, np_point, 
         file_mesh_env, dataset_name = find_files_mesh_env(directory_datasets, scene_name)
         file_json_conf_execution = opj(directory_json_conf_execution, f"single_testing_{interaction}.json")
         scores_ctrl = CtrlPropagatorSampler(directory_descriptors, file_json_conf_execution,
-                                            test_results_dir, directory_of_prop_configs, file_mesh_env)
+                                            it_test_results_dir, directory_of_prop_configs, file_mesh_env)
 
         N_SAMPLES = 1
         MIN_SCORE = 0.2
@@ -96,9 +96,9 @@ def execute_place_in_picked_point(data_dir, dataset_name, scene_name, np_point, 
 
 if __name__ == '__main__':
 
-    # base_dir = "/media/dougbel/Tezcatlipoca/PLACE_trainings"
+    base_dir = "/media/dougbel/Tezcatlipoca/PLACE_trainings"
 
-    base_dir = "/media/apacheco/Ehecatl/PLACE_comparisson"
+    # base_dir = "/media/apacheco/Ehecatl/PLACE_comparisson"
 
     directory_datasets = opj(base_dir, "datasets")
 
@@ -139,7 +139,7 @@ if __name__ == '__main__':
 
         np_point = np.load(opj(points_subdir, f"point_{num_point}.npy"))
         interaction_type_df = pd.read_csv(opj(points_subdir, "interactions.txt"), index_col=0, header=None)
-        interaction_type = interaction_type_df.at[0,1]
+        interaction_type = interaction_type_df.at[num_point,1]
         execute_place_in_picked_point(base_dir, dataset_name, scene_name, np_point, num_point, interaction_type, output_subdir, visualize=False)
 
         num_completed_task += 1
