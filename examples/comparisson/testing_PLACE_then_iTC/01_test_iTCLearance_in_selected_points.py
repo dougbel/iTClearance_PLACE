@@ -35,7 +35,7 @@ def shift_rotate_mesh(body_verts, body_faces, shift, rotation):
 
     return trimesh.Trimesh(vertices=new_verts, faces=body_faces, face_colors=[200, 200, 200, 255])
 
-def execute_place_in_picked_point(data_dir, dataset_name, scene_name, np_point, num_point, interaction_type, output_subdir, visualize = True):
+def select_it_execution_around_picked_point(data_dir, dataset_name, scene_name, np_point, num_point, interaction_type, output_subdir, visualize = True):
 
     dataset_path = opj(data_dir, "datasets", dataset_name)
     it_test_results_dir = opj(data_dir, 'test', 'env_test', scene_name)
@@ -140,7 +140,7 @@ if __name__ == '__main__':
         np_point = np.load(opj(points_subdir, f"point_{num_point}.npy"))
         interaction_type_df = pd.read_csv(opj(points_subdir, "interactions.txt"), index_col=0, header=None)
         interaction_type = interaction_type_df.at[num_point,1]
-        execute_place_in_picked_point(base_dir, dataset_name, scene_name, np_point, num_point, interaction_type, output_subdir, visualize=False)
+        select_it_execution_around_picked_point(base_dir, dataset_name, scene_name, np_point, num_point, interaction_type, output_subdir, visualize=False)
 
         num_completed_task += 1
         num_pending_tasks -= 1
