@@ -9,8 +9,10 @@ import vedo
 if __name__ == '__main__':
 
     base_dir = "/media/dougbel/Tezcatlipoca/PLACE_trainings"
+    # base_dir = "/media/apacheco/Ehecatl/PLACE_comparisson"
 
-    filter_dataset = "replica_v1"
+
+    filter_dataset = "replica_v1" # None, mp3d, prox
 
     dataset_path = opj(base_dir, "datasets")
 
@@ -24,22 +26,17 @@ if __name__ == '__main__':
     current_follow_up_column ='turk_sample_extracted'
 
     follow_up_data = pd.read_csv(follow_up_file, index_col=[0, 1, 2])
-    if not current_follow_up_column in follow_up_data.columns:
-        follow_up_data[current_follow_up_column] = False
 
     num_total_task = follow_up_data.index.size
-    pending_tasks = list(follow_up_data[ (follow_up_data[current_follow_up_column] == False)
-                                         &  (follow_up_data[place_follow_up_column]==True)
-                                         &  (follow_up_data[itC_follow_up_column]==True)].index)
-    num_pending_tasks = len(pending_tasks)
-    num_completed_task = follow_up_data[ (follow_up_data[current_follow_up_column] == True)
-                                         &  (follow_up_data[place_follow_up_column]==True)
-                                         &  (follow_up_data[itC_follow_up_column]==True)].index.size
+    completed_task = list(follow_up_data[(follow_up_data[place_follow_up_column] == True)
+                                         & (follow_up_data[itC_follow_up_column]==True)].index)
 
-    print( 'STARTING TASKS: total %d, done %d, pendings %d' % (num_total_task, num_completed_task, num_pending_tasks))
+    num_completed_task = len(completed_task)
 
-    random.shuffle(pending_tasks)
-    for dataset_name, scene_name, interaction in pending_tasks:
+    print( 'COMPLETED TASKS: total %d, done %d' % (num_total_task, num_completed_task))
+
+    random.shuffle(completed_task)
+    for dataset_name, scene_name, interaction in completed_task:
 
         if filter_dataset is not None and filter_dataset != dataset_name:
             continue

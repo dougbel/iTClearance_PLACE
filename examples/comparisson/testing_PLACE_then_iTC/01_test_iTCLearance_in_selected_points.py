@@ -97,8 +97,9 @@ def select_it_execution_around_picked_point(data_dir, dataset_name, scene_name, 
 if __name__ == '__main__':
 
     base_dir = "/media/dougbel/Tezcatlipoca/PLACE_trainings"
-
     # base_dir = "/media/apacheco/Ehecatl/PLACE_comparisson"
+
+    visualize= False
 
     directory_datasets = opj(base_dir, "datasets")
 
@@ -140,7 +141,7 @@ if __name__ == '__main__':
         np_point = np.load(opj(points_subdir, f"point_{num_point}.npy"))
         interaction_type_df = pd.read_csv(opj(points_subdir, "interactions.txt"), index_col=0, header=None)
         interaction_type = interaction_type_df.at[num_point,1]
-        select_it_execution_around_picked_point(base_dir, dataset_name, scene_name, np_point, num_point, interaction_type, output_subdir, visualize=False)
+        select_it_execution_around_picked_point(base_dir, dataset_name, scene_name, np_point, num_point, interaction_type, output_subdir, visualize=visualize)
 
         num_completed_task += 1
         num_pending_tasks -= 1

@@ -32,6 +32,8 @@ if __name__ == '__main__':
     save_results = True
 
     base_dir = "/media/dougbel/Tezcatlipoca/PLACE_trainings"
+    # base_dir = "/media/apacheco/Ehecatl/PLACE_comparisson"
+
 
     directory_datasets = opj(base_dir, "datasets")
 
