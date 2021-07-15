@@ -89,8 +89,8 @@ print(opt)
 
 if __name__ == '__main__':
 
-    # python examples/comparisson/gif_generator.py --base_dir /media/apacheco/Ehecatl/PLACE_comparisson --dataset prox --env_name MPH16 --interaction sitting_compact
-    # python examples/comparisson/gif_generator.py --base_dir /media/apacheco/Ehecatl/PLACE_comparisson --dataset prox --env_name MPH16 --interaction sitting_hands_on_device
+    # python examples/comparisson/testing/20_gif_generator.py --base_dir /media/apacheco/Ehecatl/PLACE_comparisson --dataset prox --env_name MPH16 --interaction sitting_compact
+    # python examples/comparisson/testing/20_gif_generator.py --base_dir /media/apacheco/Ehecatl/PLACE_comparisson --dataset prox --env_name MPH16 --interaction sitting_hands_on_device
 
     register_results = True
     base_dir = opt.base_dir
