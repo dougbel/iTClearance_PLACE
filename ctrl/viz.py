@@ -1,6 +1,7 @@
 import gc
 import json
 import os
+from os.path import join as opj
 import pickle
 import sys
 
@@ -30,7 +31,8 @@ from it_clearance.utils import get_vtk_items_cv_pv
 from models.optimizer import adjust_body_mesh_to_raw_guess, get_scaledShifted_bps_sets, optimization_stage_2
 from qt_ui.seed_train_extractor import Ui_MainWindow
 from util.util_mesh import remove_collision
-from utils import convert_to_3D_rot, gen_body_mesh, get_contact_id
+from util.util_proxd import translate_smplx_body, get_vertices_from_body_params
+from utils import convert_to_3D_rot, gen_body_mesh, get_contact_id, update_globalRT_for_smplx
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -84,6 +86,7 @@ class CtrlPropagatorVisualizer:
         self.recording_name = None
         self.cam2world = None
         self.smplx_model = None
+        self.vposer_model = None
 
         self.vedo_env = None
         self.vedo_body = None
@@ -99,14 +102,14 @@ class CtrlPropagatorVisualizer:
         sys.exit(app.exec_())
 
     def list_prox_scans_quan(self):
-        l_dir = os.path.join(self.datasets_dir, "datasets_raw/prox_quantitative", "fittings/mosh")
+        l_dir = opj(self.datasets_dir, "datasets_raw/prox_quantitative", "fittings/mosh")
         list_scene = os.listdir(l_dir)
         list_scene.sort()
         for scan in list_scene:
             self.ui.l_quanti.addItem(scan)
 
     def list_prox_scans_qual(self):
-        l_dir = os.path.join(self.datasets_dir, "datasets_raw/prox", "PROXD")
+        l_dir = opj(self.datasets_dir, "datasets_raw/prox", "PROXD")
         list_scene = os.listdir(l_dir)
         list_scene.sort()
         for scan in list_scene:
@@ -260,16 +263,14 @@ class CtrlPropagatorVisualizer:
     def click_run_place_optim(self):
         self.progresbar_hidden(False)
         self.update_progressbar_detail(5, "Initializing")
-        vposer_model_path = f'{self.datasets_dir}/pretrained_place/body_models/vposer_v1_0'
-        vposer_model, _ = load_vposer(vposer_model_path, vp_model='snapshot')
-        vposer_model = vposer_model.to(device)
+
         body_verts_sample = self.vedo_body.points()
         scene_verts = self.vedo_env.points()
 
 
         self.update_progressbar_detail(20, "Adjust body params to body mesh")
         body_params_rec, shift = adjust_body_mesh_to_raw_guess(body_verts_sample, scene_verts,
-                                                            vposer_model, self.smplx_model,
+                                                            self.vposer_model, self.smplx_model,
                                                             weight_loss_rec_verts= self.ui.sbox_rec_vertices.value(), # 1.0
                                                             weight_loss_rec_bps = self.ui.sbox_rec_bps.value(), # 3.0
                                                             weight_loss_vposer = self.ui.sbox_v_poser.value(),  # 0.02
@@ -281,7 +282,7 @@ class CtrlPropagatorVisualizer:
 
         self.update_progressbar_detail(50, "Transforming body params to mesh")
         body_params_opt_s1 = convert_to_3D_rot(body_params_rec)  # tensor, [bs=1, 72]
-        body_pose_joint_s1 = vposer_model.decode(body_params_opt_s1[:, 16:48], output_type='aa').view(1, -1)
+        body_pose_joint_s1 = self.vposer_model.decode(body_params_opt_s1[:, 16:48], output_type='aa').view(1, -1)
         body_verts_opt_s1 = gen_body_mesh(body_params_opt_s1, body_pose_joint_s1, self.smplx_model)[0]
         body_verts_opt_s1 = body_verts_opt_s1.detach().cpu().numpy()
         body_trimesh_s1 = trimesh.Trimesh(vertices=body_verts_opt_s1, faces=self.smplx_model.faces)
@@ -292,7 +293,7 @@ class CtrlPropagatorVisualizer:
         s_grid_min_batch, s_grid_max_batch, s_sdf_batch = self.load_sdf()
         contact_part = self.get_cofigured_contact_regions() # 'L_Leg', 'R_Leg', 'back', 'gluteus', 'L_Hand', 'R_Hand', 'thighs'
         id_contact_vertices, _ = get_contact_id(self.body_segments_dir, contact_part)
-        body_params_rec, shift = optimization_stage_2(body_verts_sample, scene_verts, vposer_model, self.smplx_model,
+        body_params_rec, shift = optimization_stage_2(body_verts_sample, scene_verts, self.vposer_model, self.smplx_model,
                                                       body_params_rec, s_grid_min_batch, s_grid_max_batch, s_sdf_batch,
                                                       id_contact_vertices,
                                                       weight_loss_rec_verts = self.ui.sbox_rec_vertices.value(), # 1.0
@@ -308,7 +309,7 @@ class CtrlPropagatorVisualizer:
 
         self.update_progressbar_detail(90, "Transforming body params to mesh")
         body_params_opt_s2 = convert_to_3D_rot(body_params_rec)  # tensor, [bs=1, 72]
-        body_pose_joint_s2 = vposer_model.decode(body_params_opt_s2[:, 16:48], output_type='aa').view(1, -1)
+        body_pose_joint_s2 = self.vposer_model.decode(body_params_opt_s2[:, 16:48], output_type='aa').view(1, -1)
         body_verts_opt_s2 = gen_body_mesh(body_params_opt_s2, body_pose_joint_s2, self.smplx_model)[0]
         body_verts_opt_s2 = body_verts_opt_s2.detach().cpu().numpy()
         body_trimesh_s2 = trimesh.Trimesh(vertices=body_verts_opt_s2, faces=self.smplx_model.faces)
@@ -339,7 +340,7 @@ class CtrlPropagatorVisualizer:
         self.update_progressbar_detail(10, "Removing collision")
 
         # for now the only option I have is to translate the body to an upper position
-        remove_collision(tri_mesh_env, tri_mesh_obj)
+        translation_z = remove_collision(tri_mesh_env, tri_mesh_obj)
 
         s = trimesh.Scene()
         tri_mesh_env.visual.face_colors = [200, 200, 200, 250]
@@ -399,32 +400,90 @@ class CtrlPropagatorVisualizer:
         output_subdir += str(sampler_rate_generated_random_numbers) + "_"
         output_subdir += cv_sampler.__class__.__name__ + "_" + str(cv_sampler.sample_size)
 
-        self.update_progressbar_detail(90, "Saving")
-        SaverClearance(affordance_name, env_name, obj_name, agglomerator,
+        self.update_progressbar_detail(85, "Saving ITClearance_results")
+        saver = SaverClearance(affordance_name, env_name, obj_name, agglomerator,
                        max_distances, ibs_calculator, tri_mesh_obj, output_subdir)
 
+        self.update_progressbar_detail(90, "Generating and saving PROXD information")
+        np_body_params = self.get_world_coordinate_proxd_data_with_z_translation(translation_z)
+        self.save_place_extra_data(affordance_name, obj_name, np_body_params, translation_z, saver.directory)
+
+        self.update_progressbar_detail(98, "Visualizing training")
+        np_body_verts_sample = get_vertices_from_body_params(self.smplx_model, self.vposer_model, np_body_params)
+        body_trimesh_proxd = trimesh.Trimesh(np_body_verts_sample, faces=self.smplx_model.faces)
+        body_trimesh_proxd.visual.face_colors = [255, 255, 255, 255]
+        body_vedo_proxd = vedo.trimesh2vtk(body_trimesh_proxd)
         vedo_items = get_vtk_items_cv_pv(trainer.pv_points, trainer.pv_vectors, trainer.cv_points, trainer.cv_vectors,
                                          trimesh_obj=tri_mesh_obj,
                                          trimesh_ibs=tri_mesh_ibs_segmented)
 
         self.ui.vtk_widget.Render()
-        self.vp.show(flatten([vedo_items, self.vedo_env, self.vedo_text]), interactive=False, resetcam=False)
+        self.vp.show(flatten([vedo_items, body_vedo_proxd,  self.vedo_env, self.vedo_text]), interactive=False, resetcam=False)
+
+
 
         self.update_progressbar_detail(100, "Done")
+
+    def save_place_extra_data(self,affordance_name, obj_name, np_body_params, z_translation, output_dir):
+        np.save(opj(output_dir, f"{affordance_name}_{obj_name}_PLACE_body_params"), np_body_params)
+
+        contact_regions = []
+        if self.ui.chk_back.isChecked():
+            contact_regions.append("back")
+        if self.ui.chk_gluteus.isChecked():
+            contact_regions.append("gluteus")
+        if self.ui.chk_thighs.isChecked():
+            contact_regions.append("thighs")
+        if self.ui.chk_foot_left.isChecked():
+            contact_regions.append("L_Leg")
+        if self.ui.chk_foot_right.isChecked():
+            contact_regions.append("R_Leg")
+        if self.ui.chk_hand_left.isChecked():
+            contact_regions.append("L_Hand")
+        if self.ui.chk_hand_right.isChecked():
+            contact_regions.append("R_Hand")
+
+        json_training_data_file = opj(output_dir, f"{affordance_name}_{obj_name}.json")
+        with open(json_training_data_file, 'r') as f:
+            json_training_data = json.load(f)
+        json_training_data["extra"] = {"initial_z_translation": z_translation,
+                                       "contact_regions": contact_regions}
+        with open(json_training_data_file, 'w') as fp:
+            json.dump(json_training_data, fp, indent=4, sort_keys=True)
+
+
+    def get_world_coordinate_proxd_data_with_z_translation(self, z_translation):
+        num_frame = self.ui.horizontalSlider.value()
+
+        img_name = self.frames_file_names[num_frame]
+        with open(opj(self.fitting_dir, img_name, '000.pkl'), 'rb') as f:
+            param = pickle.load(f, encoding='latin1')
+
+        np_body_params = np.concatenate((param['transl'][0], param['global_orient'][0], param['betas'][0],
+                                      param['pose_embedding'][0],
+                                      param['left_hand_pose'][0], param['right_hand_pose'][0]), axis=0)
+
+        np_body_params = update_globalRT_for_smplx(np_body_params, self.smplx_model, self.cam2world)
+
+        np_body_params  =translate_smplx_body(np_body_params, self.smplx_model, [0,0,z_translation])
+
+        return np_body_params
+
 
     def initialize(self, recording_name):
         self.recording_name = recording_name
 
         scene_name = self.recording_name.split("_")[0]
-        model_folder = os.path.join(self.datasets_dir, "pretrained_place/body_models/smpl")
+        model_folder = opj(self.datasets_dir, "pretrained_place","body_models","smpl")
+        vposer_model_path = opj(self.datasets_dir, "pretrained_place", "body_models", "vposer_v1_0")
         gender = "male"  # "female", "neutral"
-        base_dir = os.path.join(self.datasets_dir, "datasets_raw/prox_quantitative")
-        pseudo_fitting_dir = os.path.join(base_dir, "fittings/mosh", self.recording_name)
+        base_dir = opj(self.datasets_dir, "datasets_raw/prox_quantitative")
+        pseudo_fitting_dir = opj(base_dir, "fittings/mosh", self.recording_name)
 
         if os.path.isdir(pseudo_fitting_dir):
-            json_scene_conf = os.path.join(base_dir, 'vicon2scene.json')
+            json_scene_conf = opj(base_dir, 'vicon2scene.json')
         else:
-            base_dir = os.path.join(self.datasets_dir, "datasets_raw/prox")
+            base_dir = opj(self.datasets_dir, "datasets_raw/prox")
             female_subjects_ids = [162, 3452, 159, 3403]
             subject_id = int(self.recording_name.split('_')[1])
             if subject_id in female_subjects_ids:
@@ -432,20 +491,23 @@ class CtrlPropagatorVisualizer:
             else:
                 gender = 'male'
 
-            json_scene_conf = os.path.join(base_dir, 'cam2world', scene_name + '.json')
-            pseudo_fitting_dir = os.path.join(base_dir, "PROXD", self.recording_name)
+            json_scene_conf = opj(base_dir, 'cam2world', scene_name + '.json')
+            pseudo_fitting_dir = opj(base_dir, "PROXD", self.recording_name)
 
-        self.fitting_dir = os.path.join(pseudo_fitting_dir, 'results')
-        self.scene_dir = os.path.join(base_dir, 'scenes')
-        self.sdf_dir =  os.path.join(base_dir, 'sdf')
-        self.body_segments_dir =  os.path.join(base_dir, 'body_segments')
-        self.frames_dir = os.path.join(base_dir, 'recordings', self.recording_name, 'Color')
+        self.fitting_dir = opj(pseudo_fitting_dir, 'results')
+        self.scene_dir = opj(base_dir, 'scenes')
+        self.sdf_dir =  opj(base_dir, 'sdf')
+        self.body_segments_dir =  opj(base_dir, 'body_segments')
+        self.frames_dir = opj(base_dir, 'recordings', self.recording_name, 'Color')
         self.frames_file_names = sorted(os.listdir(self.fitting_dir))
 
         self.smplx_model = self.load_smplx_model(model_folder, gender)
         self.smplx_model.to(device)
+
+        self.vposer_model, _ = load_vposer(vposer_model_path, vp_model='snapshot')
+        self.vposer_model = self.vposer_model.to(device)
         self.cam2world = self.load_cam2world(json_scene_conf)
-        self.vedo_env = vedo.load(os.path.join(self.scene_dir, scene_name + '.ply'))
+        self.vedo_env = vedo.load(opj(self.scene_dir, scene_name + '.ply'))
         self.vedo_env.lighting(ambient=0.8, diffuse=0.2, specular=0.1, specularPower=1, specularColor=(1, 1, 1))
 
         self.ui.horizontalSlider.setMaximum(len(self.frames_file_names) - 1)
@@ -469,7 +531,7 @@ class CtrlPropagatorVisualizer:
 
     def load_frame(self, num_frame):
         img_name = self.frames_file_names[num_frame]
-        with open(os.path.join(self.fitting_dir, img_name, '000.pkl'), 'rb') as f:
+        with open(opj(self.fitting_dir, img_name, '000.pkl'), 'rb') as f:
             param = pickle.load(f, encoding='latin1')
         torch_param = {}
         for key in param.keys():
@@ -490,8 +552,8 @@ class CtrlPropagatorVisualizer:
             self.ui.lbl_recording.setHidden(True)
         else:
             self.ui.lbl_recording.setHidden(False)
-            if os.path.isfile(os.path.join(self.frames_dir, img_name + '.jpg')):
-                frame_file = os.path.join(self.frames_dir, img_name + '.jpg')
+            if os.path.isfile(opj(self.frames_dir, img_name + '.jpg')):
+                frame_file = opj(self.frames_dir, img_name + '.jpg')
                 color_img = cv2.imread(frame_file)
                 color_img = cv2.flip(color_img, 1)
             else:
@@ -517,19 +579,20 @@ class CtrlPropagatorVisualizer:
                              create_jaw_pose=True,
                              create_leye_pose=True,
                              create_reye_pose=True,
-                             create_transl=True
+                             create_transl=True,
+                             batch_size=1
                              )
         return smplx_model
 
     def load_sdf(self):
         ## read scene sdf
         scene_name = self.recording_name.split("_")[0]
-        with open(os.path.join(self.sdf_dir, scene_name + '.json')) as f:
+        with open(opj(self.sdf_dir, scene_name + '.json')) as f:
             sdf_data = json.load(f)
             grid_min = np.array(sdf_data['min'])
             grid_max = np.array(sdf_data['max'])
             grid_dim = sdf_data['dim']
-        sdf = np.load(os.path.join(self.sdf_dir, scene_name + '_sdf.npy')).reshape(grid_dim, grid_dim, grid_dim)
+        sdf = np.load(opj(self.sdf_dir, scene_name + '_sdf.npy')).reshape(grid_dim, grid_dim, grid_dim)
         s_grid_min_batch = torch.tensor(grid_min, dtype=torch.float32, device=device).unsqueeze(0).unsqueeze(1)
         s_grid_max_batch = torch.tensor(grid_max, dtype=torch.float32, device=device).unsqueeze(0).unsqueeze(1)
         s_sdf_batch = torch.tensor(sdf, dtype=torch.float32, device=device).unsqueeze(0)

@@ -2,6 +2,7 @@ import json
 import math
 
 import os
+from os.path import join as opj
 import trimesh
 import numpy as np
 import torch
@@ -149,10 +150,14 @@ def remove_collision(tri_mesh_env, tri_mesh_obj):
 
     in_collision, contact_data = collision_tester.in_collision_single(tri_mesh_obj, return_data=True)
 
+    translation_z = 0
+    delta = 0.003
     while in_collision:
-        tri_mesh_obj.apply_translation([0, 0, 0.003])
+        translation_z += delta
+        tri_mesh_obj.apply_translation([0, 0, delta])
         in_collision, contact_data = collision_tester.in_collision_single(tri_mesh_obj, return_data=True)
 
+    return translation_z
 
 def shift_rotate_vertices(np_vertices, rot_angle, shift):
     np_rotated_verts = np.zeros(np_vertices.shape)  # [10475, 3]
