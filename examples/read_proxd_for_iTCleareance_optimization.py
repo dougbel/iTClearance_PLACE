@@ -140,8 +140,16 @@ bodyDec_path = f'{data_dir}/pretrained_place/aes/body_dec_last_model.pkl'
 # scene_mesh, cur_scene_verts, s_grid_min_batch, s_grid_max_batch, s_sdf_batch = read_mesh_sdf(prox_dataset_path,'prox',scene_name)
 scene_trimesh, cur_scene_verts, s_grid_min_batch, s_grid_max_batch, s_sdf_batch = read_full_mesh_sdf(dataset_path,
                                                                                                      scene_name)
+
+female_subjects_ids = [162, 3452, 159, 3403]
+subject_id = int(recording_name.split('_')[1])
+if subject_id in female_subjects_ids:
+    gender = 'female'
+else:
+    gender = 'male'
+
 smplx_model = smplx.create(smplx_model_path, model_type='smplx',
-                           gender='neutral', ext='npz',
+                           gender=gender, ext='npz',
                            num_pca_comps=12,
                            create_global_orient=True,
                            create_body_pose=True,
@@ -160,13 +168,6 @@ print('[INFO] smplx model loaded.')
 vposer_model, _ = load_vposer(vposer_model_path, vp_model='snapshot')
 vposer_model = vposer_model.to(device)
 print('[INFO] vposer model loaded')
-
-female_subjects_ids = [162, 3452, 159, 3403]
-subject_id = int(recording_name.split('_')[1])
-if subject_id in female_subjects_ids:
-    gender = 'female'
-else:
-    gender = 'male'
 
 json_scene_conf = os.path.join(dataset_path, 'cam2world', scene_name + '.json')
 with open(json_scene_conf, 'r') as f:
