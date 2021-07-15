@@ -16,14 +16,17 @@ if __name__ == '__main__':
 
     interaction = 'reaching_out_mid_up'
 
+    base_dir = "/media/dougbel/Tezcatlipoca/PLACE_trainings"
+    test_results_dir = f"{base_dir}/train/testing_env_single"
 
-    base_dir = "output" #/media/dougbel/Tezcatlipoca/PLACE_trainings"
+    # base_dir = "output"
+    # test_results_dir = 'output/testing_env_single/'
+
 
     descriptors_dir = opj(base_dir, "config", "descriptors_repository")
     json_conf_execution_file = opj(base_dir, "config", "json_execution", f"single_testing_{interaction}.json")
     directory_of_prop_configs = opj(base_dir, "config", "propagators_configs")
 
-    test_results_dir = 'output/testing_env_single/'
     directory_env_test_results = None
 
     for env_name in os.listdir(test_results_dir):
@@ -39,10 +42,7 @@ if __name__ == '__main__':
 
             if interaction == test_data["tester_info"]["interactions"][0]["affordance_name"]:
                 directory_env_test_results = env_test_dir
-                break
-
-
-    scores_ctrl = ControlPointScore(descriptors_dir, json_conf_execution_file,
-                                    directory_env_test_results, directory_of_prop_configs)
-
-    scores_ctrl.start()
+                scores_ctrl = ControlPointScore(descriptors_dir, json_conf_execution_file,
+                                                directory_env_test_results, directory_of_prop_configs)
+                scores_ctrl.start()
+                exit(0)
