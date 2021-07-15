@@ -22,9 +22,6 @@ def find_files_mesh_env(datasets_dir, env_name):
             if env_name+".ply" == scene:
                 return opj(datasets_dir, d, "scenes", scene), d
 
-def get_files_with_extension(directory, extension):
-    return [file_name for file_name in os.listdir(directory) if file_name.endswith(extension)]
-
 
 def shift_rotate_mesh(body_verts, body_faces, shift, rotation):
     new_verts = np.zeros(body_verts.shape)

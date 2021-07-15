@@ -9,18 +9,7 @@ from vedo import vtk2trimesh
 import trimesh
 
 from ctrl.point_selection import ControlPointSelection
-
-def find_files_mesh_env(datasets_dir, env_name):
-    """
-    Return directory were the mesh of an scene is present
-    """
-    datasets =['prox', "mp3d", "replica_v1"]
-    for d in datasets:
-        for scene in os.listdir(opj(datasets_dir, d, "scenes")):
-            if env_name+".ply" == scene:
-                return opj(datasets_dir, d, "scenes", scene), d
-
-
+from util.util_mesh import find_files_mesh_env
 
 if __name__ == '__main__':
 

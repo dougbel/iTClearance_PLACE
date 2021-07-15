@@ -11,10 +11,6 @@ import trimesh
 from pyrender import Mesh, Scene, Viewer
 
 
-def get_files_with_extension(directory, extension):
-    return [file_name for file_name in os.listdir(directory) if file_name.endswith(extension)]
-
-
 def generate_gif(trimesh_env, trimesh_body, view_center,  save_on_file=None):
 
     record=True if save_on_file is not None else False

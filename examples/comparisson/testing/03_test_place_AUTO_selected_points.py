@@ -20,13 +20,10 @@ import chamfer_pytorch.dist_chamfer as ext
 from models.cvae import *
 from preprocess.preprocess_optimize import *
 from preprocess.bps_encoding import *
+from util.utils_files import get_file_names_with_extension_in
 from utils import *
 
 warnings.simplefilter("ignore", UserWarning)
-
-
-def get_files_with_extension(directory, extension):
-    return [file_name for file_name in os.listdir(directory) if file_name.endswith(extension)]
 
 
 def shift_rotate_mesh(body_verts, body_faces, shift, rotation):
@@ -512,7 +509,7 @@ if __name__ == '__main__':
         if not os.path.exists(output_subdir):
             os.makedirs(output_subdir)
 
-        for np_point_file_name in get_files_with_extension(points_dir, ".npy"):
+        for np_point_file_name in get_file_names_with_extension_in(points_dir, ".npy"):
             np_point =  np.load(opj(points_dir, np_point_file_name))
             n = np_point_file_name[np_point_file_name.find("_")+1:np_point_file_name.find(".")]
             mesh_orig, mesh_opt1, mesh_opt2 = execute_place_in_picked_point(base_dir, dataset_name, scene_name, np_point, visualize=False)

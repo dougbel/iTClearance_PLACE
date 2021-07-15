@@ -21,13 +21,11 @@ import chamfer_pytorch.dist_chamfer as ext
 from models.cvae import *
 from preprocess.preprocess_optimize import *
 from preprocess.bps_encoding import *
+from util.utils_files import get_file_names_with_extension_in
 from utils import *
 
 warnings.simplefilter("ignore", UserWarning)
 
-
-def get_files_with_extension(directory, extension):
-    return [file_name for file_name in os.listdir(directory) if file_name.endswith(extension)]
 
 
 def shift_rotate_mesh(body_verts, body_faces, shift, rotation):
@@ -505,7 +503,7 @@ if __name__ == '__main__':
 
         trimesh_env = trimesh.load(opj(directory_datasets, dataset_name, "scenes", f"{scene_name}.ply"))
 
-        for np_point_file_name in get_files_with_extension(output_subdir, ".npy"):
+        for np_point_file_name in get_file_names_with_extension_in(output_subdir, ".npy"):
             np_point =  np.load(opj(output_subdir, np_point_file_name))
             trimesh_env += create_marker(np_point)
 

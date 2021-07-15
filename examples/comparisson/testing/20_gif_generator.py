@@ -18,8 +18,7 @@ from pyrender import PerspectiveCamera,\
                      Primitive, Mesh, Node, Scene,\
                      Viewer, OffscreenRenderer, RenderFlags
 
-def get_files_with_extension(directory, extension):
-    return [file_name for file_name in os.listdir(directory) if file_name.endswith(extension)]
+from util.utils_files import get_file_names_with_extension_in
 
 
 def generate_gif(trimesh_env, trimesh_body, view_center,  save_on_file=None):
@@ -134,7 +133,7 @@ if __name__ == '__main__':
         it_opti_down_subdir = opj(samples_it_opti_down_dir, env_name, interaction)
         place_subdir = opj(samples_place_dir, env_name, interaction)
 
-        for np_point_file_name in get_files_with_extension(it_subdir, ".npy"):
+        for np_point_file_name in get_file_names_with_extension_in(it_subdir, ".npy"):
             print(np_point_file_name)
             np_point = np.load(opj(it_subdir, np_point_file_name))
             n = np_point_file_name[np_point_file_name.find("_") + 1:np_point_file_name.find(".")]
