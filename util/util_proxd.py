@@ -1,11 +1,38 @@
 import math
 import numpy as np
+import smplx
 import trimesh
 import torch
 
+from human_body_prior.tools.model_loader import load_vposer
 from utils import update_globalRT_for_smplx, gen_body_mesh
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+def load_vposer_model(vposer_model_path, vp_model='snapshot'):
+    vposer_model, _ = load_vposer(vposer_model_path, vp_model=vp_model)
+    vposer_model.to(device)
+    return vposer_model
+
+def load_smplx_model(smplx_model_path, gender):
+    smplx_model = smplx.create(smplx_model_path, model_type='smplx',
+                               gender=gender, ext='npz',
+                               num_pca_comps=12,
+                               create_global_orient=True,
+                               create_body_pose=True,
+                               create_betas=True,
+                               create_left_hand_pose=True,
+                               create_right_hand_pose=True,
+                               create_expression=True,
+                               create_jaw_pose=True,
+                               create_leye_pose=True,
+                               create_reye_pose=True,
+                               create_transl=True,
+                               batch_size=1
+                               ).to(device)
+
+    return smplx_model
+
 
 def translate_smplx_body(np_body_params,smplx_model, shift):
     trans_matrix_2 = np.array([[1, 0, 0, shift[0]],

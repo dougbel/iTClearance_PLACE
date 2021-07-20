@@ -84,6 +84,7 @@ class CtrlPropagatorVisualizer:
         self.frames_file_names = None
 
         self.recording_name = None
+        self.gender=None
         self.cam2world = None
         self.smplx_model = None
         self.vposer_model = None
@@ -421,11 +422,12 @@ class CtrlPropagatorVisualizer:
         self.vp.show(flatten([vedo_items, body_vedo_proxd,  self.vedo_env, self.vedo_text]), interactive=False, resetcam=False)
 
 
-
         self.update_progressbar_detail(100, "Done")
 
+
+
     def save_place_extra_data(self,affordance_name, obj_name, np_body_params, z_translation, output_dir):
-        np.save(opj(output_dir, f"{affordance_name}_{obj_name}_PLACE_body_params"), np_body_params)
+        np.save(opj(output_dir, f"{affordance_name}_{obj_name}_smplx_body_params"), np_body_params)
 
         contact_regions = []
         if self.ui.chk_back.isChecked():
@@ -446,8 +448,10 @@ class CtrlPropagatorVisualizer:
         json_training_data_file = opj(output_dir, f"{affordance_name}_{obj_name}.json")
         with open(json_training_data_file, 'r') as f:
             json_training_data = json.load(f)
-        json_training_data["extra"] = {"initial_z_translation": z_translation,
-                                       "contact_regions": contact_regions}
+        json_training_data["extra"] = {"body_gender":self.gender,
+                                       "contact_regions": contact_regions,
+                                        "initial_z_translation": z_translation
+                                       }
         with open(json_training_data_file, 'w') as fp:
             json.dump(json_training_data, fp, indent=4, sort_keys=True)
 
@@ -503,6 +507,7 @@ class CtrlPropagatorVisualizer:
 
         self.smplx_model = self.load_smplx_model(model_folder, gender)
         self.smplx_model.to(device)
+        self.gender = gender
 
         self.vposer_model, _ = load_vposer(vposer_model_path, vp_model='snapshot')
         self.vposer_model = self.vposer_model.to(device)
