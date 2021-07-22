@@ -6,9 +6,49 @@ import random
 
 import pandas as pd
 
+
+def copy_files_selected(to_copy, output_dir, limit_sup=None):
+    if limit_sup is None:
+        limit_sup = len(to_copy)
+
+    for i in range(limit_sup):
+        env, interaction, p, it_gif, place_gif = to_copy[i]
+
+        copy_it_gif = os.path.join(output_dir, env, interaction, "it", f"body_{p}_opti_down.gif" )
+        os.makedirs(os.path.dirname(copy_it_gif), exist_ok=True)
+        shutil.copyfile(it_gif, copy_it_gif)
+
+        copy_place_gif = os.path.join(output_dir, env, interaction, "place", f"body_{p}_opt2.gif")
+        os.makedirs(os.path.dirname(copy_place_gif), exist_ok=True)
+        shutil.copyfile(place_gif, copy_place_gif)
+
+def generate_base_csv(to_copy, output_dir, limit_sup=None):
+    if limit_sup is None:
+        limit_sup = len(to_copy)
+
+    l_data=[]
+    for i in range(limit_sup):
+        env, interaction, p, it_gif, place_gif = to_copy[i]
+
+        relative_it_gif = it_gif[it_gif.find(env):]
+        relative_place_gif = place_gif[place_gif.find(env):]
+
+        if random.random() < 0.5:
+            l_data.append((env, interaction, p, relative_it_gif, relative_place_gif, "it_place"))
+        else:
+            l_data.append((env, interaction, p, relative_place_gif, relative_it_gif, "place_it"))
+
+    df = pd.DataFrame(l_data,
+                      columns=["scene", "interaction", "num_point", "gif_left", "gif_right", "order"])
+
+    df.to_csv(os.path.join(output_dir, "amt.csv"), index=False)
+
 if __name__ == '__main__':
 
-    base_dir = "/media/apacheco/Ehecatl/PLACE_comparisson/test"
+    # base_dir = "/media/apacheco/Ehecatl/PLACE_comparisson/test"
+    base_dir = "/media/dougbel/Tezcatlipoca/PLACE_trainings/test"
+
+    up_to = 10
 
     follow_up_file = opj(base_dir, 'follow_up_process.csv')
     current_follow_up_column = "num_it_auto_samples"
@@ -33,16 +73,12 @@ if __name__ == '__main__':
     random.shuffle(to_copy)
     print(to_copy)
 
-    for i in range(10):
-        env, interaction, p, it_gif, place_gif = to_copy[i]
+    copy_files_selected(to_copy, output_dir, limit_sup=up_to)
 
-        copy_it_gif = os.path.join(output_dir, env, interaction, "it", f"body_{p}_opti_down.gif" )
-        os.makedirs(os.path.dirname(copy_it_gif), exist_ok=True)
-        shutil.copyfile(it_gif, copy_it_gif)
+    generate_base_csv(to_copy, output_dir, limit_sup=up_to)
 
-        copy_place_gif = os.path.join(output_dir, env, interaction, "place", f"body_{p}_opti_down.gif")
-        os.makedirs(os.path.dirname(copy_place_gif), exist_ok=True)
-        shutil.copyfile(place_gif, copy_place_gif)
+
+
 
 
 
