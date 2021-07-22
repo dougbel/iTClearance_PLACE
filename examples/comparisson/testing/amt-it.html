@@ -1,0 +1,46 @@
+<!-- You must include this JavaScript file -->
+<script src="https://assets.crowd.aws/crowd-html-elements.js"></script>
+
+<!-- For the full list of available Crowd HTML Elements and their input/output documentation,
+      please refer to https://docs.aws.amazon.com/sagemaker/latest/dg/sms-ui-template-reference.html -->
+
+<!-- You must include crowd-form so that your task submits answers to MTurk -->
+<crowd-form answer-format="flatten-objects">
+
+    <!-- The crowd-classifier element will create a tool for the Worker to select the
+           correct answer to your question -->
+    <crowd-classifier
+      name="equal"
+      categories="['Strongly agree', 'Agree', 'Neither agree nor disagree', 'Disagree', 'Stringly disagree']"
+      header="Guideline: The human is interacting very naturally with the scene. What is your opinion?"
+    >
+        <classification-target>
+            <div>
+                <p>
+<!--                    <img class="gif-images" src="https://amt-it-place.s3.eu-west-2.amazonaws.com/it-place/${gif_left}" />-->
+                    <img class="gif-images" src="./output/17DRP5sb8fy-bedroom/sitting_hands_on_device/it/body_1_opti_down.gif" />
+                </p>
+	    </div>
+
+      </classification-target>
+
+       <!-- Use the short-instructions section for quick instructions that the Worker
+              will see while working on the task. Including some basic examples of
+              good and bad answers here can help get good results. You can include
+              any HTML here. -->
+        <short-instructions>
+        Are these two items the same?
+      </short-instructions>
+
+      <!-- Use the full-instructions section for more detailed instructions that the
+            Worker can open while working on the task. Including more detailed
+            instructions and additional examples of good and bad answers here can
+            help get good results. You can include any HTML here. -->
+      <full-instructions>
+        <p>Read the task carefully and inspect the items.</p>
+        <p>Select whether the two items are the same.</p>
+        <p>If you're not sure, select Cannot Determine.</p>
+      </full-instructions>
+
+    </crowd-classifier>
+</crowd-form>
