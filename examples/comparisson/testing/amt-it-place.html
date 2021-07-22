@@ -25,15 +25,25 @@ return ok
       justify-content: center;
       margin: auto;
   	}
-    .claim {
+    .guideline {
       max-width: 1400px;
-      padding: 20px;
+      padding-top: 5px;
+      padding-left: 20px;
+      padding-right: 20px;
+      padding-bottom: 10px;
       /*border:1px solid black;*/
+  	}
+    .detailed_guideline {
+      float: right;
+      background-color: lightyellow;
+      border: 2px solid yellow;
+      text-decoration-color: white;
+
   	}
   	.gif-container {
       display: flex;
       flex-wrap: nowrap;
-      justify-content: center;
+      /*justify-content: center;*/
       margin: auto;
   	}
   	.left-container {
@@ -78,13 +88,22 @@ return ok
         object-fit: cover;
     }
     #question {
-  	    padding-top: 30px;
+        max-width: 780px;
+  	    margin-top: 20px;
+        margin-left: auto;
+        margin-right: auto;
         text-align: center;
+        padding-top: 5px;
+        background-color: rgb(241, 255, 250);
+        border: 2px solid rgb(0, 187, 115);
   	}
 
     @media all and (max-width: 980px) {
-
+      .detailed_guideline {
+        float: none;
+      }
       .gif-container {
+        padding-top: 20px;
         display: flex;
         flex-wrap: wrap;
         flex-direction: column;
@@ -121,9 +140,70 @@ return ok
 <crowd-form answer-format="flatten-objects" onsubmit="return run_this_function()">
   <div id="errorBox"></div>
   <div class="body">
-    <div class="claim">
-      <b>Claim:</b> Two examples of human interaction are presented.
+
+
+
+
+    <div class="guideline">
+      <b>Guideline:</b> Two examples of human-scene interaction are presented in the next images.
+
+      <span class="detailed_guideline">
+      <crowd-instructions link-text="View detailed guideline" link-type="link">
+        <short-summary>
+          <p>
+            Two examples of human-scene interaction are presented in the next images. Which example is more natural and physically plausible?
+          </p>
+        </short-summary>
+        <detailed-instructions>
+          <p>
+            Imagine that you observe a pair of humans interacting with an environment like the one presented in the images.
+            When observing both human interactions with the scene, you must decide which is more naturally and physically plausible.
+            <br/>
+            You can solve it by pondering the following support questions:
+            <ul>
+                <li><b>Is it affordable to interact with the environment in that way? </b><br>
+                You should not use social biases like "Tables are not for humans to be sitting" or "He should not be standing up on the bed" or "The floor of a room is only for standing and walking, not for laying".
+                </li>
+                <li><b>Is this a possible situation?</b><br>
+                When we perform actions in an environment, physical rules apply to such interaction; for example, we can not walk through a solid wall or be standing up at the ceiling of a room.
+                </li>
+            </ul>
+          </p>
+        </detailed-instructions>
+        <positive-example>
+		    Naturally and physically plausible examples
+            <p>
+<!--                <img src="https://amt-it-place.s3.eu-west-2.amazonaws.com/examples/physically_plaussible_optim.gif"/>-->
+                <img src="../../../images/amt_physically_plaussible_optim.gif"/>
+
+            </p>
+		    <p>
+                This interaction:
+		    	<ul>
+		    		<li>Show a human sitting on the environment correctly</li>
+		    		<li>Interaction is physically possible and valid</li>
+		    	</ul>
+		    </p>
+		  </positive-example>
+		  <negative-example>
+            NO physically plausible examples
+            <p>
+<!--                            <img src="https://amt-it-place.s3.eu-west-2.amazonaws.com/examples/NO_physically_plaussible_optim.gif"/>-->
+                <img src="../../../images/amt_NO_physically_plaussible_optim.gif"/>
+
+            </p>
+            <p>
+              This interaction:
+		    	<ul>
+		    		<li>Shows a human human interaction no physically plausible</li>
+		    		<li>Not affordable interact with the environment this way </li>
+		    	</ul>
+            </p>
+		  </negative-example>
+      </crowd-instructions>
+    </span>
     </div>
+
 
     <div class="gif-container">
        <div class="left-container">
@@ -134,13 +214,13 @@ return ok
        <div id="vertical-separator"></div>
        <div class="right-container">
          <div class="fancy-text">Example 2</div>
-<!--         <img  class="gif-images" src="https://amt-it-place.s3.eu-west-2.amazonaws.com/it-place/${gif_right}" />         -->
+<!--         <img  class="gif-images" src="https://amt-it-place.s3.eu-west-2.amazonaws.com/it-place/${gif_right}" />-->
          <img  class="gif-images" src="./output/17DRP5sb8fy-bedroom/sitting_hands_on_device/place/body_1_opt2.gif" />
        </div>
     </div>
 
     <div id="question">
-      <h3>Which example is more natural and physically plausible?</h3>
+      <b>Which example is more natural and physically plausible?</b><br/>
       <crowd-radio-group>
         <crowd-radio-button name="example1">Example 1</crowd-radio-button>
         <crowd-radio-button name="example2">Example 2</crowd-radio-button>
