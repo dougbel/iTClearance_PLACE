@@ -1,46 +1,238 @@
 <!-- You must include this JavaScript file -->
 <script src="https://assets.crowd.aws/crowd-html-elements.js"></script>
 
+
+<script>
+    function run_this_function() {
+        ok = false
+        if (!(document.getElementsByName("strongly_agree")[0].getAttribute("aria-checked") == "true" ||
+            document.getElementsByName("agree")[0].getAttribute("aria-checked") == "true" ||
+            document.getElementsByName("neither")[0].getAttribute("aria-checked") == "true" ||
+            document.getElementsByName("disagree")[0].getAttribute("aria-checked") == "true" ||
+            document.getElementsByName("strongly_disagree")[0].getAttribute("aria-checked") == "true")) {
+            errorBox.innerHTML = '<crowd-alert type="error" dismissible>You must select one option.</crowd-alert>';
+            errorBox.scrollIntoView();
+        } else
+            ok = true
+        return ok
+    }
+</script>
 <!-- For the full list of available Crowd HTML Elements and their input/output documentation,
       please refer to https://docs.aws.amazon.com/sagemaker/latest/dg/sms-ui-template-reference.html -->
+<style>
+    .body {
+        padding-top: 10px;
+        /*padding-bottom: 20px;*/
+        /*border:1px solid black;*/
+        max-width: 1400px;
+        justify-content: center;
+        margin: auto;
+    }
+
+    .claim {
+        font-size: large;
+    }
+
+    .detailed_guideline {
+        float: right;
+        background-color: lightyellow;
+        border: 2px solid yellow;
+        text-decoration-color: white;
+
+    }
+
+    .gif-container {
+        display: flex;
+        flex-wrap: nowrap;
+        /*justify-content: center;*/
+        margin: auto;
+    }
+
+    .left-container {
+        margin-top: 20px;
+        padding-left: 10px;
+        padding-right: 20px;
+        /*border:1px solid black;*/
+    }
+
+    .right-container {
+        margin-top: 20px;
+        padding-left: 20px;
+        padding-right: 10px;
+        /*border:1px solid black;*/
+    }
+
+    .submit-button {
+        text-align: right;
+        display: block;
+        /*margin-right: 30px;*/
+        margin-top: 50px;
+        padding-bottom: 30px;
+    }
+
+    .gif-images {
+        width: 45vw;
+        max-width: 640px;
+        min-width: 200px;
+    }
+
+    img {
+        object-fit: cover;
+    }
+
+    #question {
+        max-width: 780px;
+        margin-top: 20px;
+        margin-left: auto;
+        margin-right: auto;
+        text-align: center;
+        padding-top: 5px;
+        background-color: rgb(241, 255, 250);
+        border: 2px solid rgb(0, 187, 115);
+    }
+
+    .options {
+        padding-left: 70px;
+        text-align: left;
+    }
+
+    @media all and (max-width: 980px) {
+        .detailed_guideline {
+            float: none;
+        }
+
+        .gif-container {
+            padding-top: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            flex-direction: column;
+        }
+
+        .left-container {
+            padding: initial;
+            padding-bottom: 20px;
+            margin: auto;
+            text-align: center;
+        }
+
+        .right-container {
+            padding: initial;
+            margin: auto;
+            padding-top: 0px;
+        }
+
+        .gif-images {
+            width: 90vw;
+            max-width: 640px;
+            min-width: 200px;
+
+        }
+    }
+
+
+</style>
+
 
 <!-- You must include crowd-form so that your task submits answers to MTurk -->
-<crowd-form answer-format="flatten-objects">
+<crowd-form answer-format="flatten-objects" onsubmit="return run_this_function()">
+    <div id="errorBox"></div>
+    <div class="body">
+        <div class="gif-container">
+            <div class="left-container">
+                <!--         <img class="gif-images" src="https://amt-it-place.s3.eu-west-2.amazonaws.com/it-place/${gif_left}" />-->
+                <img class="gif-images"
+                     src="./output/17DRP5sb8fy-bedroom/sitting_hands_on_device/it/body_1_opti_down.gif"/>
+            </div>
+            <div class="right-container">
+                <span class="detailed_guideline">
+                  <crowd-instructions link-text="View detailed guideline" link-type="link">
+                    <short-summary>
+                      <p>
+                        A human-scene interaction is presented in the image. Is the <b>human</b> interacting <b>very naturally</b> with the scene?
+                      </p>
+                    </short-summary>
+                    <detailed-instructions>
+                      <p>
+                        Imagine that you observe a human interacting with the environment as presented in the image. You must decide if such interaction could be considered very natural.
+                        <br/>
+                        You can decide it by pondering the following support questions:
+                        <ul>
+                            <li><b>Is it affordable to interact with the environment in that way? </b><br/><br/>
+                                You <b>should not use social biases</b> like "Tables are not for humans to be sitting" or "He should not be standing up on the bed" or "The floor of a room is only for standing and walking, not for laying".<br/><br/>
+                            </li>
+                            <li><b>Is this a possible situation?</b><br><br/>
+                            When we perform actions in an environment, physical rules apply to such interaction; for example, we can not walk through a solid wall or be standing up at the ceiling of a room.
+                            </li>
+                        </ul>
+                        </p>
+                    </detailed-instructions>
+                    <positive-example>
+                        Very natual interaction
+                        <p>
+                <!--                <img src="https://amt-it-place.s3.eu-west-2.amazonaws.com/examples/physically_plaussible_optim.gif"/>-->
+                            <img src="../../../images/amt_physically_plaussible_optim.gif"/>
 
-    <!-- The crowd-classifier element will create a tool for the Worker to select the
-           correct answer to your question -->
-    <crowd-classifier
-      name="equal"
-      categories="['Strongly agree', 'Agree', 'Neither agree nor disagree', 'Disagree', 'Stringly disagree']"
-      header="Guideline: The human is interacting very naturally with the scene. What is your opinion?"
-    >
-        <classification-target>
-            <div>
-                <p>
-<!--                    <img class="gif-images" src="https://amt-it-place.s3.eu-west-2.amazonaws.com/it-place/${gif_left}" />-->
-                    <img class="gif-images" src="./output/17DRP5sb8fy-bedroom/sitting_hands_on_device/it/body_1_opti_down.gif" />
-                </p>
-	    </div>
+                        </p>
+                        <p>
+                            This interaction:
+                            <ul>
+                                <li>Show a human sitting on the environment correctly</li>
+                                <li>Interaction is physically plausible, then natural </li>
+                            </ul>
+                        </p>
+                      </positive-example>
+                      <negative-example>
+                        Not natural interaction
+                        <p>
+                <!--                            <img src="https://amt-it-place.s3.eu-west-2.amazonaws.com/examples/NO_physically_plaussible_optim.gif"/>-->
+                            <img src="../../../images/amt_NO_physically_plaussible_optim.gif"/>
 
-      </classification-target>
+                        </p>
+                        <p>
+                          This interaction:
+                            <ul>
+                                <li>Shows an interaction no physically plausible, then not natural</li>
+                                <li>It is not affordable interact with the environment this way </li>
+                            </ul>
+                          </p>
+                      </negative-example>
+                  </crowd-instructions>
+                </span>
+                <span class="claim">
+                    <p>
+                    <b>Claim:</b>
+                    </p>
+                    <p>
+                        The <b>human</b> is interacting <b>very naturally</b> with the scene.
+                    </p>
+                    <br/>
+                    <p>
+                    <b>What is your opinion?</b>
+                    </p>
 
-       <!-- Use the short-instructions section for quick instructions that the Worker
-              will see while working on the task. Including some basic examples of
-              good and bad answers here can help get good results. You can include
-              any HTML here. -->
-        <short-instructions>
-        Are these two items the same?
-      </short-instructions>
+                </span>
+                <div id="question">
+                    <div class="options">
+                        <crowd-radio-group>
+                            <crowd-radio-button name="strongly_agree">5. Strongly agree</crowd-radio-button>
+                            <br/>
+                            <crowd-radio-button name="agree">4. Agree</crowd-radio-button>
+                            <br/>
+                            <crowd-radio-button name="neither">3. Neither agree nor disagree</crowd-radio-button>
+                            <br/>
+                            <crowd-radio-button name="disagree">2. Disagree</crowd-radio-button>
+                            <br/>
+                            <crowd-radio-button name="strongly_disagree">1. Strongly disagree</crowd-radio-button>
+                        </crowd-radio-group>
+                    </div>
+                </div>
+                <crowd-button form-action="submit" class="submit-button" variant="primary">
+                    Submit
+                    <iron-icon icon="icons:thumb-up"/>
+                </crowd-button>
+            </div>
+        </div>
 
-      <!-- Use the full-instructions section for more detailed instructions that the
-            Worker can open while working on the task. Including more detailed
-            instructions and additional examples of good and bad answers here can
-            help get good results. You can include any HTML here. -->
-      <full-instructions>
-        <p>Read the task carefully and inspect the items.</p>
-        <p>Select whether the two items are the same.</p>
-        <p>If you're not sure, select Cannot Determine.</p>
-      </full-instructions>
 
-    </crowd-classifier>
+    </div>
 </crowd-form>
