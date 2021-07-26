@@ -31,13 +31,11 @@
 
     .claim {
         font-size: large;
+        margin-top: 40px;
     }
 
     .detailed_guideline {
-        float: right;
-        background-color: lightyellow;
-        border: 2px solid yellow;
-        text-decoration-color: white;
+        text-align: end;
 
     }
 
@@ -144,73 +142,75 @@
                      src="./output/17DRP5sb8fy-bedroom/sitting_hands_on_device/it/body_1_opti_down.gif"/>
             </div>
             <div class="right-container">
-                <span class="detailed_guideline">
-                  <crowd-instructions link-text="View detailed guideline" link-type="link">
-                    <short-summary>
-                      <p>
-                        A human-scene interaction is presented in the image. Is the <b>human</b> interacting <b>very naturally</b> with the scene?
-                      </p>
-                    </short-summary>
-                    <detailed-instructions>
-                      <p>
-                        Imagine that you observe a human interacting with the environment as presented in the image. You must decide if such interaction could be considered very natural.
-                        <br/>
-                        You can decide it by pondering the following support questions:
-                        <ul>
-                            <li><b>Is it affordable to interact with the environment in that way? </b><br/><br/>
-                                You <b>should not use social biases</b> like "Tables are not for humans to be sitting" or "He should not be standing up on the bed" or "The floor of a room is only for standing and walking, not for laying".<br/><br/>
-                            </li>
-                            <li><b>Is this a possible situation?</b><br><br/>
-                            When we perform actions in an environment, physical rules apply to such interaction; for example, we can not walk through a solid wall or be standing up at the ceiling of a room.
-                            </li>
-                        </ul>
-                        </p>
-                    </detailed-instructions>
-                    <positive-example>
-                        Very natual interaction
-                        <p>
-                <!--                <img src="https://amt-it-place.s3.eu-west-2.amazonaws.com/examples/physically_plaussible_optim.gif"/>-->
-                            <img src="../../../images/amt_physically_plaussible_optim.gif"/>
-
-                        </p>
-                        <p>
-                            This interaction:
+                <div class="detailed_guideline">
+                    <crowd-instructions link-text="Detailed instructions" link-type="button">
+                        <short-summary>
+                            <p>
+                                A human-scene interaction is presented in the image. Is the <b>human</b> interacting <b>very
+                                naturally</b> with the scene?
+                            </p>
+                        </short-summary>
+                        <detailed-instructions>
+                            <p>
+                                Imagine that you observe a human interacting with the environment as presented in the
+                                image. You must decide if such interaction could be considered very natural.
+                                <br/>
+                                You can decide it by pondering the following support questions:
                             <ul>
-                                <li>Show a human sitting on the environment correctly</li>
-                                <li>Interaction is physically plausible, then natural </li>
+                                <li><b>Is it affordable to interact with the environment in that way? </b><br/><br/>
+                                    You <b>should not use social biases</b> like "Tables are not for humans to be
+                                    sitting" or "He should not be standing up on the bed" or "The floor of a room is
+                                    only for standing and walking, not for laying".<br/><br/>
+                                </li>
+                                <li><b>Is this a possible situation?</b><br><br/>
+                                    When we perform actions in an environment, physical rules apply to such
+                                    interactions.
+                                    For example, we can not walk through a solid wall nor stand up at a room's ceiling.
+                                </li>
                             </ul>
-                        </p>
-                      </positive-example>
-                      <negative-example>
-                        Not natural interaction
-                        <p>
-                <!--                            <img src="https://amt-it-place.s3.eu-west-2.amazonaws.com/examples/NO_physically_plaussible_optim.gif"/>-->
-                            <img src="../../../images/amt_NO_physically_plaussible_optim.gif"/>
+                            </p>
+                        </detailed-instructions>
+                        <positive-example>
+                            Very natual interaction
+                            <p>
+                                <!--                <img src="https://amt-it-place.s3.eu-west-2.amazonaws.com/examples/physically_plaussible_optim.gif"/>-->
+                                <img src="../../../images/amt_physically_plaussible_optim.gif"/>
 
-                        </p>
-                        <p>
-                          This interaction:
+                            </p>
+                            <p>
+                                This interaction:
+                                <ul>
+                                    <li>Show a human sitting on the environment correctly</li>
+                                    <li>Interaction is  physically plausible and valid, then natural</li>
+                                </ul>
+                            </p>
+                        </positive-example>
+                        <negative-example>
+                            Not natural interaction
+                            <p>
+                                <!--                            <img src="https://amt-it-place.s3.eu-west-2.amazonaws.com/examples/NO_physically_plaussible_optim.gif"/>-->
+                                <img src="../../../images/amt_NO_physically_plaussible_optim.gif"/>
+
+                            </p>
+                            <p>
+                                This interaction:
                             <ul>
                                 <li>Shows an interaction no physically plausible, then not natural</li>
-                                <li>It is not affordable interact with the environment this way </li>
+                                <li>It is not affordable interact with the environment this way</li>
                             </ul>
-                          </p>
-                      </negative-example>
-                  </crowd-instructions>
-                </span>
-                <span class="claim">
+                            </p>
+                        </negative-example>
+                    </crowd-instructions>
+                </div>
+                <div class="claim">
                     <p>
-                    <b>Claim:</b>
+                        <b>Claim</b>: The <b>human</b> is interacting <b>very naturally</b> with the scene.
                     </p>
                     <p>
-                        The <b>human</b> is interacting <b>very naturally</b> with the scene.
-                    </p>
-                    <br/>
-                    <p>
-                    <b>What is your opinion?</b>
+                        <b>What is your opinion?</b>
                     </p>
 
-                </span>
+                </div>
                 <div id="question">
                     <div class="options">
                         <crowd-radio-group>

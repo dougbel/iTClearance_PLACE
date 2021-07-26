@@ -26,19 +26,20 @@
     }
 
     .guideline {
+        display: flex;
         max-width: 1400px;
         padding-top: 5px;
         padding-left: 20px;
         padding-right: 70px;
         padding-bottom: 10px;
-        /*border:1px solid black;*/
+        /* border: 1px solid black; */
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
     }
 
     .detailed_guideline {
-        float: right;
-        background-color: lightyellow;
-        border: 2px solid yellow;
-        text-decoration-color: white;
+        margin-left: auto;
 
     }
 
@@ -65,7 +66,7 @@
 
     .fancy-text {
         background-color: rgb(241, 250, 255);
-        border: 2px solid rgb(0, 115, 187);
+        border: 2px solid rgb(110, 225, 255);
         font-weight: bold;
         width: 50%;
         padding: 5px;
@@ -152,63 +153,70 @@
 
 
         <div class="guideline">
-            <b>Guideline:</b> Two examples of human-scene interaction are presented in the images.
 
-            <span class="detailed_guideline">
-              <crowd-instructions link-text="View detailed guideline" link-type="link">
-                <short-summary>
-                  <p>
-                    Two examples of human-scene interaction are presented in the next images. Which example is more natural and physically plausible?
-                  </p>
-                </short-summary>
-                <detailed-instructions>
-                  <p>
-                    Imagine that you observe a pair of humans interacting in an environment like the one presented in the images.
-                    When observing both presented human interactions, you must decide which one is more naturally and physically plausible.
-                    <br/>
-                    You can solve it by pondering the following support questions:
-                    <ul>
-                        <li><b>Is it affordable to interact with the environment in that way? </b><br><br>
-                            You <b>should not use social biases</b> like "Tables are not for humans to be sitting" or "He should not be standing up on the bed" or "The floor of a room is only for standing and walking, not for laying".<br><br>
-                        </li>
-                        <li><b>Is this a possible situation?</b><br><br>
-                        When we perform actions in an environment, physical rules apply to such interaction; for example, we can not walk through a solid wall or be standing up at the ceiling of a room.
-                        </li>
-                    </ul>
-                    </p>
-                </detailed-instructions>
-                <positive-example>
-                    Naturally and physically plausible examples
-                    <p>
-        <!--                <img src="https://amt-it-place.s3.eu-west-2.amazonaws.com/examples/physically_plaussible_optim.gif"/>-->
-                        <img src="../../../images/amt_physically_plaussible_optim.gif"/>
+            <div><b>Guideline:</b> Two examples of human-scene interaction are presented in the images.</div>
 
-                    </p>
-                    <p>
-                        This interaction:
+            <div class="detailed_guideline">
+                <crowd-instructions link-text="Detailed instructions" link-type="button">
+                    <short-summary>
+                        <p>
+                            Two examples of human-scene interaction are presented in the next images. Which example is
+                            more natural?
+                        </p>
+                    </short-summary>
+                    <detailed-instructions>
+                        <p>
+                            Imagine that you observe a pair of humans interacting with an environment like the one
+                            presented in the images.
+                            When observing both presented human interactions, you must decide which one is more
+                            natural.
+                            <br/>
+                            You can solve it by pondering the following support questions:
                         <ul>
-                            <li>Show a human sitting on the environment correctly</li>
-                            <li>Interaction is physically possible and valid</li>
+                            <li><b>Is it possible to interact with the environment in that way? </b><br><br>
+                                You <b>should not use social biases</b> like "Tables are not for humans to be sitting"
+                                or "He should not be standing up on the bed" or "The floor of a room is only for
+                                standing and walking, not for laying".<br><br>
+                            </li>
+                            <li><b>Is this a possible situation?</b><br><br>
+                                When we perform actions in an environment, physical rules apply to such interactions.
+                                For example, we can not walk through a solid wall nor stand up at a room's ceiling.
+                            </li>
                         </ul>
-                    </p>
-                  </positive-example>
-                  <negative-example>
-                    NO physically plausible examples
-                    <p>
-        <!--                            <img src="https://amt-it-place.s3.eu-west-2.amazonaws.com/examples/NO_physically_plaussible_optim.gif"/>-->
-                        <img src="../../../images/amt_NO_physically_plaussible_optim.gif"/>
+                        </p>
+                    </detailed-instructions>
+                    <positive-example>
+                        Natural interaction examples
+                        <p>
+                            <!--                <img src="https://amt-it-place.s3.eu-west-2.amazonaws.com/examples/physically_plaussible_optim.gif"/>-->
+                            <img src="../../../images/amt_physically_plaussible_optim.gif"/>
 
-                    </p>
-                    <p>
-                      This interaction:
+                        </p>
+                        <p>
+                            This interaction:
+                            <ul>
+                                <li>Show a human sitting on the environment correctly</li>
+                                <li>Interaction is  physically plausible and valid, then natural</li>
+                            </ul>
+                        </p>
+                    </positive-example>
+                    <negative-example>
+                        NO natural interaction examples
+                        <p>
+                            <!--                            <img src="https://amt-it-place.s3.eu-west-2.amazonaws.com/examples/NO_physically_plaussible_optim.gif"/>-->
+                            <img src="../../../images/amt_NO_physically_plaussible_optim.gif"/>
+
+                        </p>
+                        <p>
+                            This interaction:
                         <ul>
-                            <li>Shows a human human interaction no physically plausible</li>
-                            <li>Not affordable interact with the environment this way </li>
+                            <li>Shows a human-scene interaction no physically plausible, then not natural</li>
+                            <li>It is not possible interact with the environment this way</li>
                         </ul>
-                      </p>
-                  </negative-example>
-              </crowd-instructions>
-          </span>
+                        </p>
+                    </negative-example>
+                </crowd-instructions>
+            </div>
         </div>
 
 
@@ -229,7 +237,7 @@
         </div>
 
         <div id="question">
-            <b>Which example is more natural and physically plausible?</b><br/>
+            <b>Which example is more natural?</b><br/>
             <crowd-radio-group>
                 <crowd-radio-button name="example1">Example 1</crowd-radio-button>
                 <crowd-radio-button name="example2">Example 2</crowd-radio-button>
