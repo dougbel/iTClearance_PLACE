@@ -83,6 +83,7 @@ class SelectorITClearanceReferencePoint:
 
         self.vedo_body = vedo_body
         self.vedo_env = vedo_env
+        self.vedo_env.backFaceCulling(True)
         self.vedo_ibs = vedo_ibs
         self.provenance_vectors = provenance_vectors
 
@@ -90,6 +91,7 @@ class SelectorITClearanceReferencePoint:
 
         self.vedo_testing_point = None
         self.np_testing_point = None
+        self.vedo_reference_arrow = None
 
     def select_reference_point_to_train(self):
         self.vp = vedo.Plotter(bg="white",size=(800,600), axes=9)
@@ -109,6 +111,9 @@ class SelectorITClearanceReferencePoint:
         if self.activated:
             if self.vedo_testing_point is not None:
                 self.vp.clear(self.vedo_testing_point)
+            if self.vedo_reference_arrow is not None:
+                self.vp.clear(self.vedo_reference_arrow)
+                self.vedo_reference_arrow = None
 
             self.np_testing_point = np.asarray(mesh.picked3d)
 
@@ -125,6 +130,14 @@ class SelectorITClearanceReferencePoint:
             else:
                 self.vp.clear(self.txt_enable)
                 self.vp.add(self.txt_disable)
+        if key == 'x':
+            if self.vedo_reference_arrow is not None:
+                self.vp.clear(self.vedo_reference_arrow)
+                self.vedo_reference_arrow = None
+            else:
+                if self.np_testing_point is not None:
+                    self.vedo_reference_arrow = vedo.Arrow(self.np_testing_point, self.np_testing_point+[0,0,2], s=0.001)
+                    self.vp.add(self.vedo_reference_arrow)
 
 
 

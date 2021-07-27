@@ -1,8 +1,12 @@
 """I moved some milimeters up some training cause the gap between the bodies and teh environment was so small for a
 cosidered GOD TRAINING, then a training process is performed one more time """
+
+
 import json
 import os
+from os.path import join as opj
 
+import numpy as np
 from vedo import Lines, Spheres, Text2D
 from vedo.utils import flatten
 
@@ -18,32 +22,48 @@ from it_clearance.training.trainer import TrainerClearance
 from it_clearance.utils import get_vtk_items_cv_pv
 from util.util_interactive import SelectorITClearanceReferencePoint
 from util.util_mesh import find_yaw_to_align_XY_OBB_with_BB
+from util.util_proxd import get_vertices_from_body_params, translate_smplx_body, load_smplx_model, rotate_smplx_body, \
+    load_vposer_model
 
 if __name__ == "__main__":
 
-    descriptors_dir = "output/descriptors_repository"
+    interaction= "sitting_looking_to_right"
+
+    datasets_dir = "/home/dougbel/Documents/UoB/5th_semestre/to_test/place_comparisson/data"
+
+    smplx_model_path = opj(datasets_dir, "pretrained_place", "body_models", "smpl")
+    vposer_model_path = opj(datasets_dir, "pretrained_place", "body_models", "vposer_v1_0")
+
+    descriptors_dir = "output/descriptors_repository_v2"
 
     env_file = None
     obj_file = None
-    # ibs_file = None
     json_training_file = None
-    for descriptor in os.listdir(descriptors_dir):
-        sub_dir = os.path.join(descriptors_dir, descriptor)
-        for file_name in os.listdir(sub_dir):
-            if "_environment.ply" in file_name:
-                env_file = os.path.join(sub_dir, file_name)
-            if "_object.ply" in file_name:
-                obj_file = os.path.join(sub_dir, file_name)
-            # if '_ibs_mesh_segmented.ply'  in file_name:
-            #     ibs_file = os.path.join(sub_dir, file_name)
-            if ".json" in file_name:
-                json_training_file = os.path.join(sub_dir, file_name)
+    np_body_params_file = None
 
+    interactions = os.listdir(descriptors_dir)
+    interactions.sort()
+
+    for descriptor in interactions:
+        if interaction is not None and descriptor != interaction:
+            continue
+
+        sub_dir = opj(descriptors_dir, descriptor)
+
+        obj_file_name = [f for f in os.listdir(opj(descriptors_dir, descriptor)) if f.endswith("_object.ply")][0]
+
+        prefix_file_name = obj_file_name[:obj_file_name.find("_object.ply")]
+
+        obj_file = opj(sub_dir, prefix_file_name + "_object.ply")
+        env_file = opj(sub_dir, prefix_file_name + "_environment.ply")
+        json_training_file = opj(sub_dir, prefix_file_name + ".json")
+        np_body_params_file = opj(sub_dir, prefix_file_name + "_smplx_body_params.npy")
 
         print("Fixing ", descriptor)
         print("environment ", env_file)
         print("object ", obj_file)
         print("json_training_file ", json_training_file)
+        print("np_body_params_file ", np_body_params_file)
 
         import vedo
         import trimesh
@@ -85,9 +105,17 @@ if __name__ == "__main__":
         trimesh_obj.apply_translation(-selected_p)
 
         rot_angle_1 = find_yaw_to_align_XY_OBB_with_BB(trimesh_env)
-        # rot_scn = scene.copy(include_cache=True)
         trimesh_env.apply_transform(trimesh.transformations.euler_matrix(0, 0, rot_angle_1, axes='rxyz'))
         trimesh_obj.apply_transform(trimesh.transformations.euler_matrix(0, 0, rot_angle_1, axes='rxyz'))
+
+        np_body_params = np.load(np_body_params_file)
+        smplx_model = load_smplx_model(smplx_model_path, train_data["extra"]["body_gender"])
+        np_body_params = translate_smplx_body(np_body_params, smplx_model, -selected_p)
+        np_body_params = rotate_smplx_body(np_body_params, smplx_model, rot_angle_1)
+
+        train_data["extra"]["transform_for_training"] = {"reference_point": list(selected_p),
+                                                       "XY_alignment_Z_rotation": rot_angle_1}
+
 
         affordance_name = train_data['affordance_name']
         env_name = train_data['env_name']
@@ -134,13 +162,29 @@ if __name__ == "__main__":
         output_subdir += cv_sampler.__class__.__name__ + "_" + str(cv_sampler.sample_size)
 
 
+        # #########    SAVING    ###############
+
         print( "Saving")
-        SaverClearance(affordance_name, env_name, obj_name, agglomerator,
+        saver = SaverClearance(affordance_name, env_name, obj_name, agglomerator,
                        max_distances, ibs_calculator, trimesh_obj, output_subdir)
+
+        with open(opj(saver.output_dir, affordance_name, prefix_file_name + ".json"), 'w') as fp:
+            json.dump(train_data, fp, indent=4, sort_keys=True)
+
+        np.save(opj(saver.output_dir, affordance_name, prefix_file_name + "_smplx_body_params.npy"), np_body_params)
+
+
+        # #########    VISUALISATION    ###############
 
         vedo_items = get_vtk_items_cv_pv(trainer.pv_points, trainer.pv_vectors, trainer.cv_points, trainer.cv_vectors,
                                          trimesh_obj=trimesh_obj,
                                          trimesh_ibs=tri_mesh_ibs_segmented)
+
+        vposer_model = load_vposer_model(vposer_model_path)
+        np_body_verts_sample = get_vertices_from_body_params(smplx_model, vposer_model, np_body_params)
+        body_trimesh_proxd = trimesh.Trimesh(np_body_verts_sample, faces=smplx_model.faces)
+        body_trimesh_proxd.visual.face_colors = [255, 255, 255, 255]
+        body_vedo_proxd = vedo.trimesh2vtk(body_trimesh_proxd)
 
 
         vp = vedo.Plotter(bg="white", size=(800, 600), axes=2)
@@ -148,5 +192,5 @@ if __name__ == "__main__":
         vedo_txt = Text2D(affordance_name, pos="top-left",
                           bg='darkblue', c="lightgray", font='Arial', s=0.8, alpha=0.9)
         vedo_env.lighting(ambient=0.8, diffuse=0.2, specular=0.1, specularPower=1, specularColor=(1, 1, 1))
-        vp.show(flatten([vedo_items, vedo_env, vedo_txt]))
+        vp.show(flatten([vedo_items, body_vedo_proxd, vedo_env, vedo_txt]))
         vp.close()
