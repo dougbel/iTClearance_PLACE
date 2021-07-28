@@ -1,9 +1,13 @@
 """I moved some milimeters up some training cause the gap between the bodies and teh environment was so small for a
 cosidered GOD TRAINING, then a training process is performed one more time """
+
+
 import json
 import os
+from os.path import join as opj
 
-from vedo import Lines, Spheres, Text2D
+import numpy as np
+from vedo import Lines, Spheres, Text2D, Arrow
 from vedo.utils import flatten
 
 from it import util
@@ -18,32 +22,48 @@ from it_clearance.training.trainer import TrainerClearance
 from it_clearance.utils import get_vtk_items_cv_pv
 from util.util_interactive import SelectorITClearanceReferencePoint
 from util.util_mesh import find_yaw_to_align_XY_OBB_with_BB
+from util.util_proxd import get_vertices_from_body_params, translate_smplx_body, load_smplx_model, rotate_smplx_body, \
+    load_vposer_model
 
 if __name__ == "__main__":
 
-    descriptors_dir = "output/descriptors_repository"
+    interaction= "walking_right_foot" # None
+
+    datasets_dir = "/home/dougbel/Documents/UoB/5th_semestre/to_test/place_comparisson/data"
+
+    smplx_model_path = opj(datasets_dir, "pretrained_place", "body_models", "smpl")
+    vposer_model_path = opj(datasets_dir, "pretrained_place", "body_models", "vposer_v1_0")
+
+    descriptors_dir = "output/descriptors_repository_v2"
 
     env_file = None
     obj_file = None
-    # ibs_file = None
     json_training_file = None
-    for descriptor in os.listdir(descriptors_dir):
-        sub_dir = os.path.join(descriptors_dir, descriptor)
-        for file_name in os.listdir(sub_dir):
-            if "_environment.ply" in file_name:
-                env_file = os.path.join(sub_dir, file_name)
-            if "_object.ply" in file_name:
-                obj_file = os.path.join(sub_dir, file_name)
-            # if '_ibs_mesh_segmented.ply'  in file_name:
-            #     ibs_file = os.path.join(sub_dir, file_name)
-            if ".json" in file_name:
-                json_training_file = os.path.join(sub_dir, file_name)
+    np_body_params_file = None
 
+    interactions = os.listdir(descriptors_dir)
+    interactions.sort()
+
+    for descriptor in interactions:
+        if interaction is not None and descriptor != interaction:
+            continue
+
+        sub_dir = opj(descriptors_dir, descriptor)
+
+        obj_file_name = [f for f in os.listdir(opj(descriptors_dir, descriptor)) if f.endswith("_object.ply")][0]
+
+        prefix_file_name = obj_file_name[:obj_file_name.find("_object.ply")]
+
+        obj_file = opj(sub_dir, prefix_file_name + "_object.ply")
+        env_file = opj(sub_dir, prefix_file_name + "_environment.ply")
+        json_training_file = opj(sub_dir, prefix_file_name + ".json")
+        np_body_params_file = opj(sub_dir, prefix_file_name + "_smplx_body_params.npy")
 
         print("Fixing ", descriptor)
         print("environment ", env_file)
         print("object ", obj_file)
         print("json_training_file ", json_training_file)
+        print("np_body_params_file ", np_body_params_file)
 
         import vedo
         import trimesh
@@ -62,36 +82,62 @@ if __name__ == "__main__":
         # vedo_ibs = vedo.trimesh2vtk(trimesh_ibs)
 
         with open(json_training_file) as f:
-            train_data = json.load(f)
-        it_descriptor = DeglomeratorClearance(sub_dir, train_data['affordance_name'], train_data['obj_name'])
-        num_cv = train_data['trainer']['cv_sampler']['sample_clearance_size']
+            old_train_data = json.load(f)
+        it_descriptor = DeglomeratorClearance(sub_dir, old_train_data['affordance_name'], old_train_data['obj_name'])
+        num_cv = old_train_data['trainer']['cv_sampler']['sample_clearance_size']
         cv_points = it_descriptor.cv_points[0:num_cv]
         cv_vectors = it_descriptor.cv_vectors[0:num_cv]
         clearance_vectors = Lines(cv_points, cv_points + cv_vectors, c='yellow', alpha=1).lighting("plastic")
         cv_from = Spheres(cv_points, r=.004, c="yellow", alpha=1).lighting("plastic")
-        num_pv = train_data['trainer']['sampler']['sample_size']
+        num_pv = old_train_data['trainer']['sampler']['sample_size']
         pv_points = it_descriptor.pv_points[0:num_pv]
         pv_vectors = it_descriptor.pv_vectors[0:num_pv]
         provenance_vectors = Lines(pv_points, pv_points + pv_vectors, c='red', alpha=1).lighting("plastic")
 
         selected_p=None
         while selected_p is None:
-            sel_gui = SelectorITClearanceReferencePoint(vedo_env, vedo_obj, provenance_vectors)
-            selected_p = sel_gui.select_reference_point_to_train()
+            # b_dir = "/media/dougbel/Tezcatlipoca/PLACE_trainings_proxd/"
+            # old_json_path = opj(b_dir, "config", "descriptors_repository", old_train_data['affordance_name'], prefix_file_name + ".json")
+            # with open(old_json_path) as f:
+            #     d = json.load(f)
+            # guess_p = np.asarray(d['extra']["transform_for_training"]["reference_point"])
 
+            sel_gui = SelectorITClearanceReferencePoint(vedo_env, vedo_obj, provenance_vectors)
+            guess_p = sel_gui.select_reference_point_to_train()
+            (closest, __, __) = trimesh_env.nearest.on_surface(np.array(guess_p).reshape(-1, 3))
+            selected_p = closest[0]
+
+            s = trimesh.Scene()
+            s.add_geometry(trimesh_env)
+            s.add_geometry(trimesh_obj)
+            s_guess = trimesh.primitives.Sphere(center=guess_p, radius=0.005)
+            s_guess.visual.face_colors = [255, 0, 255, 255]
+            s.add_geometry(s_guess)
+            s1 = trimesh.primitives.Sphere(center=selected_p, radius=.005)
+            s1.visual.face_colors = [0, 255, 0, 255]
+            s.add_geometry(s1)
+            s.show()
 
         print("Translating env and obj meshes")
         trimesh_env.apply_translation(-selected_p)
         trimesh_obj.apply_translation(-selected_p)
 
         rot_angle_1 = find_yaw_to_align_XY_OBB_with_BB(trimesh_env)
-        # rot_scn = scene.copy(include_cache=True)
         trimesh_env.apply_transform(trimesh.transformations.euler_matrix(0, 0, rot_angle_1, axes='rxyz'))
         trimesh_obj.apply_transform(trimesh.transformations.euler_matrix(0, 0, rot_angle_1, axes='rxyz'))
 
-        affordance_name = train_data['affordance_name']
-        env_name = train_data['env_name']
-        obj_name = train_data['obj_name']
+        np_body_params = np.load(np_body_params_file)
+        smplx_model = load_smplx_model(smplx_model_path, old_train_data["extra"]["body_gender"])
+        np_body_params = translate_smplx_body(np_body_params, smplx_model, -selected_p)
+        np_body_params = rotate_smplx_body(np_body_params, smplx_model, rot_angle_1)
+
+        old_train_data["extra"]["transform_for_training"] = {"reference_point": list(selected_p),
+                                                       "XY_alignment_Z_rotation": rot_angle_1}
+
+
+        affordance_name = old_train_data['affordance_name']
+        env_name = old_train_data['env_name']
+        obj_name = old_train_data['obj_name']
         influence_radio_bb = 2
         extension, middle_point = util.influence_sphere(trimesh_obj, influence_radio_bb)
         tri_mesh_env_segmented = util.slide_mesh_by_bounding_box(trimesh_env, middle_point, extension)
@@ -103,10 +149,10 @@ if __name__ == "__main__":
         # vp.close()
 
         print("Calculating IBS")
-        ibs_init_size_sampling = train_data["ibs_calculator"]["init_size_sampling"]  # 400
-        ibs_resamplings = train_data["ibs_calculator"]["resamplings"]  # 4
+        ibs_init_size_sampling = old_train_data["ibs_calculator"]["init_size_sampling"]  # 400
+        ibs_resamplings = old_train_data["ibs_calculator"]["resamplings"]  # 4
         sampler_rate_ibs_samples = 5
-        sampler_rate_generated_random_numbers = train_data["trainer"]["sampler"]["rate_generated_random_numbers"]
+        sampler_rate_generated_random_numbers = old_train_data["trainer"]["sampler"]["rate_generated_random_numbers"]
         influence_radio_ratio = 1.2
         ibs_calculator = IBSMesh(ibs_init_size_sampling, ibs_resamplings)
         ibs_calculator.execute(tri_mesh_env_segmented, trimesh_obj)
@@ -134,19 +180,42 @@ if __name__ == "__main__":
         output_subdir += cv_sampler.__class__.__name__ + "_" + str(cv_sampler.sample_size)
 
 
+        # #########    SAVING    ###############
+
         print( "Saving")
-        SaverClearance(affordance_name, env_name, obj_name, agglomerator,
+        #iT Clearance data
+        saver = SaverClearance(affordance_name, env_name, obj_name, agglomerator,
                        max_distances, ibs_calculator, trimesh_obj, output_subdir)
+
+        # adding extra information of previous steps
+        with open(opj(saver.output_dir, affordance_name, prefix_file_name + ".json"), 'r') as fp:
+            new_json_training_data = json.load(fp)
+        new_json_training_data["extra"] = old_train_data["extra"]
+        with open(opj(saver.output_dir, affordance_name, prefix_file_name + ".json"), 'w') as fp:
+            json.dump(new_json_training_data, fp, indent=4)
+
+        # saving smplx body paramaters
+        np.save(opj(saver.output_dir, affordance_name, prefix_file_name + "_smplx_body_params.npy"), np_body_params)
+
+
+        # #########    VISUALISATION    ###############
 
         vedo_items = get_vtk_items_cv_pv(trainer.pv_points, trainer.pv_vectors, trainer.cv_points, trainer.cv_vectors,
                                          trimesh_obj=trimesh_obj,
                                          trimesh_ibs=tri_mesh_ibs_segmented)
 
+        vposer_model = load_vposer_model(vposer_model_path)
+        np_body_verts_sample = get_vertices_from_body_params(smplx_model, vposer_model, np_body_params)
+        body_trimesh_proxd = trimesh.Trimesh(np_body_verts_sample, faces=smplx_model.faces)
+        body_trimesh_proxd.visual.face_colors = [255, 255, 255, 255]
+        body_vedo_proxd = vedo.trimesh2vtk(body_trimesh_proxd)
+
 
         vp = vedo.Plotter(bg="white", size=(800, 600), axes=2)
         vedo_env = vedo.trimesh2vtk(trimesh_env)
-        vedo_txt = Text2D(affordance_name, pos="top-left",
-                          bg='darkblue', c="lightgray", font='Arial', s=0.8, alpha=0.9)
+        vedo_txt = Text2D(affordance_name, pos="top-left", bg='darkblue', c="lightgray", font='Arial', s=0.8, alpha=0.9)
+        np_normal_env = np.asarray(list(map(float, new_json_training_data['trainer']["normal_env"].split(","))))
+        vedo_normal_env = Arrow([0, 0, 0], 2 * np_normal_env, c="darkorange", s=0.001)
         vedo_env.lighting(ambient=0.8, diffuse=0.2, specular=0.1, specularPower=1, specularColor=(1, 1, 1))
-        vp.show(flatten([vedo_items, vedo_env, vedo_txt]))
+        vp.show(flatten([vedo_items, body_vedo_proxd, vedo_env, vedo_normal_env, vedo_txt]))
         vp.close()
