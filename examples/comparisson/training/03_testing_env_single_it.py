@@ -19,12 +19,13 @@ if __name__ == '__main__':
     logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
     logging.info('Reading configuration interactions to test')
 
-    base_dir = "/media/dougbel/Tezcatlipoca/PLACE_trainings"
+    # base_dir = "/media/dougbel/Tezcatlipoca/PLACE_trainings"
+    base_dir = "/media/dougbel/Tezcatlipoca/PLACE_trainings_proxd/"
 
     descriptors_dir = opj(base_dir, "config", "descriptors_repository")
     testing_conf_dir= opj(base_dir, "config", "json_execution")
 
-    # trainings_to_test= os.listdir(descriptors_dir)
+    trainings_to_test= os.listdir(descriptors_dir)
     # trainings_to_test = ["walking_right_foot"]
     # trainings_to_test = ["sitting_looking_to_right"]
     # trainings_to_test = ["sitting_stool_one_foot_floor"]
@@ -37,14 +38,17 @@ if __name__ == '__main__':
     # trainings_to_test = ["standing_up"]
     # trainings_to_test = ["laying_sofa_foot_on_floor"]
     # trainings_to_test = ["standup_hand_on_furniture"]
-    trainings_to_test = ["walking_right_foot"]
+    # trainings_to_test = ["walking_right_foot"]
 
-    base_output_dir = 'output/testing_env_single/'
+    base_output_dir = opj(base_dir, "train", "testing_env_single")#'output/testing_env_single/'
 
 
     json_training_file = None
+    trainings_to_test.sort()
     for descriptor in trainings_to_test:
         sub_dir = os.path.join(descriptors_dir, descriptor)
+        print(sub_dir)
+
         for file_name in os.listdir(sub_dir):
             if ".json" in file_name:
                 json_training_file = opj(sub_dir, file_name)
@@ -59,8 +63,8 @@ if __name__ == '__main__':
         scene_name = train_data['env_name'][:train_data['env_name'].index("_")]
 
         # on artificial living room 1
-        env_file = opj(base_dir, "datasets", "prox", "scenes", scene_name + ".ply")
-        env_file_filled = opj(base_dir, "datasets", "prox", "scenes_filled", scene_name + ".ply")
+        env_file = opj(base_dir,"train", "dataset", "prox", "scenes", scene_name + ".ply")
+        env_file_filled = opj(base_dir,"train", "dataset", "prox", "scenes_filled", scene_name + ".ply")
 
 
 
