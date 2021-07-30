@@ -4,16 +4,19 @@
 
 <script>
     function run_this_function() {
-        ok = false
+        ok = true
         if (!(document.getElementsByName("strongly_agree")[0].getAttribute("aria-checked") == "true" ||
             document.getElementsByName("agree")[0].getAttribute("aria-checked") == "true" ||
             document.getElementsByName("neither")[0].getAttribute("aria-checked") == "true" ||
             document.getElementsByName("disagree")[0].getAttribute("aria-checked") == "true" ||
             document.getElementsByName("strongly_disagree")[0].getAttribute("aria-checked") == "true")) {
+
             errorBox.innerHTML = '<crowd-alert type="error" dismissible>You must select one option.</crowd-alert>';
             errorBox.scrollIntoView();
-        } else
-            ok = true
+            ok = false
+            
+        }
+
         return ok
     }
 </script>
@@ -137,9 +140,8 @@
     <div class="body">
         <div class="gif-container">
             <div class="left-container">
-                <!--         <img class="gif-images" src="https://amt-it-place.s3.eu-west-2.amazonaws.com/it-place/${gif_left}" />-->
-                <img class="gif-images"
-                     src="./output/17DRP5sb8fy-bedroom/sitting_hands_on_device/it/body_1_opti_down.gif"/>
+<!--                <img class="gif-images" src="https://amt-it-place.s3.eu-west-2.amazonaws.com/it-place/${gif_left}" />-->
+                <img class="gif-images" src="./output/very_last/17DRP5sb8fy-bedroom/walking_right_foot/it/body_1_opti_down.gif"/>
             </div>
             <div class="right-container">
                 <div class="detailed_guideline">

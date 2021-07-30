@@ -3,13 +3,18 @@
 
 <script>
     function run_this_function() {
-        ok = false
+        ok = true
         if (!(document.getElementsByName("example1")[0].getAttribute("aria-checked") == "true" ||
             document.getElementsByName("example2")[0].getAttribute("aria-checked") == "true")) {
             errorBox.innerHTML = '<crowd-alert type="error" dismissible>You must select one of the provided examples.</crowd-alert>';
             errorBox.scrollIntoView();
-        } else
-            ok = true
+            ok=false
+        }
+        // if (document.getElementsByName("reason")[0].value == "") {
+        //     errorBox.innerHTML = '<crowd-alert type="error" dismissible>You must describe briefly the reason for your selection.</crowd-alert>';
+        //     errorBox.scrollIntoView();
+        //     ok = false
+        // }
         return ok
     }
 </script>
@@ -224,15 +229,14 @@
             <div class="left-container">
                 <div class="fancy-text">Example 1</div>
                 <!--         <img class="gif-images" src="https://amt-it-place.s3.eu-west-2.amazonaws.com/it-place/${gif_left}" />-->
-                <img class="gif-images"
-                     src="./output/17DRP5sb8fy-bedroom/sitting_hands_on_device/it/body_1_opti_down.gif"/>
+                <img class="gif-images" src="./output/very_last/17DRP5sb8fy-bedroom/walking_right_foot/it/body_1_opti_down.gif"/>
+
             </div>
             <div id="vertical-separator"></div>
             <div class="right-container">
                 <div class="fancy-text">Example 2</div>
                 <!--         <img  class="gif-images" src="https://amt-it-place.s3.eu-west-2.amazonaws.com/it-place/${gif_right}" />-->
-                <img class="gif-images"
-                     src="./output/17DRP5sb8fy-bedroom/sitting_hands_on_device/place/body_1_opt2.gif"/>
+                <img class="gif-images" src="./output/very_last/17DRP5sb8fy-bedroom/walking_right_foot/place/body_1_opt2.gif"/>
             </div>
         </div>
 
@@ -243,6 +247,9 @@
                 <crowd-radio-button name="example2">Example 2</crowd-radio-button>
             </crowd-radio-group>
         </div>
+<!--        <br/>-->
+<!--        <b>Briefly state the reason for your answer:</b>-->
+<!--        <crowd-input name="reason" label="I chose that because..."></crowd-input>-->
 
         <crowd-button form-action="submit" class="submit-button" variant="primary">
             Submit
