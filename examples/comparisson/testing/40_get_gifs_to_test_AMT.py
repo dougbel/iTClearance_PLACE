@@ -37,7 +37,7 @@ def copy_files_selected(to_copy_real, to_copy_fake, output_dir):
             shutil.copyfile(real_gif, copy_real_gif)
 
 
-def generate_base_csv(to_copy_real, to_copy_fake, output_subdir):
+def generate_binary_csv(to_copy_real, to_copy_fake, output_subdir):
 
     size_batch = len(to_copy_real) + len(to_copy_fake)
 
@@ -75,7 +75,52 @@ def generate_base_csv(to_copy_real, to_copy_fake, output_subdir):
 
     df = pd.DataFrame(l_data, columns=["scene", "interaction", "num_point", "gif_left", "gif_right", "order"])
 
-    df.to_csv(os.path.join(output_subdir, "amt.csv"), index=False)
+    df.to_csv(os.path.join(output_subdir, "amt_binary.csv"), index=False)
+
+
+def generate_unary_csvs(to_copy_real, to_copy_fake, output_subdir):
+
+    size_batch = len(to_copy_real) + len(to_copy_fake)
+
+    positions_for_fake_it = np.random.randint(0, size_batch, size=len(to_copy_fake))
+    positions_for_fake_place = np.random.randint(0, size_batch, size=len(to_copy_fake))
+
+    current_fake_pos_it = 0
+    current_real_pos_it = 0
+    current_fake_pos_place = 0
+    current_real_pos_place = 0
+
+    l_it_data = []
+    l_place_data = []
+    for pos in range(size_batch):
+
+        if pos in positions_for_fake_it:
+            env, interaction, p, real_gif, fake_gif = to_copy_fake[current_fake_pos_it]
+            current_fake_pos_it += 1
+            relative_fake_gif = fake_gif[fake_gif.find(env):]
+            l_it_data.append((env, interaction, p, relative_fake_gif, "fake"))
+        else:
+            env, interaction, p, it_gif, place_gif = to_copy_real[current_real_pos_it]
+            current_real_pos_it += 1
+            relative_it_gif = it_gif[it_gif.find(env):]
+            l_it_data.append((env, interaction, p, relative_it_gif, "it"))
+
+        if pos in positions_for_fake_place:
+            env, interaction, p, real_gif, fake_gif = to_copy_fake[current_fake_pos_place]
+            current_fake_pos_place += 1
+            relative_fake_gif = fake_gif[fake_gif.find(env):]
+            l_place_data.append((env, interaction, p, relative_fake_gif, "fake"))
+        else:
+            env, interaction, p, it_gif, place_gif = to_copy_real[current_real_pos_place]
+            current_real_pos_place += 1
+            relative_place_gif = place_gif[place_gif.find(env):]
+            l_place_data.append((env, interaction, p, relative_place_gif, "place"))
+
+    df = pd.DataFrame(l_it_data, columns=["scene", "interaction", "num_point", "gif_left", "order"])
+    df.to_csv(os.path.join(output_subdir, "amt_unary_it.csv"), index=False)
+
+    df = pd.DataFrame(l_place_data, columns=["scene", "interaction", "num_point", "gif_left", "order"])
+    df.to_csv(os.path.join(output_subdir, "amt_unary_place.csv"), index=False)
 
 
 if __name__ == '__main__':
@@ -154,4 +199,6 @@ if __name__ == '__main__':
 
         copy_files_selected(to_copy_real, to_copy_fake, output_subdir)
 
-        generate_base_csv(to_copy_real, to_copy_fake, output_subdir)
+        generate_binary_csv(to_copy_real, to_copy_fake, output_subdir)
+
+        generate_unary_csvs(to_copy_real, to_copy_fake, output_subdir)
