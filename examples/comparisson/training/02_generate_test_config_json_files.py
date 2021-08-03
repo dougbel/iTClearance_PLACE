@@ -3,9 +3,10 @@ import os
 from os.path import join as opj 
 
 if __name__ == "__main__":
+    # base_dir = "/media/dougbel/Tezcatlipoca/PLACE_trainings_no_proxd"
     base_dir = "/media/dougbel/Tezcatlipoca/PLACE_trainings"
     descriptors_dir = opj(base_dir, "config", "descriptors_repository")
-    output_dir = "output/json_execution"
+    output_dir = opj(base_dir, "config","json_execution")
 
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)

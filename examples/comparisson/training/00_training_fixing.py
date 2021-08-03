@@ -27,9 +27,9 @@ from util.util_proxd import get_vertices_from_body_params, translate_smplx_body,
 
 if __name__ == "__main__":
 
-    interaction= "walking_right_foot" # None
+    interaction= "standing_up" # None
 
-    datasets_dir = "/home/dougbel/Documents/UoB/5th_semestre/to_test/place_comparisson/data"
+    datasets_dir = "/media/dougbel/Tezcatlipoca/PLACE_trainings"
 
     smplx_model_path = opj(datasets_dir, "pretrained_place", "body_models", "smpl")
     vposer_model_path = opj(datasets_dir, "pretrained_place", "body_models", "vposer_v1_0")
@@ -116,7 +116,7 @@ if __name__ == "__main__":
             s1 = trimesh.primitives.Sphere(center=selected_p, radius=.005)
             s1.visual.face_colors = [0, 255, 0, 255]
             s.add_geometry(s1)
-            s.show()
+            s.show(caption="Verifying reference point")
 
         print("Translating env and obj meshes")
         trimesh_env.apply_translation(-selected_p)

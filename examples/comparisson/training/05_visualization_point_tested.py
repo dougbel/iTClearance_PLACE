@@ -14,8 +14,9 @@ if __name__ == '__main__':
     # 'standing_up', 'standup_hand_on_furniture'
     # 'walking_left_foot']
 
-    interaction = 'reaching_out_mid_up'
+    interaction = 'walking_right_foot'
 
+    # base_dir = "/media/dougbel/Tezcatlipoca/PLACE_trainings_no_proxd"
     base_dir = "/media/dougbel/Tezcatlipoca/PLACE_trainings"
     test_results_dir = f"{base_dir}/train/testing_env_single"
 

@@ -19,13 +19,14 @@ if __name__ == '__main__':
     logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
     logging.info('Reading configuration interactions to test')
 
-    # base_dir = "/media/dougbel/Tezcatlipoca/PLACE_trainings"
-    base_dir = "/media/dougbel/Tezcatlipoca/PLACE_trainings_proxd/"
+    base_dir = "/media/dougbel/Tezcatlipoca/PLACE_trainings"
+    # base_dir = "/media/dougbel/Tezcatlipoca/PLACE_trainings_no_proxd/"
 
     descriptors_dir = opj(base_dir, "config", "descriptors_repository")
     testing_conf_dir= opj(base_dir, "config", "json_execution")
 
-    trainings_to_test= os.listdir(descriptors_dir)
+    # trainings_to_test= os.listdir(descriptors_dir)
+    trainings_to_test = ["standing_up"]
     # trainings_to_test = ["walking_right_foot"]
     # trainings_to_test = ["sitting_looking_to_right"]
     # trainings_to_test = ["sitting_stool_one_foot_floor"]

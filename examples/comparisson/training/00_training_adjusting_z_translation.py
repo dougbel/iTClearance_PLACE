@@ -16,16 +16,21 @@ if __name__ == "__main__":
 
     basis_dir = "output"
 
+    working_interaction = "standing_up" #None
+
     input_dir = f"{basis_dir}/descriptors_repository_v1"
     output_dir = f"{basis_dir}/descriptors_repository_v2"
 
-    datasets_dir = "/home/dougbel/Documents/UoB/5th_semestre/to_test/place_comparisson/data"
+    datasets_dir = "/media/dougbel/Tezcatlipoca/PLACE_trainings"
     smplx_model_path = opj(datasets_dir, "pretrained_place", "body_models", "smpl")
     vposer_model_path = opj(datasets_dir, "pretrained_place", "body_models", "vposer_v1_0")
 
     df = pd.read_csv(f"{basis_dir}/v1_to_v2_z_translation.csv", index_col=0)
 
     for interaction_name in os.listdir(input_dir):
+
+        if working_interaction is not None and interaction_name != working_interaction:
+            continue
 
         z_translation = float(df[df["interaction"]==interaction_name]["z_translation"])
 
