@@ -1,7 +1,8 @@
 import os
 import json
 from os.path import join as opj
-from viewer.point_score.ControlPointScore import ControlPointScore
+
+from ctrl.ControlPointScorePROXD import ControlPointScorePROXD
 
 if __name__ == '__main__':
 
@@ -28,6 +29,9 @@ if __name__ == '__main__':
     json_conf_execution_file = opj(base_dir, "config", "json_execution", f"single_testing_{interaction}.json")
     directory_of_prop_configs = opj(base_dir, "config", "propagators_configs")
 
+    smplx_model_path = opj(base_dir, "pretrained_place", "body_models", "smpl")
+    vposer_model_path = opj(base_dir, "pretrained_place", "body_models", "vposer_v1_0")
+
     directory_env_test_results = None
 
     for env_name in os.listdir(test_results_dir):
@@ -43,7 +47,8 @@ if __name__ == '__main__':
 
             if interaction == test_data["tester_info"]["interactions"][0]["affordance_name"]:
                 directory_env_test_results = env_test_dir
-                scores_ctrl = ControlPointScore(descriptors_dir, json_conf_execution_file,
-                                                directory_env_test_results, directory_of_prop_configs)
+                scores_ctrl = ControlPointScorePROXD(descriptors_dir, json_conf_execution_file,
+                                                     directory_env_test_results, directory_of_prop_configs,
+                                                     smplx_model_path, vposer_model_path)
                 scores_ctrl.start()
                 exit(0)
