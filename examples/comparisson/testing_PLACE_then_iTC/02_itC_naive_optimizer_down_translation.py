@@ -12,19 +12,6 @@ import it
 from it import util
 
 
-def find_files_mesh_env(datasets_dir, env_name):
-    """
-    Return directory were the mesh of an scene is present
-    """
-    datasets =['prox', "mp3d", "replica_v1"]
-    for d in datasets:
-        for scene in os.listdir(opj(datasets_dir, d, "scenes")):
-            if env_name+".ply" == scene:
-                return opj(datasets_dir, d, "scenes", scene), d
-
-
-
-
 
 if __name__ == '__main__':
 
