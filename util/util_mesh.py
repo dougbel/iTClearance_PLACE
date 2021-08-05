@@ -66,17 +66,7 @@ def read_full_mesh_sdf(dataset_path, scene_name):
     cur_scene_verts = np.asarray(scene.vertices)
 
     ## read scene sdf
-    scene_sdf_path = os.path.join(dataset_path, 'sdf')
-    with open(os.path.join(scene_sdf_path, scene_name + '.json')) as f:
-        sdf_data = json.load(f)
-        grid_min = np.array(sdf_data['min'])
-        grid_max = np.array(sdf_data['max'])
-        grid_dim = sdf_data['dim']
-    sdf = np.load(os.path.join(scene_sdf_path, scene_name + '_sdf.npy')).reshape(grid_dim, grid_dim, grid_dim)
-    s_grid_min_batch = torch.tensor(grid_min, dtype=torch.float32, device=device).unsqueeze(0).unsqueeze(1)
-    s_grid_max_batch = torch.tensor(grid_max, dtype=torch.float32, device=device).unsqueeze(0).unsqueeze(1)
-    s_sdf_batch = torch.tensor(sdf, dtype=torch.float32, device=device).unsqueeze(0)
-    s_sdf_batch = s_sdf_batch.repeat(1, 1, 1, 1)  # [1, 256, 256, 256]
+    s_grid_min_batch, s_grid_max_batch, s_sdf_batch = read_sdf(dataset_path, scene_name)
     # elif dataset == 'mp3d':
     #     scene = trimesh.load(os.path.join(dataset_path, 'scenes', scene_name + '.ply'))
     #     cur_scene_verts = np.asarray(scene.vertices)
@@ -123,6 +113,26 @@ def read_full_mesh_sdf(dataset_path, scene_name):
     #         s_grid_min_batch= s_grid_max_batch= s_sdf_batch = None
 
     return scene, cur_scene_verts, s_grid_min_batch, s_grid_max_batch, s_sdf_batch
+
+def read_sdf(dataset_path, scene_name):
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    ## read scene sdf
+    scene_sdf_path = os.path.join(dataset_path, 'sdf')
+    with open(os.path.join(scene_sdf_path, scene_name + '.json')) as f:
+        sdf_data = json.load(f)
+        grid_min = np.array(sdf_data['min'])
+        grid_max = np.array(sdf_data['max'])
+        grid_dim = sdf_data['dim']
+    sdf = np.load(os.path.join(scene_sdf_path, scene_name + '_sdf.npy')).reshape(grid_dim, grid_dim, grid_dim)
+    s_grid_min_batch = torch.tensor(grid_min, dtype=torch.float32, device=device).unsqueeze(0).unsqueeze(1)
+    s_grid_max_batch = torch.tensor(grid_max, dtype=torch.float32, device=device).unsqueeze(0).unsqueeze(1)
+    s_sdf_batch = torch.tensor(sdf, dtype=torch.float32, device=device).unsqueeze(0)
+    s_sdf_batch = s_sdf_batch.repeat(1, 1, 1, 1)  # [1, 256, 256, 256]
+
+    return s_grid_min_batch, s_grid_max_batch, s_sdf_batch
+
+
 
 def read_full_mesh(datasets_path, scene_name):
 

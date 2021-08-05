@@ -26,13 +26,14 @@ if __name__ == '__main__':
 
 
     descriptors_dir = opj(base_dir, "config", "descriptors_repository")
-    json_conf_execution_file = opj(base_dir, "config", "json_execution", f"single_testing_{interaction}.json")
-    directory_of_prop_configs = opj(base_dir, "config", "propagators_configs")
+    json_conf_execution_path = opj(base_dir, "config", "json_execution", f"single_testing_{interaction}.json")
+    prop_configs_dir = opj(base_dir, "config", "propagators_configs")
 
-    smplx_model_path = opj(base_dir, "pretrained_place", "body_models", "smpl")
-    vposer_model_path = opj(base_dir, "pretrained_place", "body_models", "vposer_v1_0")
+    smplx_model_dir = opj(base_dir, "pretrained_place", "body_models", "smpl")
+    vposer_model_dir = opj(base_dir, "pretrained_place", "body_models", "vposer_v1_0")
+    datasets_dir = opj(base_dir, "datasets_raw")
 
-    directory_env_test_results = None
+    env_test_results_dir = None
 
     for env_name in os.listdir(test_results_dir):
         env_test_dir = opj(test_results_dir, env_name)
@@ -46,9 +47,17 @@ if __name__ == '__main__':
                     break
 
             if interaction == test_data["tester_info"]["interactions"][0]["affordance_name"]:
-                directory_env_test_results = env_test_dir
-                scores_ctrl = ControlPointScorePROXD(descriptors_dir, json_conf_execution_file,
-                                                     directory_env_test_results, directory_of_prop_configs,
-                                                     smplx_model_path, vposer_model_path)
+                env_test_results_dir = env_test_dir
+
+                (dir_env, env) =os.path.split(test_data["file_env"])
+                env_tested_name = env[:-4]
+                dataset_name = dir_env.split("/")[-2]
+
+                scores_ctrl = ControlPointScorePROXD(descriptors_dir, json_conf_execution_path,
+                                                     env_test_results_dir, prop_configs_dir,
+                                                     smplx_model_dir, vposer_model_dir,
+                                                     datasets_dir,
+                                                     dataset_name,
+                                                     env_tested_name)
                 scores_ctrl.start()
                 exit(0)
