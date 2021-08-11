@@ -16,14 +16,14 @@ if __name__ == '__main__':
     test_results_dir = opj(base_dir, "train", "testing_env_single")
 
     # interaction = 'laying_bed'
-    # max_limit_score = 200
-    # max_limit_missing = 35
+    # max_limit_score = 135
+    # max_limit_missing = 25
     # max_limit_cv_collided = 2
 
-    # interaction = 'laying_hands_up'
-    # max_limit_score = 200
-    # max_limit_missing = 35
-    # max_limit_cv_collided = 2
+    interaction = 'laying_hands_up'
+    max_limit_score = 100
+    max_limit_missing = 25
+    max_limit_cv_collided = 2
 
     # interaction = 'laying_on_sofa'
     # max_limit_score = 60
@@ -126,10 +126,10 @@ if __name__ == '__main__':
     # max_limit_missing = 13
     # max_limit_cv_collided = 4
 
-    interaction = 'walking_right_foot'
-    max_limit_score = 27
-    max_limit_missing = 70
-    max_limit_cv_collided = 4
+    # interaction = 'walking_right_foot'
+    # max_limit_score = 27
+    # max_limit_missing = 70
+    # max_limit_cv_collided = 4
 
     for env_name in os.listdir(test_results_dir):
         env_path = opj(test_results_dir,env_name)

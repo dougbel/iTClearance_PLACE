@@ -10,6 +10,7 @@ class ViewPointScorePROXD():
         self.controler = controler
         self.vedo_file_env = load(file_env)
         self.vedo_file_env.lighting(ambient=0.8, diffuse=0.2, specular=0.1, specularPower=1, specularColor=(1, 1, 1))
+        self.vedo_file_env.backFaceCulling(False)
 
         self.point_clouds=[]
         self.right_side_elements=[self.vedo_file_env]

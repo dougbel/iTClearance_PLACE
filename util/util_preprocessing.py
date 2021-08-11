@@ -5,6 +5,28 @@ import time
 import numpy as np
 import math
 
+import trimesh.primitives
+import trimesh.sample
+
+
+def crop_scene_sphere_smplx_at_point(scene_verts, picked_point, r=1.0):
+    scene_center = np.copy(picked_point)
+
+    sphere = trimesh.primitives.Sphere(radius=r, center=picked_point)
+    sphere_samples, __ = trimesh.sample.sample_surface_even(sphere, 24500)
+    sphere_samples_local = sphere_samples - scene_center
+
+    scene_verts_crop = scene_verts[ sphere.contains(scene_verts) ]
+    scene_verts_crop = scene_verts_crop - scene_center
+
+    scene_verts_crop = np.concatenate((scene_verts_crop, sphere_samples_local), axis=0)
+
+    scene_verts_local = scene_verts - scene_center
+
+    shift = -scene_center
+    return scene_verts_local, scene_verts_crop, shift
+
+
 def crop_scene_cube_smplx_at_point(scene_verts, picked_point, r=2.0, with_wall_ceilling=True, random_seed=None, rotate=False):
     scene_center = np.copy(picked_point)
     if random_seed is None:

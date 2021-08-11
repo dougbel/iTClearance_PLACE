@@ -27,7 +27,7 @@ from preprocess.bps_encoding import bps_gen_ball_inside, bps_encode_scene
 from preprocess.preprocess_optimize import augmentation_crop_scene_smplx
 from si.fulldataclearancescores import FullDataClearanceScores
 from util.util_mesh import find_files_mesh_env, read_sdf
-from util.util_preprocessing import crop_scene_cube_smplx_at_point
+from util.util_preprocessing import crop_scene_cube_smplx_at_point, crop_scene_sphere_smplx_at_point
 from util.util_proxd import load_smplx_model, load_vposer_model, translate_smplx_body, rotate_smplx_body, \
     get_vertices_from_body_params, get_trimesh_from_body_params, device
 from utils import get_contact_id, convert_to_6D_rot, convert_to_3D_rot, gen_body_mesh
@@ -220,12 +220,12 @@ class ControlPointScorePROXD():
         body_vedo_proxd = trimesh2vtk(body_trimesh_proxd)
         self.view.add_vedo_element(body_vedo_proxd, at=1)
 
-        selected_p = body_trimesh_proxd.bounding_box.centroid #body_trimesh_proxd.vertices.mean(axis=0)
+        selected_p = body_trimesh_proxd.bounding_sphere.centroid #body_trimesh_proxd.vertices.mean(axis=0)
 
         print('[INFO] Position selected.')
 
-        ROTATE_CUBE = True
-        cube_size = 2.0  # 3D cage size TODO: it could change to 2.5
+        # ROTATE_CUBE = True
+        # cube_size = 2.0
         weight_loss_rec_verts = 1.0
         weight_loss_rec_bps = 1.0
         weight_loss_vposer = 0.02
@@ -233,25 +233,33 @@ class ControlPointScorePROXD():
         weight_loss_hand = 0.01
         weight_collision = 8.0
         weight_loss_contact = 0.5
-        itr_s2 = 100
+        itr_s2 = 150
         rot_angle_1 = 0  # TODO eliminate this parameter once tested
 
         scene_trimesh = trimesh.load(self.file_mesh_env)
         scene_verts = scene_trimesh.vertices
 
+        cube_size = body_trimesh_proxd.bounding_sphere.extents[0] * 1.2
+        r = cube_size/2
+        scene_verts_local, scene_verts_crop_local, shift = crop_scene_sphere_smplx_at_point(scene_verts, selected_p, r=r)
 
-        scene_verts_local, scene_verts_crop_local, shift = crop_scene_cube_smplx_at_point(
-            scene_verts, picked_point=selected_p, r=cube_size, with_wall_ceilling=True,
-            random_seed=None,
-            rotate=ROTATE_CUBE)
+        # scene_verts_local, scene_verts_crop_local, shift = crop_scene_cube_smplx_at_point(
+        #     scene_verts, picked_point=selected_p, r=cube_size, with_wall_ceilling=True,
+        #     random_seed=None,
+        #     rotate=ROTATE_CUBE)
 
         print('[INFO] scene mesh cropped and shifted.')
 
         scene_basis_set = bps_gen_ball_inside(n_bps=10000, random_seed=100)
-        scene_verts_global, scene_verts_crop_global, rot_angle_2 = augmentation_crop_scene_smplx(
-            scene_verts_local / cube_size,
-            scene_verts_crop_local / cube_size,
-            np.random.randint(10000))
+
+        scene_verts_global = scene_verts_local / cube_size
+        scene_verts_crop_global = scene_verts_crop_local / cube_size
+        rot_angle_2 = 0
+
+        # scene_verts_global, scene_verts_crop_global, rot_angle_2 = augmentation_crop_scene_smplx(
+        #     scene_verts_local / cube_size,
+        #     scene_verts_crop_local / cube_size,
+        #     np.random.randint(10000))
         scene_bps, selected_scene_verts_global, selected_ind = bps_encode_scene(scene_basis_set,
                                                                                 scene_verts_crop_global)  # [n_feat, n_bps]
         selected_scene_verts_local = scene_verts_crop_local[selected_ind]
