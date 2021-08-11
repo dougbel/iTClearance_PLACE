@@ -62,7 +62,7 @@ if __name__ == '__main__':
                 scores_ctrl.start_viewer()
                 exit(0)
 
-                # # this only work for sitting looking to right
+                # this only work for sitting looking to right
                 # np_point, best_angle = scores_ctrl.get_data_from_nearest_point_to([0.5494, -0.4548, -0.2781])
                 # body_trimesh_optim, np_body_params_optim = scores_ctrl.optimize_best_scored_position(np_point, best_angle)
                 # import trimesh

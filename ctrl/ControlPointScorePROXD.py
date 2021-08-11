@@ -216,16 +216,15 @@ class ControlPointScorePROXD():
 
         body_trimesh_proxd = get_trimesh_from_body_params(self.smplx_model, self.vposer_model, np_body_params)
 
-        body_trimesh_proxd.visual.face_colors = [150, 150, 0, 255]
-        body_vedo_proxd = trimesh2vtk(body_trimesh_proxd)
-        self.view.add_vedo_element(body_vedo_proxd, at=1)
+        if self.view.started:
+            body_trimesh_proxd.visual.face_colors = [150, 150, 0, 255]
+            body_vedo_proxd = trimesh2vtk(body_trimesh_proxd)
+            self.view.add_vedo_element(body_vedo_proxd, at=1)
 
-        selected_p = body_trimesh_proxd.bounding_sphere.centroid #body_trimesh_proxd.vertices.mean(axis=0)
+        selected_p = body_trimesh_proxd.bounding_sphere.centroid
 
         print('[INFO] Position selected.')
 
-        # ROTATE_CUBE = True
-        # cube_size = 2.0
         weight_loss_rec_verts = 1.0
         weight_loss_rec_bps = 1.0
         weight_loss_vposer = 0.02
@@ -234,7 +233,6 @@ class ControlPointScorePROXD():
         weight_collision = 8.0
         weight_loss_contact = 0.5
         itr_s2 = 150
-        # rot_angle_1 = 0
 
         scene_trimesh = trimesh.load(self.file_mesh_env)
         scene_verts = scene_trimesh.vertices
@@ -243,33 +241,17 @@ class ControlPointScorePROXD():
         r = cube_size/2
         scene_verts_local, scene_verts_crop_local, shift = crop_scene_sphere_smplx_at_point(scene_verts, selected_p, r=r)
 
-        # scene_verts_local, scene_verts_crop_local, shift = crop_scene_cube_smplx_at_point(
-        #     scene_verts, picked_point=selected_p, r=cube_size, with_wall_ceilling=True,
-        #     random_seed=None,
-        #     rotate=ROTATE_CUBE)
-
         print('[INFO] scene mesh cropped and shifted.')
 
         scene_basis_set = bps_gen_ball_inside(n_bps=10000, random_seed=100)
 
-        scene_verts_global = scene_verts_local / cube_size
         scene_verts_crop_global = scene_verts_crop_local / cube_size
-        rot_angle_2 = 0
 
-        # scene_verts_global, scene_verts_crop_global, rot_angle_2 = augmentation_crop_scene_smplx(
-        #     scene_verts_local / cube_size,
-        #     scene_verts_crop_local / cube_size,
-        #     np.random.randint(10000))
         scene_bps, selected_scene_verts_global, selected_ind = bps_encode_scene(scene_basis_set,
                                                                                 scene_verts_crop_global)  # [n_feat, n_bps]
         selected_scene_verts_local = scene_verts_crop_local[selected_ind]
 
         print('[INFO] bps encoding computed.')
-
-        ############################# load trained model ###############################
-        # scene_bps = torch.from_numpy(scene_bps).float().unsqueeze(0).to(device)  # [1, 1, n_bps]
-        # scene_bps_verts = torch.from_numpy(selected_scene_verts_local.transpose(1, 0)).float().unsqueeze(0).to(device)  # [1, 3, 10000]
-
 
         # position body params in the new reference point "shift"
         shifted_rotated_scene = trimesh.Trimesh(vertices=scene_verts_local, faces=scene_trimesh.faces)
@@ -291,8 +273,6 @@ class ControlPointScorePROXD():
 
         nbrs = NearestNeighbors(n_neighbors=1, leaf_size=1, algorithm="ball_tree").fit(np_body_verts_sample)
         np_body_bps_sample, neigh_ind = nbrs.kneighbors(selected_scene_verts_global)
-        # np_body_bps_sample = np_body_verts_sample[neigh_ind.squeeze()] - selected_scene_verts_global
-        # np_body_bps_sample = np.sqrt(np_body_bps_sample[:, 0] ** 2 + np_body_bps_sample[:, 1] ** 2 + np_body_bps_sample[:, 2] ** 2)
         body_bps_sample = torch.from_numpy(np_body_bps_sample).float().unsqueeze(0).unsqueeze(0).to(device)
 
         if view_evolution_screens:
@@ -303,20 +283,16 @@ class ControlPointScorePROXD():
             s.add_geometry(body_trimesh_sampled)
             s.show(caption="body sampled (verifying scale)", flags={'axis': True})
 
-
-
         vid, _ = get_contact_id(body_segments_folder=opj(self.prox_dataset_dir, 'body_segments'),
                                 contact_body_parts=self.contact_regions)
 
-        ################ stage 1 (simple optimization, without contact/collision loss) ######
-        print('[INFO] start optimization stage 1...')
         # initialize smplx params, bs=1, local 3D cage coordinate system
         body_params_rec = torch.from_numpy(body_params).float().unsqueeze(0).to(device)
         body_params_rec = convert_to_6D_rot(body_params_rec)
         body_params_rec.requires_grad = True
 
 
-        print('[INFO] start optimization stage 2...')
+        print('[INFO] start optimization ...')
         optimizer = optim.Adam([body_params_rec], lr=0.01)
 
         body_verts = body_verts_sample.permute(0, 2, 1)  # [1, 10475, 3]
@@ -330,11 +306,7 @@ class ControlPointScorePROXD():
             body_verts_rec = gen_body_mesh(body_params_rec_72, body_pose_joint, self.smplx_model)[0]  # [n_body_vert, 3]
 
             # transform body verts to unit ball global coordinate
-            temp = body_verts_rec / cube_size  # scale into unit ball
-            body_verts_rec_global = torch.zeros(body_verts_rec.shape).to(device)
-            body_verts_rec_global[:, 0] = temp[:, 0] * math.cos(rot_angle_2) - temp[:, 1] * math.sin(rot_angle_2)
-            body_verts_rec_global[:, 1] = temp[:, 0] * math.sin(rot_angle_2) + temp[:, 1] * math.cos(rot_angle_2)
-            body_verts_rec_global[:, 2] = temp[:, 2]
+            body_verts_rec_global = body_verts_rec / cube_size  # scale into unit ball
 
             # calculate body_bps_rec
             body_bps_rec = torch.zeros(body_bps_sample.shape)
@@ -364,11 +336,7 @@ class ControlPointScorePROXD():
             loss_hand = torch.mean(hand_params ** 2)
 
             # transfrom body_verts_rec (local 3d cage coordinate system) to prox coordinate system
-            # body_verts_rec_prox = torch.zeros(body_verts_rec.shape).to(device)
             temp = body_verts_rec - torch.from_numpy(shift).float().to(device)
-            # body_verts_rec_prox[:, 0] = temp[:, 0] * math.cos(-rot_angle_1) - temp[:, 1] * math.sin(-rot_angle_1)
-            # body_verts_rec_prox[:, 1] = temp[:, 0] * math.sin(-rot_angle_1) + temp[:, 1] * math.cos(-rot_angle_1)
-            # body_verts_rec_prox[:, 2] = temp[:, 2]
             body_verts_rec_prox = temp.unsqueeze(0)  # tensor, [bs=1, 10475, 3]
 
             ### sdf collision loss
