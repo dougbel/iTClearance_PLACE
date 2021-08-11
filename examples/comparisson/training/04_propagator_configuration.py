@@ -16,12 +16,12 @@ if __name__ == '__main__':
     test_results_dir = opj(base_dir, "train", "testing_env_single")
 
     # interaction = 'laying_bed'
-    # max_limit_score = 123
+    # max_limit_score = 200
     # max_limit_missing = 35
     # max_limit_cv_collided = 2
 
     # interaction = 'laying_hands_up'
-    # max_limit_score = 123
+    # max_limit_score = 200
     # max_limit_missing = 35
     # max_limit_cv_collided = 2
 
@@ -94,7 +94,7 @@ if __name__ == '__main__':
     # interaction = 'sitting_looking_to_right'
     # max_limit_score = 110
     # max_limit_missing = 45
-    # max_limit_cv_collided = 10
+    # max_limit_cv_collided = 9
 
     # interaction = 'sitting_small_table'
     # max_limit_score = 110
@@ -119,7 +119,7 @@ if __name__ == '__main__':
     # interaction = 'standup_hand_on_furniture'
     # max_limit_score = 80
     # max_limit_missing = 40
-    # max_limit_cv_collided = 3
+    # max_limit_cv_collided = 2
 
     # interaction = 'walking_left_foot'
     # max_limit_score = 50

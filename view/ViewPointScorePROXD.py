@@ -30,7 +30,7 @@ class ViewPointScorePROXD():
 
     def show(self):
         self.vp.mouseRightClickFunction = self.on_right_click
-        self.vp.show(flatten([self.vedo_file_env,self.point_clouds]), at=0)
+        self.vp.show(flatten([self.vedo_file_env,self.point_clouds]), at=0, axes=4)
         self.vp.show(self.vedo_file_env, at=1)
         # self.vp.show() # this permit independent visualization
         interactive()

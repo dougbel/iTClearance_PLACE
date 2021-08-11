@@ -216,18 +216,18 @@ class ControlPointScorePROXD():
 
         body_trimesh_proxd = get_trimesh_from_body_params(self.smplx_model, self.vposer_model, np_body_params)
 
-        body_trimesh_proxd.visual.face_colors = [150, 150, 150, 200]
+        body_trimesh_proxd.visual.face_colors = [150, 150, 0, 255]
         body_vedo_proxd = trimesh2vtk(body_trimesh_proxd)
         self.view.add_vedo_element(body_vedo_proxd, at=1)
 
-        selected_p = body_trimesh_proxd.vertices.mean(axis=0)
+        selected_p = body_trimesh_proxd.bounding_box.centroid #body_trimesh_proxd.vertices.mean(axis=0)
 
         print('[INFO] Position selected.')
 
         ROTATE_CUBE = True
         cube_size = 2.0  # 3D cage size TODO: it could change to 2.5
         weight_loss_rec_verts = 1.0
-        weight_loss_rec_bps = 3.0
+        weight_loss_rec_bps = 1.0
         weight_loss_vposer = 0.02
         weight_loss_shape = 0.01
         weight_loss_hand = 0.01
@@ -259,8 +259,8 @@ class ControlPointScorePROXD():
         print('[INFO] bps encoding computed.')
 
         ############################# load trained model ###############################
-        scene_bps = torch.from_numpy(scene_bps).float().unsqueeze(0).to(device)  # [1, 1, n_bps]
-        scene_bps_verts = torch.from_numpy(selected_scene_verts_local.transpose(1, 0)).float().unsqueeze(0).to(device)  # [1, 3, 10000]
+        # scene_bps = torch.from_numpy(scene_bps).float().unsqueeze(0).to(device)  # [1, 1, n_bps]
+        # scene_bps_verts = torch.from_numpy(selected_scene_verts_local.transpose(1, 0)).float().unsqueeze(0).to(device)  # [1, 3, 10000]
 
 
         # position body params in the new reference point "shift"
@@ -286,12 +286,12 @@ class ControlPointScorePROXD():
         # np_body_bps_sample = np.sqrt(np_body_bps_sample[:, 0] ** 2 + np_body_bps_sample[:, 1] ** 2 + np_body_bps_sample[:, 2] ** 2)
         body_bps_sample = torch.from_numpy(np_body_bps_sample).float().unsqueeze(0).unsqueeze(0).to(device)
 
-        body_trimesh_sampled = trimesh.Trimesh(np_body_verts_sample * cube_size, faces=self.smplx_model.faces)
-        body_trimesh_sampled.visual.face_colors = [0, 255, 255, 100]
-        s = trimesh.Scene()
-        s.add_geometry(shifted_rotated_scene)
-        s.add_geometry(body_trimesh_sampled)
-        s.show(caption="body sampled (verifying scale)", flags={'axis': True})
+        # body_trimesh_sampled = trimesh.Trimesh(np_body_verts_sample * cube_size, faces=self.smplx_model.faces)
+        # body_trimesh_sampled.visual.face_colors = [0, 255, 255, 100]
+        # s = trimesh.Scene()
+        # s.add_geometry(shifted_rotated_scene)
+        # s.add_geometry(body_trimesh_sampled)
+        # s.show(caption="body sampled (verifying scale)", flags={'axis': True})
 
 
 
@@ -393,25 +393,9 @@ class ControlPointScorePROXD():
         print('[INFO] optimization stage 2 finished.')
 
         body_params_opt_s2 = convert_to_3D_rot(body_params_rec)  # tensor, [bs=1, 72]
-
         np_body_params_optim = translate_smplx_body(body_params_opt_s2.detach().squeeze().cpu().numpy(), self.smplx_model, -shift)
-
         body_trimesh_optim = get_trimesh_from_body_params(self.smplx_model, self.vposer_model, np_body_params_optim)
-
         body_trimesh_optim.visual.face_colors = [255, 255, 255, 255]
         body_vedo_optim = trimesh2vtk(body_trimesh_optim)
         self.view.add_vedo_element(body_vedo_optim, at=1)
 
-
-        # body_pose_joint = self.vposer_model.decode(body_params_opt_s2[:, 16:48], output_type='aa').view(1, -1)
-        # body_verts_opt_s2 = gen_body_mesh(body_params_opt_s2, body_pose_joint, self.smplx_model)[0]
-        # body_verts_opt_s2 = body_verts_opt_s2.detach().cpu().numpy()  # [n_body_vert, 3]
-        #
-        # body_trimesh_s2 = trimesh.Trimesh(vertices=body_verts_opt_s2, faces=self.smplx_model.faces,
-        #                                   face_colors=[200, 200, 200, 255])
-        #
-        # s = trimesh.Scene()
-        # s.add_geometry(shifted_rotated_scene)
-        # s.add_geometry(body_trimesh_sampled)
-        # s.add_geometry(body_trimesh_s2)
-        # s.show(caption=f"After ADVANCE optimization", flags={'axis': True})
