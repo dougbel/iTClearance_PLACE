@@ -15,7 +15,7 @@ if __name__ == '__main__':
     # 'standing_up', 'standup_hand_on_furniture'
     # 'walking_left_foot']
 
-    interaction = 'walking_right_foot'
+    interaction = 'sitting_looking_to_right'
 
     # base_dir = "/media/dougbel/Tezcatlipoca/PLACE_trainings_no_proxd"
     base_dir = "/media/dougbel/Tezcatlipoca/PLACE_trainings"
@@ -59,5 +59,15 @@ if __name__ == '__main__':
                                                      datasets_dir,
                                                      dataset_name,
                                                      env_tested_name)
-                scores_ctrl.start()
+                scores_ctrl.start_viewer()
                 exit(0)
+
+                # # this only work for sitting looking to right
+                # np_point, best_angle = scores_ctrl.get_data_from_nearest_point_to([0.5494, -0.4548, -0.2781])
+                # body_trimesh_optim, np_body_params_optim = scores_ctrl.optimize_best_scored_position(np_point, best_angle)
+                # import trimesh
+                # trimesh_env = trimesh.load(scores_ctrl.file_mesh_env)
+                # s = trimesh.Scene()
+                # s.add_geometry(trimesh_env)
+                # s.add_geometry(body_trimesh_optim)
+                # s.show()

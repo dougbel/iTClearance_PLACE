@@ -14,6 +14,7 @@ class ViewPointScorePROXD():
 
         self.point_clouds=[]
         self.right_side_elements=[self.vedo_file_env]
+        self.started = False
 
     def add_point_cloud(self, np_points, np_scores, r=5, at=0):
         pts = Points(np_points, r=r)
@@ -22,14 +23,10 @@ class ViewPointScorePROXD():
         self.point_clouds.append(pts)
 
     def add_vedo_element(self, vedo_element, at):
-        # if at ==0:
-        #     self.left_side_elements.append(vedo_element)
-        #
-        # else:
-        #     self.right_side_elements.append(vedo_element)
         self.vp.add(vedo_element, at=at)
 
-    def show(self):
+    def start(self):
+        self.started = True
         self.vp.mouseRightClickFunction = self.on_right_click
         self.vp.show(flatten([self.vedo_file_env,self.point_clouds]), at=0, axes=4)
         self.vp.show(self.vedo_file_env, at=1)
@@ -40,4 +37,3 @@ class ViewPointScorePROXD():
         if mesh.picked3d is not None:
             np_point, best_angle = self.controler.get_data_from_nearest_point_to(mesh.picked3d)
             self.controler.optimize_best_scored_position(np_point, best_angle)
-            # self.show()

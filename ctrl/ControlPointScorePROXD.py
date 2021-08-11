@@ -116,8 +116,8 @@ class ControlPointScorePROXD():
         self.s_grid_min_batch, self.s_grid_max_batch, self.s_sdf_batch = read_sdf(self.dataset_dir, self.env_test_name)
 
 
-    def start(self):
-        self.view.show()
+    def start_viewer(self):
+        self.view.start()
 
     def get_data_from_nearest_point_to(self, np_point):
         closest_index = distance.cdist([np_point], self.np_full_points).argmin()
@@ -199,17 +199,17 @@ class ControlPointScorePROXD():
                 vedo_obj.rotateZ(angle, rad=True)
                 vedo_obj.pos(x=np_nearest_point[0], y=np_nearest_point[1], z=np_nearest_point[2])
 
-
-                self.view.add_vedo_element(provenance_vectors, at=0)
-                self.view.add_vedo_element(clearance_vectors, at=0)
-                self.view.add_vedo_element(cv_from, at=0)
-                self.view.add_vedo_element(vedo_obj, at=0)
+                if self.view.started:
+                    self.view.add_vedo_element(provenance_vectors, at=0)
+                    self.view.add_vedo_element(clearance_vectors, at=0)
+                    self.view.add_vedo_element(cv_from, at=0)
+                    self.view.add_vedo_element(vedo_obj, at=0)
             print(table)
 
         return np_nearest_point, best_angle
 
 
-    def optimize_best_scored_position(self, np_point, best_angle):
+    def optimize_best_scored_position(self, np_point, best_angle, view_evolution_screens=False):
 
         np_body_params = rotate_smplx_body(self.np_body_params, self.smplx_model, best_angle)
         np_body_params = translate_smplx_body(np_body_params, self.smplx_model, np_point)
@@ -234,7 +234,7 @@ class ControlPointScorePROXD():
         weight_collision = 8.0
         weight_loss_contact = 0.5
         itr_s2 = 150
-        rot_angle_1 = 0  # TODO eliminate this parameter once tested
+        # rot_angle_1 = 0
 
         scene_trimesh = trimesh.load(self.file_mesh_env)
         scene_verts = scene_trimesh.vertices
@@ -276,13 +276,14 @@ class ControlPointScorePROXD():
         shifted_rotated_scene.visual.face_colors = scene_trimesh.visual.face_colors
 
         body_params = translate_smplx_body(np_body_params, self.smplx_model, shift)
-        shifted_rotated_body_smplx_trimesh = get_trimesh_from_body_params(self.smplx_model, self.vposer_model, body_params)
 
-        s = trimesh.Scene()
-        s.add_geometry(shifted_rotated_scene)
-        s.add_geometry(shifted_rotated_body_smplx_trimesh)
-        s.add_geometry(trimesh.points.PointCloud(selected_scene_verts_local, colors=[0, 255, 0]))
-        s.show(caption="smplx_model shifted and rotated", flags={'axis': True})
+        if view_evolution_screens:
+            shifted_rotated_body_smplx_trimesh = get_trimesh_from_body_params(self.smplx_model, self.vposer_model, body_params)
+            s = trimesh.Scene()
+            s.add_geometry(shifted_rotated_scene)
+            s.add_geometry(shifted_rotated_body_smplx_trimesh)
+            s.add_geometry(trimesh.points.PointCloud(selected_scene_verts_local, colors=[0, 255, 0]))
+            s.show(caption="smplx_model shifted and rotated", flags={'axis': True})
 
         # extract body params of body positioned at "shift" and scaled to cube size
         np_body_verts_sample = get_vertices_from_body_params(self.smplx_model, self.vposer_model, body_params) / cube_size
@@ -294,12 +295,13 @@ class ControlPointScorePROXD():
         # np_body_bps_sample = np.sqrt(np_body_bps_sample[:, 0] ** 2 + np_body_bps_sample[:, 1] ** 2 + np_body_bps_sample[:, 2] ** 2)
         body_bps_sample = torch.from_numpy(np_body_bps_sample).float().unsqueeze(0).unsqueeze(0).to(device)
 
-        # body_trimesh_sampled = trimesh.Trimesh(np_body_verts_sample * cube_size, faces=self.smplx_model.faces)
-        # body_trimesh_sampled.visual.face_colors = [0, 255, 255, 100]
-        # s = trimesh.Scene()
-        # s.add_geometry(shifted_rotated_scene)
-        # s.add_geometry(body_trimesh_sampled)
-        # s.show(caption="body sampled (verifying scale)", flags={'axis': True})
+        if view_evolution_screens:
+            body_trimesh_sampled = trimesh.Trimesh(np_body_verts_sample * cube_size, faces=self.smplx_model.faces)
+            body_trimesh_sampled.visual.face_colors = [0, 255, 255, 100]
+            s = trimesh.Scene()
+            s.add_geometry(shifted_rotated_scene)
+            s.add_geometry(body_trimesh_sampled)
+            s.show(caption="body sampled (verifying scale)", flags={'axis': True})
 
 
 
@@ -308,12 +310,10 @@ class ControlPointScorePROXD():
 
         ################ stage 1 (simple optimization, without contact/collision loss) ######
         print('[INFO] start optimization stage 1...')
-        body_params_rec = torch.from_numpy(body_params).float().unsqueeze(0).to(
-            device)  # initialize smplx params, bs=1, local 3D cage coordinate system
+        # initialize smplx params, bs=1, local 3D cage coordinate system
+        body_params_rec = torch.from_numpy(body_params).float().unsqueeze(0).to(device)
         body_params_rec = convert_to_6D_rot(body_params_rec)
         body_params_rec.requires_grad = True
-
-
 
 
         print('[INFO] start optimization stage 2...')
@@ -364,12 +364,12 @@ class ControlPointScorePROXD():
             loss_hand = torch.mean(hand_params ** 2)
 
             # transfrom body_verts_rec (local 3d cage coordinate system) to prox coordinate system
-            body_verts_rec_prox = torch.zeros(body_verts_rec.shape).to(device)
+            # body_verts_rec_prox = torch.zeros(body_verts_rec.shape).to(device)
             temp = body_verts_rec - torch.from_numpy(shift).float().to(device)
-            body_verts_rec_prox[:, 0] = temp[:, 0] * math.cos(-rot_angle_1) - temp[:, 1] * math.sin(-rot_angle_1)
-            body_verts_rec_prox[:, 1] = temp[:, 0] * math.sin(-rot_angle_1) + temp[:, 1] * math.cos(-rot_angle_1)
-            body_verts_rec_prox[:, 2] = temp[:, 2]
-            body_verts_rec_prox = body_verts_rec_prox.unsqueeze(0)  # tensor, [bs=1, 10475, 3]
+            # body_verts_rec_prox[:, 0] = temp[:, 0] * math.cos(-rot_angle_1) - temp[:, 1] * math.sin(-rot_angle_1)
+            # body_verts_rec_prox[:, 1] = temp[:, 0] * math.sin(-rot_angle_1) + temp[:, 1] * math.cos(-rot_angle_1)
+            # body_verts_rec_prox[:, 2] = temp[:, 2]
+            body_verts_rec_prox = temp.unsqueeze(0)  # tensor, [bs=1, 10475, 3]
 
             ### sdf collision loss
             norm_verts_batch = (body_verts_rec_prox - self.s_grid_min_batch) / (self.s_grid_max_batch - self.s_grid_min_batch) * 2 - 1
@@ -391,8 +391,6 @@ class ControlPointScorePROXD():
             contact_dist, _ = dist_chamfer_contact(body_verts_contact.contiguous(), scene_verts.contiguous())
             loss_contact = torch.mean(torch.sqrt(contact_dist + 1e-4) / (torch.sqrt(contact_dist + 1e-4) + 1.0))
 
-            # print("contact", loss_contact)
-            # print("collision", loss_collision)
 
             loss = weight_loss_rec_verts * loss_rec_verts + weight_loss_rec_bps * loss_rec_bps + weight_loss_vposer * loss_vposer + weight_loss_shape * loss_shape + weight_loss_hand * loss_hand + weight_collision * loss_collision + weight_loss_contact * loss_contact
             loss.backward(retain_graph=True)
@@ -405,5 +403,8 @@ class ControlPointScorePROXD():
         body_trimesh_optim = get_trimesh_from_body_params(self.smplx_model, self.vposer_model, np_body_params_optim)
         body_trimesh_optim.visual.face_colors = [255, 255, 255, 255]
         body_vedo_optim = trimesh2vtk(body_trimesh_optim)
-        self.view.add_vedo_element(body_vedo_optim, at=1)
 
+        if self.view.started:
+            self.view.add_vedo_element(body_vedo_optim, at=1)
+
+        return body_trimesh_optim, np_body_params_optim
