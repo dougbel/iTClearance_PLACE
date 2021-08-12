@@ -1,3 +1,4 @@
+import argparse
 import gc
 import json
 import os
@@ -9,10 +10,16 @@ import pandas as pd
 import numpy as np
 import trimesh
 
-from ctrl.ControlPointScorePROXD import ControlPointScorePROXD
 from util.util_mesh import read_sdf
 from util.util_proxd import optimize_body_on_environment, load_smplx_model, load_vposer_model
 from utils import get_contact_id
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--base_dir', required=True, help='Information directory (dataset, pretrained models, etc)')
+opt = parser.parse_args()
+print(opt)
+
 
 if __name__ == '__main__':
 
@@ -20,7 +27,7 @@ if __name__ == '__main__':
     shuffle_order = False  # if shuffle is True then execution would be SLOWER
     save_results = False
 
-    base_dir = "/media/dougbel/Tezcatlipoca/PLACE_trainings"
+    base_dir = opt.base_dir
 
     datasets_dir = opj(base_dir, "datasets")
 

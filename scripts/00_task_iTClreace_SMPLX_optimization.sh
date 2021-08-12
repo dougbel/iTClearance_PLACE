@@ -11,5 +11,5 @@ DEVICE=1
 
 
 
-CUDA_VISIBLE_DEVICES=$DEVICE python iTClearance_PLACE/examples/comparisson/testing/03_test_place_AUTO_selected_points.py  --base_dir /home/alexa/Abel/DATA/PLACE_comparisson
+CUDA_VISIBLE_DEVICES=$DEVICE python iTClearance_PLACE/examples/comparisson/testing/04_itC_optimizer_SMPLX_body_parameters.py  --base_dir /home/alexa/Abel/DATA/PLACE_trainings
 
