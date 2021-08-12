@@ -131,6 +131,7 @@ if __name__ == '__main__':
                 if not os.path.exists(output_subdir):
                     os.makedirs(output_subdir)
                 body_trimesh_optim.export(opj(output_subdir, f"body_{i}.ply"))
+                np.save(opj(output_subdir, f"body_{i}_smplx_body_params.npy"), np_body_params_optim)
 
         if save_results:
             num_completed_task += 1
