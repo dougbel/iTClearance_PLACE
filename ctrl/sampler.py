@@ -73,14 +73,15 @@ class CtrlPropagatorSampler:
         selected_tested_points = tested_points[filter_pts_inside_r]
 
         samples_point =[]
+        samples_angle = []
         samples_vedo_obj = []
 
         if len(selected_mapped_scores)>0:
-            samples_vedo_obj, samples_point = self.sample_n_by_k_means(selected_tested_points,
+            samples_vedo_obj, samples_point,samples_angle = self.sample_n_by_k_means(selected_tested_points,
                                                                            selected_mapped_scores,
                                                                            n_samples, best_in_cluster, visualize)
 
-        return samples_vedo_obj, samples_point
+        return samples_vedo_obj, samples_point, samples_angle
 
 
     def get_best_score_by_tested_point(self):
@@ -127,6 +128,7 @@ class CtrlPropagatorSampler:
         """
         vtk_object = None
         point_sample = None
+        angle_sample = None
 
         while True:
             self.idx_votes += 1
@@ -156,38 +158,40 @@ class CtrlPropagatorSampler:
             vp.show()
             vp.close()
 
-        return vtk_object, point_sample
+        return vtk_object, point_sample, angle_sample
 
-    def get_n_sample_clustered(self, min_score, n_samples, best_in_cluster=False,  visualize=False):
+    def get_n_sample_clustered(self, min_similarity, n_samples, best_in_cluster=False, visualize=False):
         """
           Get n samples from tested cluster_points where a minimum score is achieved (inclusive). Selection is performed used a cluster
         representation. If no enough point it choose all of them
-        :param min_score: look for cluster_points with a minimum score
+        :param min_similarity: look for cluster_points with a minimum score
         :param n_samples: number of samples to extract
         :param best_in_cluster: if true the best is cluster is selected it not a vote system  is used
         :param visualize:
         :return:
         """
-        selected_mapped_scores = self.np_mapped_scores[self.np_mapped_scores >= min_score]
-        selected_tested_points = self.np_pc_tested[self.np_mapped_scores >= min_score]
+        selected_mapped_scores = self.np_mapped_scores[self.np_mapped_scores >= min_similarity]
+        selected_tested_points = self.np_pc_tested[self.np_mapped_scores >= min_similarity]
 
         samples_point =[]
+        samples_angle =[]
         samples_vedo_obj = []
 
         if len(selected_mapped_scores)>=n_samples:
-            samples_vedo_obj, samples_point =  self.sample_n_by_k_means(selected_tested_points, selected_mapped_scores,
+            samples_vedo_obj, samples_point, samples_angle =  self.sample_n_by_k_means(selected_tested_points, selected_mapped_scores,
                                                                         n_samples, best_in_cluster, visualize)
         elif len(selected_mapped_scores)>0:
-            samples_vedo_obj, samples_point =self.sample_all(selected_tested_points, visualize)
+            samples_vedo_obj, samples_point, samples_angle = self.sample_all(selected_tested_points, visualize)
 
 
 
 
-        return samples_vedo_obj, samples_point
+        return samples_vedo_obj, samples_point, samples_angle
 
 
     def sample_n_by_k_means(self, selected_tested_points, selected_mapped_scores, n_samples, best_in_cluster, visualize ):
         samples_point =[]
+        samples_angle =[]
         samples_vedo_obj =[]
         kmeans = KMeans(init="random", n_clusters=n_samples, n_init=10, max_iter=300)
         kmeans.fit(selected_tested_points)
@@ -215,6 +219,7 @@ class CtrlPropagatorSampler:
                 # print(angle_sample, " at ", point_sample)
                 vtk_object.pos(x=point_sample[0], y=point_sample[1], z=point_sample[2])
                 samples_point.append(point_sample)
+                samples_angle.append(angle_sample)
                 samples_vedo_obj.append(vtk_object)
 
         if visualize:
@@ -237,12 +242,13 @@ class CtrlPropagatorSampler:
             vp.show()
             vp.close()
 
-        return samples_vedo_obj, samples_point
+        return samples_vedo_obj, samples_point, samples_angle
 
 
     def sample_all(self, selected_tested_points, visualize ):
-        samples_point =[]
-        samples_vedo_obj =[]
+        samples_point = []
+        samples_angle = []
+        samples_vedo_obj = []
 
         n_selected_points = len(selected_tested_points)
 
@@ -257,6 +263,7 @@ class CtrlPropagatorSampler:
                 # print(angle_sample, " at ", point_sample)
                 vtk_object.pos(x=point_sample[0], y=point_sample[1], z=point_sample[2])
                 samples_point.append(point_sample)
+                samples_angle.append(angle_sample)
                 samples_vedo_obj.append(vtk_object)
 
         if visualize:
@@ -273,4 +280,4 @@ class CtrlPropagatorSampler:
             vp.show()
             vp.close()
 
-        return samples_vedo_obj, samples_point
+        return samples_vedo_obj, samples_point, samples_angle

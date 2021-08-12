@@ -51,7 +51,7 @@ def select_it_execution_around_picked_point(data_dir, dataset_name, scene_name, 
         MIN_SCORE = 0.2
         R=1
         for r in [ R/3, R/2, R]:
-            vtk_objects, point_samples = scores_ctrl.get_n_samples_around_point(MIN_SCORE, N_SAMPLES, np_point, r,
+            vtk_objects, point_samples, angle_samples = scores_ctrl.get_n_samples_around_point(MIN_SCORE, N_SAMPLES, np_point, r,
                                                                         best_in_cluster=True,
                                                                         visualize=visualize)
             if len(vtk_objects) > 0:
@@ -60,8 +60,10 @@ def select_it_execution_around_picked_point(data_dir, dataset_name, scene_name, 
         if len(vtk_objects) > 0:
             vtk_object = vtk_objects[0]
             point_sample = point_samples[0]
+            angle_sample = angle_samples[0]
 
             np.save(opj(output_subdir, f"point_{num_point}_{interaction}"), point_sample)
+            np.save(opj(output_subdir, f"angle_{num_point}_{interaction}"), angle_sample)
             vtk2trimesh(vtk_object).export(opj(output_subdir, f"body_{num_point}_{interaction}.ply"))
 
             if visualize:

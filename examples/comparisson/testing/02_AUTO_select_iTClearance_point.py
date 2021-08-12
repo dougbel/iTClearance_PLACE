@@ -70,8 +70,8 @@ if __name__ == '__main__':
                                     directory_env_test, directory_of_prop_configs, file_mesh_env)
 
         N_SAMPLES = 3
-        MIN_SCORE = 0.2
-        vtk_objects, point_samples = scores_ctrl.get_n_sample_clustered(MIN_SCORE, N_SAMPLES,best_in_cluster=False, visualize=True)
+        MIN_SIMILARITY = 0.2
+        vtk_objects, point_samples, angle_samples = scores_ctrl.get_n_sample_clustered(MIN_SIMILARITY, N_SAMPLES, best_in_cluster=False, visualize=True)
 
         output_suddir = opj(output_dir, env_name, interaction)
         if not os.path.exists(output_suddir):
@@ -81,8 +81,10 @@ if __name__ == '__main__':
             for i in range(len( vtk_objects )):
                 vtk_object = vtk_objects[i]
                 point_sample = point_samples[i]
+                angle_sample = angle_samples[i]
 
                 np.save(opj(output_suddir, f"point_{i}"), point_sample)
+                np.save(opj(output_suddir, f"angle_{i}"), angle_sample)
                 vtk2trimesh(vtk_object).export(opj(output_suddir,f"body_{i}.ply"))
 
 
