@@ -3,6 +3,8 @@ import warnings
 from os.path import join as opj
 from shutil import copyfile
 import gc
+
+import numpy as np
 import pandas as pd
 import trimesh
 
@@ -39,14 +41,14 @@ def shift_rotate_mesh(body_verts, body_faces, shift, rotation):
 def execute_place_in_picked_point(data_dir, dataset_name, scene_name, np_point, visualize = True):
     # set optimization hype-parameters
     weight_loss_rec_verts = 1.0
-    weight_loss_rec_bps = 3.0
+    weight_loss_rec_bps = 1.0
     weight_loss_vposer = 0.02
     weight_loss_shape = 0.01
     weight_loss_hand = 0.01
     weight_collision = 8.0
     weight_loss_contact = 0.5
-    itr_s1 = 200
-    itr_s2 = 100
+    itr_s1 = 0
+    itr_s2 = 300
 
     cube_size = 2.0  # 3D cage size
     optimize = True  # optimize or not
@@ -514,7 +516,7 @@ if __name__ == '__main__':
             n = np_point_file_name[np_point_file_name.find("_")+1:np_point_file_name.find(".")]
             mesh_orig, mesh_opt1, mesh_opt2 = execute_place_in_picked_point(base_dir, dataset_name, scene_name, np_point, visualize=False)
             mesh_orig.export(opj(output_subdir, f"body_{n}_orig.ply"))
-            mesh_opt1.export(opj(output_subdir, f"body_{n}_opt1.ply"))
+            # mesh_opt1.export(opj(output_subdir, f"body_{n}_opt1.ply"))
             mesh_opt2.export(opj(output_subdir, f"body_{n}_opt2.ply"))
 
         num_completed_task += 1
