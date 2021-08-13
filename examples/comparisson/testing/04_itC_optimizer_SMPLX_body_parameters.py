@@ -25,7 +25,7 @@ print(opt)
 
 
 if __name__ == '__main__':
-
+    # python iTClearance_PLACE/examples/comparisson/testing/04_itC_optimizer_SMPLX_body_parameters.py  --base_dir /media/dougbel/Tezcatlipoca/PLACE_trainings
     visualize = True
     shuffle_order = False  # if shuffle is True then execution would be SLOWER
     save_results = False

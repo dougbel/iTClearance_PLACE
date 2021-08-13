@@ -471,6 +471,9 @@ print(opt)
 
 if __name__ == '__main__':
 
+    # python iTClearance_PLACE/examples/comparisson/testing/03_test_place_AUTO_selected_points.py  --base_dir /media/dougbel/Tezcatlipoca/PLACE_trainings
+
+
     # [ 'reaching_out_mid_up', 'reaching_out_mid_down', 'reaching_out_on_table', 'reaching_out_mid',
     # 'sitting_looking_to_right', 'sitting_compact', 'reachin_out_ontable_one_hand'
     # 'sitting_comfortable', 'sitting_stool', 'sitting_stool_one_foot_floor', 'sitting', 'sitting_bit_open_arms',
@@ -479,7 +482,6 @@ if __name__ == '__main__':
     # 'standing_up', 'standup_hand_on_furniture'
     # 'walking_left_foot']
 
-    # interaction = 'reaching_out_mid_up'
 
     base_dir = opt.base_dir
 
@@ -512,6 +514,8 @@ if __name__ == '__main__':
             os.makedirs(output_subdir)
 
         for np_point_file_name in get_file_names_with_extension_in(points_dir, ".npy"):
+            if not np_point_file_name.startswith("point_"):
+                continue
             np_point =  np.load(opj(points_dir, np_point_file_name))
             n = np_point_file_name[np_point_file_name.find("_")+1:np_point_file_name.find(".")]
             mesh_orig, mesh_opt1, mesh_opt2 = execute_place_in_picked_point(base_dir, dataset_name, scene_name, np_point, visualize=False)
