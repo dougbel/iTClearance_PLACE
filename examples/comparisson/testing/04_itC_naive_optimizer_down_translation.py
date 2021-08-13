@@ -15,9 +15,9 @@ from it import util
 
 if __name__ == '__main__':
 
-    visualize= False
+    visualize= True
     shuffle_order = False # if shuffle is True then execution would be SLOWER
-    save_results = True
+    save_results = False
 
     base_dir = "/media/dougbel/Tezcatlipoca/PLACE_trainings"
 
