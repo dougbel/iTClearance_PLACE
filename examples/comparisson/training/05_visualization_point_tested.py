@@ -8,7 +8,7 @@ if __name__ == '__main__':
 
 
     # [ 'reaching_out_mid_up', 'reaching_out_mid_down', 'reaching_out_on_table', 'reaching_out_mid',
-    # 'sitting_looking_to_right', 'sitting_compact', 'reachin_out_ontable_one_hand'
+    # 'sitting_looking_to_right', 'sitting_compact', 'reaching_out_ontable_one_hand'
     # 'sitting_comfortable', 'sitting_stool', 'sitting_stool_one_foot_floor', 'sitting', 'sitting_bit_open_arms',
     # 'sitting_chair', 'sitting_hands_on_device', 'sitting_small_table'
     # 'laying_bed', 'laying_hands_up', 'laying_on_sofa', 'laying_sofa_foot_on_floor'

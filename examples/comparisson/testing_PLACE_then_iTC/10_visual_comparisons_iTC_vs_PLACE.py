@@ -23,7 +23,7 @@ if __name__ == '__main__':
     interactions_by_type = {
         "laying": ["laying_bed", "laying_hands_up", "laying_on_sofa", "laying_sofa_foot_on_floor"],
         "reaching_out": ["reaching_out_mid", "reaching_out_mid_down", "reaching_out_mid_up", "reaching_out_on_table",
-                         "reachin_out_ontable_one_hand"],
+                         "reaching_out_ontable_one_hand"],
         "sitting": ["sitting", "sitting_bit_open_arms", "sitting_chair", "sitting_comfortable", "sitting_compact",
                     "sitting_hands_on_device", "sitting_looking_to_right", "sitting_small_table", "sitting_stool",
                     "sitting_stool_one_foot_floor"],
