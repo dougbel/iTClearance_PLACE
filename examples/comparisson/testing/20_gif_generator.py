@@ -134,6 +134,8 @@ if __name__ == '__main__':
         place_subdir = opj(samples_place_dir, env_name, interaction)
 
         for np_point_file_name in get_file_names_with_extension_in(it_subdir, ".npy"):
+            if not np_point_file_name.startswith("point_"):
+                continue
             print(np_point_file_name)
             np_point = np.load(opj(it_subdir, np_point_file_name))
             n = np_point_file_name[np_point_file_name.find("_") + 1:np_point_file_name.find(".")]
