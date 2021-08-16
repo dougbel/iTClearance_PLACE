@@ -88,10 +88,10 @@ print(opt)
 
 if __name__ == '__main__':
 
-    # python examples/comparisson/testing/20_gif_generator.py --base_dir /media/apacheco/Ehecatl/PLACE_comparisson --dataset prox --env_name MPH16 --interaction sitting_compact
-    # python examples/comparisson/testing/20_gif_generator.py --base_dir /media/apacheco/Ehecatl/PLACE_comparisson --dataset prox --env_name MPH16 --interaction sitting_hands_on_device
+    # python examples/comparisson/testing/20_gif_generator.py --base_dir /media/dougbel/Tezcatlipoca/PLACE_trainings --dataset prox --env_name MPH16 --interaction sitting_compact
+    # python examples/comparisson/testing/20_gif_generator.py --base_dir /media/dougbel/Tezcatlipoca/PLACE_trainings --dataset prox --env_name MPH16 --interaction sitting_hands_on_device
 
-    register_results = True
+    register_results = False
     base_dir = opt.base_dir
     dataset_name = opt.dataset
     env_name = opt.env_name
@@ -102,6 +102,7 @@ if __name__ == '__main__':
 
     samples_it_dir = opj(base_dir, "test", "sampled_it_clearance")
     samples_it_opti_down_dir = opj(base_dir, "test", "sampled_it_clearance_opti_down_trans")
+    samples_it_opti_smplx_dir = opj(base_dir, "test", "sampled_it_clearance_opti_smplx")
 
     samples_place_dir = opj(base_dir, "test", "sampled_place_exec")
 
@@ -130,7 +131,9 @@ if __name__ == '__main__':
     else:
         print( dataset_name, env_name, interaction)
         it_subdir = opj(samples_it_dir, env_name, interaction)
-        it_opti_down_subdir = opj(samples_it_opti_down_dir, env_name, interaction)
+        # it_opti_down_subdir = opj(samples_it_opti_down_dir, env_name, interaction)
+        it_opti_smplx_subdir = opj(samples_it_opti_smplx_dir, env_name, interaction)
+
         place_subdir = opj(samples_place_dir, env_name, interaction)
 
         for np_point_file_name in get_file_names_with_extension_in(it_subdir, ".npy"):
@@ -154,12 +157,12 @@ if __name__ == '__main__':
             if not os.path.exists(output_subdir):
                 os.makedirs(output_subdir)
 
-            trimesh_body = trimesh.load(opj(place_subdir, f"body_{n}_orig.ply"))
-            generate_gif(trimesh_env, trimesh_body, view_center, opj(output_subdir, f"body_{n}_orig.gif"))
-            gc.collect()
-            trimesh_body = trimesh.load(opj(place_subdir, f"body_{n}_opt1.ply"))
-            generate_gif(trimesh_env, trimesh_body, view_center, opj(output_subdir, f"body_{n}_opt1.gif"))
-            gc.collect()
+            # trimesh_body = trimesh.load(opj(place_subdir, f"body_{n}_orig.ply"))
+            # generate_gif(trimesh_env, trimesh_body, view_center, opj(output_subdir, f"body_{n}_orig.gif"))
+            # gc.collect()
+            # trimesh_body = trimesh.load(opj(place_subdir, f"body_{n}_opt1.ply"))
+            # generate_gif(trimesh_env, trimesh_body, view_center, opj(output_subdir, f"body_{n}_opt1.gif"))
+            # gc.collect()
             trimesh_body = trimesh.load(opj(place_subdir, f"body_{n}_opt2.ply"))
             generate_gif(trimesh_env, trimesh_body, view_center, opj(output_subdir, f"body_{n}_opt2.gif"))
             gc.collect()
@@ -168,12 +171,16 @@ if __name__ == '__main__':
             if not os.path.exists(output_subdir):
                 os.makedirs(output_subdir)
 
-            trimesh_body = trimesh.load(opj(it_subdir, f"body_{n}.ply"))
-            generate_gif(trimesh_env, trimesh_body, view_center, opj(output_subdir, f"body_{n}.gif"))
+            # trimesh_body = trimesh.load(opj(it_subdir, f"body_{n}.ply"))
+            # generate_gif(trimesh_env, trimesh_body, view_center, opj(output_subdir, f"body_{n}.gif"))
+            # gc.collect()
+            # trimesh_body = trimesh.load(opj(it_opti_down_subdir, f"body_{n}.ply"))
+            # generate_gif(trimesh_env, trimesh_body, view_center, opj(output_subdir, f"body_{n}_opti_down.gif"))
+            # gc.collect()
+            trimesh_body = trimesh.load(opj(it_opti_smplx_subdir, f"body_{n}.ply"))
+            generate_gif(trimesh_env, trimesh_body, view_center, opj(output_subdir, f"body_{n}_opti_smplx.gif"))
             gc.collect()
-            trimesh_body = trimesh.load(opj(it_opti_down_subdir, f"body_{n}.ply"))
-            generate_gif(trimesh_env, trimesh_body, view_center, opj(output_subdir, f"body_{n}_opti_down.gif"))
-            gc.collect()
+
 
 
         if register_results:
