@@ -100,7 +100,7 @@ if __name__ == '__main__':
     directory_datasets = opj(base_dir, "datasets")
 
     samples_it_dir = opj(base_dir, "test", "sampled_it_clearance")
-    samples_it_opti_down_dir = opj(base_dir, "test", "sampled_it_clearance_opti_down_trans")
+    samples_it_opti_smplx_dir = opj(base_dir, "test", "sampled_it_clearance_opti_smplx")
 
     samples_place_dir = opj(base_dir, "test", "sampled_place_exec")
 
@@ -139,10 +139,10 @@ if __name__ == '__main__':
 
         print( dataset_name, env_name, interaction)
         it_subdir = opj(samples_it_dir, env_name, interaction)
-        it_opti_down_subdir = opj(samples_it_opti_down_dir, env_name, interaction)
+        it_opti_smplx_subdir = opj(samples_it_opti_smplx_dir, env_name, interaction)
         place_subdir = opj(samples_place_dir, env_name, interaction)
 
-        np_point_files = get_file_names_with_extension_in(it_subdir, ".npy")
+        np_point_files = [f for f in get_file_names_with_extension_in(it_subdir, ".npy") if f.startswith("point_")]
         #select one of the files randomly
         np_point_file_name = np_point_files[ random.randint( 0, len(np_point_files)-1 ) ]
 
@@ -176,7 +176,7 @@ if __name__ == '__main__':
             trimesh_body = trimesh.load(opj(place_subdir, f"body_{n}_opt2.ply"))
             sample_algorithm = "place"
         else:
-            trimesh_body = trimesh.load(opj(it_opti_down_subdir, f"body_{n}.ply"))
+            trimesh_body = trimesh.load(opj(it_opti_smplx_subdir, f"body_{n}.ply"))
             counter_part_algorithm = "it"
 
         trimesh_body.apply_translation([0, 0, z_translation])
