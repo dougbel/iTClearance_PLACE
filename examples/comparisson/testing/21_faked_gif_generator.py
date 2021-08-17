@@ -91,7 +91,8 @@ if __name__ == '__main__':
 
     # python examples/comparisson/testing/21_faked_gif_generator.py --base_dir /media/dougbel/Tezcatlipoca/PLACE_trainings --batch_size 5
 
-    register_results = True
+    register_results = False
+    shuffle_order = False
     base_dir = opt.base_dir
 
     batch_size = int(opt.batch_size)
@@ -127,7 +128,8 @@ if __name__ == '__main__':
     if num_pending_tasks <= 0:
         exit()
 
-    random.shuffle(pending_tasks)
+    if shuffle_order :
+        random.shuffle(pending_tasks)
 
     print('STARTING TASKS: total %d, done %d, pendings %d' % (num_total_task, num_completed_task, num_pending_tasks))
 
