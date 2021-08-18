@@ -101,7 +101,7 @@ if __name__ == '__main__':
     directory_datasets = opj(base_dir, "datasets")
 
     samples_it_dir = opj(base_dir, "test", "sampled_it_clearance")
-    samples_it_opti_down_dir = opj(base_dir, "test", "sampled_it_clearance_opti_down_trans")
+    # samples_it_opti_down_dir = opj(base_dir, "test", "sampled_it_clearance_opti_down_trans")
     samples_it_opti_smplx_dir = opj(base_dir, "test", "sampled_it_clearance_opti_smplx")
 
     samples_place_dir = opj(base_dir, "test", "sampled_place_exec")

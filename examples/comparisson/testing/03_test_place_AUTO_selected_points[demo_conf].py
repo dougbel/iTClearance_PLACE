@@ -1,14 +1,14 @@
 """
 This execute PLACE with parameters as in the demo provided in github
-in demo
-weight_loss_rec_bps = 3.0
-itr_s1 = 200
-itr_s2 = 100
+==>in demo
+    weight_loss_rec_bps = 3.0
+    itr_s1 = 200
+    itr_s2 = 100
 
-in paper
-weight_loss_rec_bps = 1.0
+==>in paper
+    weight_loss_rec_bps = 1.0
 
-this are not mentioned in paper:
+    this are not mentioned in paper:
     itr_s1 = 200
     itr_s2 = 100
 
