@@ -2,6 +2,7 @@ import argparse
 import gc
 import os
 import random
+import shutil
 import time
 
 import numpy as np
@@ -88,8 +89,8 @@ print(opt)
 
 if __name__ == '__main__':
 
-    # python examples/comparisson/testing/20_gif_generator.py --base_dir /media/dougbel/Tezcatlipoca/PLACE_trainings --dataset prox --env_name MPH16 --interaction sitting_compact
-    # python examples/comparisson/testing/20_gif_generator.py --base_dir /media/dougbel/Tezcatlipoca/PLACE_trainings --dataset prox --env_name MPH16 --interaction sitting_hands_on_device
+    # python examples/comparisson/testing/20_gif_generator[demo_config].py --base_dir /media/dougbel/Tezcatlipoca/PLACE_trainings --dataset prox --env_name MPH16 --interaction sitting_compact
+    # python examples/comparisson/testing/20_gif_generator[demo_config].py --base_dir /media/dougbel/Tezcatlipoca/PLACE_trainings --dataset prox --env_name MPH16 --interaction sitting_hands_on_device
 
     register_results = False
     base_dir = opt.base_dir
@@ -104,13 +105,17 @@ if __name__ == '__main__':
     # samples_it_opti_down_dir = opj(base_dir, "test", "sampled_it_clearance_opti_down_trans")
     samples_it_opti_smplx_dir = opj(base_dir, "test", "sampled_it_clearance_opti_smplx")
 
-    samples_place_dir = opj(base_dir, "test", "sampled_place_exec")
+    samples_place_dir = opj(base_dir, "test", "sampled_place_exec[demo_conf]")
 
-    output_dir = opj(base_dir, 'test', 'gifted_place_auto_samples_extracted')
+    #this is the parh to verify if the gif asociates with iTClearance->SMPLX optimization already exists
+    paper_output_dir = opj(base_dir, 'test', 'gifted_place_auto_samples_extracted')
+
+    #this is the actual output directory
+    output_dir = opj(base_dir, 'test', 'gifted_place_auto_samples_extracted[demo_conf]')
 
     follow_up_file = opj(base_dir, 'test', 'follow_up_process.csv')
-    previus_follow_up_column = "place_auto_samples_extracted"
-    current_follow_up_column = "gifted_place_auto_samples_extracted"
+    previus_follow_up_column = "place_auto_samples_extracted[demo_conf]"
+    current_follow_up_column = "gifted_place_auto_samples_extracted[demo_conf]"
 
     follow_up_data = pd.read_csv(follow_up_file, index_col=[0, 1, 2])
     if not current_follow_up_column in follow_up_data.columns:
@@ -167,19 +172,27 @@ if __name__ == '__main__':
             generate_gif(trimesh_env, trimesh_body, view_center, opj(output_subdir, f"body_{n}_opt2.gif"))
             gc.collect()
 
+
+
             output_subdir = opj(output_dir, env_name, interaction, "it")
             if not os.path.exists(output_subdir):
                 os.makedirs(output_subdir)
 
-            # trimesh_body = trimesh.load(opj(it_subdir, f"body_{n}.ply"))
-            # generate_gif(trimesh_env, trimesh_body, view_center, opj(output_subdir, f"body_{n}.gif"))
-            # gc.collect()
-            # trimesh_body = trimesh.load(opj(it_opti_down_subdir, f"body_{n}.ply"))
-            # generate_gif(trimesh_env, trimesh_body, view_center, opj(output_subdir, f"body_{n}_opti_down.gif"))
-            # gc.collect()
-            trimesh_body = trimesh.load(opj(it_opti_smplx_subdir, f"body_{n}.ply"))
-            generate_gif(trimesh_env, trimesh_body, view_center, opj(output_subdir, f"body_{n}_opti_smplx.gif"))
-            gc.collect()
+            # here I verify if the gif whit iT Clearance with SMPLX optimization is vailible, then copy
+            paper_iT_gif_file = opj( paper_output_dir, env_name, interaction, "it", f"body_{n}_opti_smplx.gif")
+            if os.path.exists(paper_iT_gif_file):
+                shutil.copy(paper_iT_gif_file, opj(output_subdir, f"body_{n}_opti_smplx.gif"))
+            else:
+
+                # trimesh_body = trimesh.load(opj(it_subdir, f"body_{n}.ply"))
+                # generate_gif(trimesh_env, trimesh_body, view_center, opj(output_subdir, f"body_{n}.gif"))
+                # gc.collect()
+                # trimesh_body = trimesh.load(opj(it_opti_down_subdir, f"body_{n}.ply"))
+                # generate_gif(trimesh_env, trimesh_body, view_center, opj(output_subdir, f"body_{n}_opti_down.gif"))
+                # gc.collect()
+                trimesh_body = trimesh.load(opj(it_opti_smplx_subdir, f"body_{n}.ply"))
+                generate_gif(trimesh_env, trimesh_body, view_center, opj(output_subdir, f"body_{n}_opti_smplx.gif"))
+                gc.collect()
 
 
 
