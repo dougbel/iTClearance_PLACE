@@ -2,17 +2,14 @@ import argparse
 import gc
 import json
 import os
-import random
+import warnings
 from os.path import join as opj
 from shutil import copyfile
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 import trimesh
-import vedo
-import warnings
-import it
-from it import util
+
 from util.util_mesh import read_sdf
 from util.util_proxd import load_smplx_model, load_vposer_model, optimize_body_on_environment
 from utils import get_contact_id

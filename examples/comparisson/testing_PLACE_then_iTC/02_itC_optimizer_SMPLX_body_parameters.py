@@ -1,29 +1,33 @@
+import argparse
 import gc
 import json
 import os
-import random
+import warnings
 from os.path import join as opj
 from shutil import copyfile
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 import trimesh
-import vedo
-import warnings
-import it
-from it import util
+
 from util.util_mesh import read_sdf
 from util.util_proxd import load_smplx_model, load_vposer_model, optimize_body_on_environment
 from utils import get_contact_id
 
+warnings.simplefilter("ignore", UserWarning)
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--base_dir', required=True, help='Information directory (dataset, pretrained models, etc)')
+opt = parser.parse_args()
+print(opt)
+
 if __name__ == '__main__':
 
-    warnings.simplefilter("ignore", UserWarning)
 
     visualize= True
     save_results = False
 
-    base_dir = "/media/dougbel/Tezcatlipoca/PLACE_trainings"
+    base_dir = opt.base_dir #"/media/dougbel/Tezcatlipoca/PLACE_trainings"
     # base_dir = "/media/apacheco/Ehecatl/PLACE_comparisson"
 
 
