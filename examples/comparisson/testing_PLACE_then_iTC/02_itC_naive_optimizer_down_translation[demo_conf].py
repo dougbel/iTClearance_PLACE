@@ -25,9 +25,9 @@ if __name__ == '__main__':
     directory_datasets = opj(base_dir, "datasets")
 
 
-    place_samples_dir = opj(base_dir,'test_place_picker', 'sampled_place_exec')
-    it_samples_dir = opj(base_dir, 'test_place_picker', 'sampled_it_clearance')
-    output_dir = opj(base_dir, 'test_place_picker', 'sampled_it_clearance_opti_down_trans')
+    place_samples_dir = opj(base_dir,'test_place_picker[demo_conf]', 'sampled_place_exec')
+    it_samples_dir = opj(base_dir, 'test_place_picker[demo_conf]', 'sampled_it_clearance')
+    output_dir = opj(base_dir, 'test_place_picker[demo_conf]', 'sampled_it_clearance_opti_down_trans')
 
     interactions_by_type = {
         "laying": ["laying_bed", "laying_hands_up", "laying_on_sofa", "laying_sofa_foot_on_floor"],
@@ -42,7 +42,7 @@ if __name__ == '__main__':
 
 
 
-    follow_up_file = opj(base_dir,'test_place_picker', 'follow_up_process.csv')
+    follow_up_file = opj(base_dir,'test_place_picker[demo_conf]', 'follow_up_process.csv')
     previous_follow_up_column = "num_it_picked_sampled"
     current_follow_up_column = "num_it_picked_sampled_opti_down_trans"
 

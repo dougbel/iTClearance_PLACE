@@ -1,9 +1,3 @@
-"""
-It was noticeable how bad results were found due to the direct calculation of optimization using
-Contact and Collision losses
-"""
-
-
 import warnings
 from os.path import join as opj
 from shutil import copyfile
@@ -47,14 +41,14 @@ def shift_rotate_mesh(body_verts, body_faces, shift, rotation):
 def execute_place_in_picked_point(data_dir, dataset_name, scene_name, np_point, visualize = True):
     # set optimization hype-parameters
     weight_loss_rec_verts = 1.0
-    weight_loss_rec_bps = 1.0 # 3.0
+    weight_loss_rec_bps = 3.0
     weight_loss_vposer = 0.02
     weight_loss_shape = 0.01
     weight_loss_hand = 0.01
     weight_collision = 8.0
     weight_loss_contact = 0.5
-    itr_s1 = 0  # 200
-    itr_s2 = 300 # 100
+    itr_s1 = 200
+    itr_s2 = 100
 
     cube_size = 2.0  # 3D cage size
     optimize = True  # optimize or not
@@ -455,7 +449,7 @@ def execute_place_in_picked_point(data_dir, dataset_name, scene_name, np_point, 
     body_trimesh_opt_s1 = shift_rotate_mesh(body_verts_opt_s1, smplx_model.faces, shift, rot_angle_1)
     body_trimesh_opt_s2 = shift_rotate_mesh(body_verts_opt_s2, smplx_model.faces, shift, rot_angle_1)
 
-    body_trimesh_no_opt.visual.face_colors = [100, 100, 100, 80]
+    body_trimesh_no_opt.visual.face_colors = [200, 200, 200, 80]
     body_trimesh_opt_s1.visual.face_colors = [200, 200, 200, 150]
     body_trimesh_opt_s2.visual.face_colors = [200, 200, 200, 255]
 
@@ -483,9 +477,9 @@ if __name__ == '__main__':
 
     directory_datasets = opj(base_dir, "datasets")
 
-    output_dir = opj(base_dir, 'test_place_picker', 'sampled_place_exec')
+    output_dir = opj(base_dir, 'test_place_picker[demo_conf]', 'sampled_place_exec')
 
-    follow_up_file = opj(base_dir,'test_place_picker', 'follow_up_process.csv')
+    follow_up_file = opj(base_dir,'test_place_picker[demo_conf]', 'follow_up_process.csv')
     counter_follow_up_column = "num_place_picked_sampled"
     goal_follow_up_column = "goal_place_picked_sampled"
 
@@ -530,15 +524,11 @@ if __name__ == '__main__':
                 print(f"Select the {i}(th) testing point")
                 sel_gui = Selector(trimesh_env, scene_min_x, scene_max_x, scene_min_y, scene_max_y)
                 selected_p = sel_gui.select_point_to_test()
-                # base_old_selection_dir ="/media/dougbel/Tezcatlipoca/PLACE_trainings_no_proxd/test_place_picker/sampled_place_exec"
-                # last_selection_point = opj(base_old_selection_dir, scene_name, f"point_{i}.npy")
-                # selected_p = np.load(last_selection_point)
-
             trimesh_env += create_marker(selected_p)
 
             mesh_orig, mesh_opt1, mesh_opt2 = execute_place_in_picked_point(base_dir, dataset_name, scene_name, selected_p, visualize=True)
             mesh_orig.export(opj(output_subdir, f"body_{i}_orig.ply"))
-            # mesh_opt1.export(opj(output_subdir, f"body_{i}_opt1.ply"))
+            mesh_opt1.export(opj(output_subdir, f"body_{i}_opt1.ply"))
             mesh_opt2.export(opj(output_subdir, f"body_{i}_opt2.ply"))
 
             inter_type = None
