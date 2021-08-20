@@ -101,8 +101,11 @@ if __name__ == '__main__':
 
             in_collision, contact_data = collision_tester.in_collision_single(it_body, return_data=True)
 
+            translation = 0.0
+            delta = -0.003
             while in_collision == False:
-                it_body.apply_translation([0, 0, -0.003])
+                it_body.apply_translation([0, 0, delta])
+                translation += delta
                 in_collision, contact_data = collision_tester.in_collision_single(it_body, return_data=True)
 
 
@@ -121,6 +124,9 @@ if __name__ == '__main__':
                 if not os.path.exists(output_subdir):
                     os.makedirs(output_subdir)
                 it_body.export(opj(output_subdir, f"body_{current_num_point}_{current_interaction}.ply"))
+                w_txt_file = open(opj(output_subdir, f"body_{current_num_point}_{current_interaction}_translation.txt"), "w")
+                w_txt_file.write(str(translation))
+                w_txt_file.close()
 
         if save_results:
             num_completed_task += 1
