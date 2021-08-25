@@ -92,7 +92,11 @@ if __name__ == '__main__':
     # python examples/comparisson/testing/20_gif_generator[demo_config].py --base_dir /media/dougbel/Tezcatlipoca/PLACE_trainings --dataset prox --env_name MPH16 --interaction sitting_compact
     # python examples/comparisson/testing/20_gif_generator[demo_config].py --base_dir /media/dougbel/Tezcatlipoca/PLACE_trainings --dataset prox --env_name MPH16 --interaction sitting_hands_on_device
 
-    register_results = False
+    register_results = True
+
+    # crop the dataset to an specific size to avoid problem on rendering the gif image
+    crop_scene_on_dataset = "replica_v1" # None
+
     base_dir = opt.base_dir
     dataset_name = opt.dataset
     env_name = opt.env_name
@@ -150,6 +154,18 @@ if __name__ == '__main__':
 
             file_mesh_env = opj(directory_datasets, dataset_name, "scenes", env_name + ".ply")
             trimesh_env = trimesh.load(file_mesh_env)
+
+            if crop_scene_on_dataset == dataset_name:
+                output_subdir = opj(output_dir, env_name, interaction)
+                if not os.path.exists(output_subdir):
+                    os.makedirs(output_subdir)
+                vedo_env = vedo.load(file_mesh_env)
+                b=vedo.Box(pos= np_point,length=4.6, width=4.6, height=6)
+                vedo_env.cutWithMesh(b)
+                vedo.write(vedo_env, opj(output_subdir, f"{env_name}_cropped.ply"))
+                trimesh_env = trimesh.load(opj(output_subdir, f"{env_name}_cropped.ply"))
+                os.remove(opj(output_subdir, f"{env_name}_cropped.ply"))
+
 
             #calculating view center
             view_center = np.copy(np_point)
