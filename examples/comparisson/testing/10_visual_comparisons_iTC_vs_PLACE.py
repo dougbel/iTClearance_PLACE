@@ -13,9 +13,11 @@ if __name__ == '__main__':
     # base_dir = "/media/apacheco/Ehecatl/PLACE_comparisson"
     view_place_demo_conf = True
     full_visualization = False
+    shuffle_order = True
 
-
-    filter_dataset = "replica_v1" # None, mp3d, prox
+    filter_dataset = None # None, mp3d, prox, replica_v1
+    filter_scene = None # "frl_apartment_0"
+    filter_interaction = None #"reaching_out_ontable_one_hand"
 
     dataset_path = opj(base_dir, "datasets")
 
@@ -46,10 +48,17 @@ if __name__ == '__main__':
 
     print( 'COMPLETED TASKS: total %d, done %d' % (num_total_task, num_completed_task))
 
-    random.shuffle(completed_task)
+    if shuffle_order:
+        random.shuffle(completed_task)
+    else:
+        completed_task.sort()
     for dataset_name, scene_name, interaction in completed_task:
-
+        print(dataset_name, "   ", scene_name, "   ", interaction)
         if filter_dataset is not None and filter_dataset != dataset_name:
+            continue
+        if filter_scene is not None and filter_scene != scene_name:
+            continue
+        if filter_interaction is not None and filter_interaction != interaction:
             continue
 
         vedo_scene = vedo.load(opj(dataset_path, dataset_name, "scenes", scene_name+".ply"))
@@ -83,7 +92,7 @@ if __name__ == '__main__':
 
 
         if full_visualization:
-            plt = vedo.Plotter(shape=(3,5), title=f"{dataset_name}/{scene_name}", size=(1800,1000), axes=4)
+            plt = vedo.Plotter(shape=(3,5), title=f"{dataset_name}/{scene_name}/{interaction}", size=(1800,1000), axes=4)
 
             plt.show(vedo_scene+place_b0_orig, "PLACE, No optimization" ,at=0)
             plt.show(vedo_scene+place_b0_opt1, "PLACE SimOptim", at=1)
@@ -104,7 +113,7 @@ if __name__ == '__main__':
                 plt.show(vedo_scene+it_b2, at=13 )
                 plt.show(vedo_scene+it_b2_opti_smplx, at=14 )
         else:
-            plt = vedo.Plotter(shape=(2, 3), title=f"{dataset_name}/{scene_name}", size=(1800, 1000), axes=4)
+            plt = vedo.Plotter(shape=(2, 3), title=f"{dataset_name}/{scene_name}/{interaction}", size=(1800, 1000), axes=4)
 
             plt.show(vedo_scene + place_b0_opt2, "PLACE AdvOptim", at=0)
             plt.show(vedo_scene + it_b0_opti_smplx, "iTCleareance optimized", at=3)
