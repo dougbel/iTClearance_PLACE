@@ -204,7 +204,7 @@ if __name__ == '__main__':
                 # generate_gif(trimesh_env, trimesh_body, view_center, opj(output_subdir, f"body_{n}.gif"))
                 # gc.collect()
                 # trimesh_body = trimesh.load(opj(it_opti_down_subdir, f"body_{n}.ply"))
-                # generate_gif(trimesh_env, trimesh_body, view_center, opj(output_subdir, f"body_{n}_opti_down.gif"))
+                # generate_gif(trimesh_env, trimesh_body, view_center, opj(output_subdir, f"body_{n}_opti_smplx.gif"))
                 # gc.collect()
                 trimesh_body = trimesh.load(opj(it_opti_smplx_subdir, f"body_{n}.ply"))
                 generate_gif(trimesh_env, trimesh_body, view_center, opj(output_subdir, f"body_{n}_opti_smplx.gif"))
