@@ -94,13 +94,13 @@ if __name__ == '__main__':
 
     directory_datasets = opj(base_dir, "datasets")
 
-    samples_it_dir = opj(base_dir, "test_place_picker", "sampled_it_clearance")
-    sampled_it_opti_smplx_dir = opj(base_dir, "test_place_picker", "sampled_it_clearance_opti_smplx")
-    samples_place_dir = opj(base_dir, "test_place_picker", "sampled_place_exec")
-    points_dir = opj(base_dir, 'test_place_picker', 'sampled_place_exec')
+    samples_it_dir = opj(base_dir, "test_place_picker[demo_conf]", "sampled_it_clearance")
+    sampled_it_opti_smplx_dir = opj(base_dir, "test_place_picker[demo_conf]", "sampled_it_clearance_opti_smplx")
+    samples_place_dir = opj(base_dir, "test_place_picker[demo_conf]", "sampled_place_exec")
+    points_dir = opj(base_dir, 'test_place_picker[demo_conf]', 'sampled_place_exec')
 
 
-    output_dir = opj(base_dir, 'test_place_picker', 'gifted_samples_extracted')
+    output_dir = opj(base_dir, 'test_place_picker[demo_conf]', 'gifted_samples_extracted')
 
     interactions_by_type = {
         "laying": ["laying_bed", "laying_hands_up", "laying_on_sofa", "laying_sofa_foot_on_floor"],
@@ -114,7 +114,7 @@ if __name__ == '__main__':
     }
 
 
-    follow_up_file = opj(base_dir, 'test_place_picker', 'follow_up_process.csv')
+    follow_up_file = opj(base_dir, 'test_place_picker[demo_conf]', 'follow_up_process.csv')
     last_task_colum = "num_it_picked_sampled_opti_smplx"
     current_follow_up_column = "gifted_place_auto_samples_extracted"
 
@@ -169,12 +169,12 @@ if __name__ == '__main__':
         if not os.path.exists(output_subdir):
             os.makedirs(output_subdir)
 
-        trimesh_body = trimesh.load(opj(place_subdir, f"body_{num_point}_orig.ply"))
-        generate_gif(trimesh_env, trimesh_body, view_center, opj(output_subdir, f"body_{num_point}_orig.gif"))
-        gc.collect()
-        trimesh_body = trimesh.load(opj(place_subdir, f"body_{num_point}_opt1.ply"))
-        generate_gif(trimesh_env, trimesh_body, view_center, opj(output_subdir, f"body_{num_point}_opt1.gif"))
-        gc.collect()
+        # trimesh_body = trimesh.load(opj(place_subdir, f"body_{num_point}_orig.ply"))
+        # generate_gif(trimesh_env, trimesh_body, view_center, opj(output_subdir, f"body_{num_point}_orig.gif"))
+        # gc.collect()
+        # trimesh_body = trimesh.load(opj(place_subdir, f"body_{num_point}_opt1.ply"))
+        # generate_gif(trimesh_env, trimesh_body, view_center, opj(output_subdir, f"body_{num_point}_opt1.gif"))
+        # gc.collect()
         trimesh_body = trimesh.load(opj(place_subdir, f"body_{num_point}_opt2.ply"))
         generate_gif(trimesh_env, trimesh_body, view_center, opj(output_subdir, f"body_{num_point}_opt2.gif"))
         gc.collect()
@@ -190,9 +190,9 @@ if __name__ == '__main__':
         for current_interaction in interactions_by_type[interaction_type]:
             file_name = f"body_{num_point}_{current_interaction}.ply"
             if os.path.exists(opj(samples_it_dir, env_name, file_name)):
-                trimesh_body = trimesh.load(opj(it_subdir, f"body_{num_point}_{current_interaction}.ply"))
-                generate_gif(trimesh_env, trimesh_body, view_center, opj(output_subdir, f"body_{num_point}_{current_interaction}.gif"))
-                gc.collect()
+                # trimesh_body = trimesh.load(opj(it_subdir, f"body_{num_point}_{current_interaction}.ply"))
+                # generate_gif(trimesh_env, trimesh_body, view_center, opj(output_subdir, f"body_{num_point}_{current_interaction}.gif"))
+                # gc.collect()
                 trimesh_body = trimesh.load(opj(it_opti_smplx_subdir, f"body_{num_point}_{current_interaction}.ply"))
                 generate_gif(trimesh_env, trimesh_body, view_center, opj(output_subdir, f"body_{num_point}_{current_interaction}_opti_smplx.gif"))
                 gc.collect()
@@ -201,7 +201,8 @@ if __name__ == '__main__':
         if register_results:
             num_completed_task += 1
             copyfile(follow_up_file, follow_up_file + "_backup")
-            follow_up_data.at[(dataset_name, env_name), current_follow_up_column] = num_point+1
+            prev_val = follow_up_data.at[(dataset_name, env_name), current_follow_up_column]
+            follow_up_data.at[(dataset_name, env_name), current_follow_up_column] = prev_val+1
             follow_up_data.to_csv(follow_up_file)
             print(f"UPDATE: total {num_total_task}, done {num_completed_task}")
 

@@ -4,6 +4,7 @@ import random
 import pandas as pd
 from  os.path import join as opj
 
+import trimesh
 import vedo
 
 
@@ -12,13 +13,10 @@ if __name__ == '__main__':
     base_dir = "/media/dougbel/Tezcatlipoca/PLACE_trainings"
     # base_dir = "/media/apacheco/Ehecatl/PLACE_comparisson"
 
-    filter_dataset = "replica_v1"
+    filter_dataset = None #"replica_v1"
+    shuffle_order = True
+    view_place_demo_conf = True
 
-    dataset_path = opj(base_dir, "datasets")
-
-    samples_it_dir = opj(base_dir, "test_place_picker", "sampled_it_clearance")
-    samples_it_optim_down_dir = opj(base_dir, "test_place_picker", "sampled_it_clearance_opti_down_trans")
-    samples_place_dir = opj(base_dir, "test_place_picker", "sampled_place_exec")
 
     interactions_by_type = {
         "laying": ["laying_bed", "laying_hands_up", "laying_on_sofa", "laying_sofa_foot_on_floor"],
@@ -31,9 +29,21 @@ if __name__ == '__main__':
         "walking": ["walking_left_foot", "walking_right_foot"]
     }
 
+    dataset_path = opj(base_dir, "datasets")
 
-    follow_up_file = opj(base_dir,'test_place_picker', 'follow_up_process.csv')
-    last_task_colum = "num_it_picked_sampled_opti_down_trans"
+    if view_place_demo_conf:
+        samples_it_dir = opj(base_dir, "test_place_picker[demo_conf]", "sampled_it_clearance")
+        samples_it_optim_smplx_dir = opj(base_dir, "test_place_picker[demo_conf]","sampled_it_clearance_opti_smplx")
+        samples_place_dir = opj(base_dir, "test_place_picker[demo_conf]", "sampled_place_exec")
+        follow_up_file = opj(base_dir, 'test_place_picker[demo_conf]', 'follow_up_process.csv')
+    else:
+        samples_it_dir = opj(base_dir, "test_place_picker", "sampled_it_clearance")
+        samples_it_optim_smplx_dir = opj(base_dir, "test_place_picker", "sampled_it_clearance_opti_smplx")
+        samples_place_dir = opj(base_dir, "test_place_picker", "sampled_place_exec")
+        follow_up_file = opj(base_dir, 'test_place_picker', 'follow_up_process.csv')
+
+
+    last_task_colum = "num_it_picked_sampled_opti_smplx"
 
     follow_up_data = pd.read_csv(follow_up_file, index_col=[0, 1])
 
@@ -47,7 +57,10 @@ if __name__ == '__main__':
 
     print('COMPLETED TASKS: total %d, done %d' % (num_total_task, len(completed_task)))
 
-    random.shuffle(completed_task)
+    if shuffle_order:
+        random.shuffle(completed_task)
+    else:
+        completed_task.sort()
 
     for dataset_name, scene_name, num_point in completed_task:
 
@@ -70,21 +83,24 @@ if __name__ == '__main__':
         vedo_scene = vedo.load(opj(dataset_path, dataset_name, "scenes", scene_name + ".ply"))
         vedo_scene.backFaceCulling(value=True)
 
-        plt = vedo.Plotter(N=len(available_interactions)+3,
+        plt = vedo.Plotter(N=len(available_interactions)+1,
                            title=f"{dataset_name}/{scene_name}", size=(1800, 1000), axes=4)
 
-        place_orig = vedo.load(opj(samples_place_dir, scene_name, f"body_{num_point}_orig.ply")).color("white")
-        place_opt1 = vedo.load(opj(samples_place_dir, scene_name, f"body_{num_point}_opt1.ply")).color("white")
-        place_opt2 = vedo.load(opj(samples_place_dir, scene_name, f"body_{num_point}_opt2.ply")).color("white")
-        plt.show(vedo_scene + place_orig, "PLACE, No optimization", at=0)
-        plt.show(vedo_scene + place_opt1, "PLACE SimOptim", at=1)
-        plt.show(vedo_scene + place_opt2, "PLACE AdvOptim", at=2)
+        samples_place_subdir = opj(samples_place_dir, scene_name)
+        # place_orig = vedo.trimesh2vtk(trimesh.load(opj(samples_place_subdir, f"body_{num_point}_orig.ply"))).color("white")
+        # place_opt1 = vedo.trimesh2vtk(trimesh.load(opj(samples_place_subdir, f"body_{num_point}_opt1.ply"))).color("white")
+        place_opt2 = vedo.trimesh2vtk(trimesh.load(opj(samples_place_subdir, f"body_{num_point}_opt2.ply"))).color("white")
+        # plt.show(vedo_scene + place_orig, "PLACE, No optimization", at=0)
+        # plt.show(vedo_scene + place_opt1, "PLACE SimOptim", at=1)
+        plt.show(vedo_scene + place_opt2, "PLACE AdvOptim", at=0)
 
         i=0
         for current_interaction, file_name in available_interactions:
             # it_b0 = vedo.load(opj(samples_it_dir, scene_name, file_name)).color("yellow").alpha(.5)
-            it_b0_opti_down = vedo.load(opj(samples_it_optim_down_dir, scene_name, file_name)).color("green")
-            plt.show(vedo_scene+it_b0_opti_down, f"iTClearance {current_interaction}", at=i+3)
+            it_b0_opti_down = vedo.trimesh2vtk(trimesh.load(opj(samples_it_optim_smplx_dir, scene_name, file_name)))
+            it_b0_opti_down.color("green")
+
+            plt.show(vedo_scene+it_b0_opti_down, f"iTClearance {current_interaction}", at=i+1)
             # plt.show(vedo_scene+,f"{current_interaction} OptiDown", at=i*2+4)
             i+=1
         vedo.interactive()
