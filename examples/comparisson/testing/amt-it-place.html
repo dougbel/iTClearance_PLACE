@@ -4,8 +4,8 @@
 <script>
     function run_this_function() {
         ok = true
-        if (!(document.getElementsByName("example1")[0].getAttribute("aria-checked") == "true" ||
-            document.getElementsByName("example2")[0].getAttribute("aria-checked") == "true")) {
+        if (!(document.getElementsByName("exampleA")[0].getAttribute("aria-checked") == "true" ||
+            document.getElementsByName("exampleB")[0].getAttribute("aria-checked") == "true")) {
             errorBox.innerHTML = '<crowd-alert type="error" dismissible>You must select one of the provided examples.</crowd-alert>';
             errorBox.scrollIntoView();
             ok=false
@@ -193,7 +193,7 @@
                     <positive-example>
                         Natural interaction examples
                         <p>
-                            <!--                <img src="https://amt-it-place.s3.eu-west-2.amazonaws.com/examples/physically_plaussible_optim.gif"/>-->
+<!--                                            <img src="https://amt-it-place-apo.s3.eu-west-2.amazonaws.com/examples/amt_physically_plaussible_optim.gif"/>-->
                             <img src="../../../images/amt_physically_plaussible_optim.gif"/>
 
                         </p>
@@ -208,7 +208,7 @@
                     <negative-example>
                         NO natural interaction examples
                         <p>
-                            <!--                            <img src="https://amt-it-place.s3.eu-west-2.amazonaws.com/examples/NO_physically_plaussible_optim.gif"/>-->
+<!--                                                        <img src="https://amt-it-place-apo.s3.eu-west-2.amazonaws.com/examples/amt_NO_physically_plaussible_optim.gif"/>-->
                             <img src="../../../images/amt_NO_physically_plaussible_optim.gif"/>
 
                         </p>
@@ -227,15 +227,15 @@
 
         <div class="gif-container">
             <div class="left-container">
-                <div class="fancy-text">Example 1</div>
-                <!--         <img class="gif-images" src="https://amt-it-place.s3.eu-west-2.amazonaws.com/it-place/${gif_left}" />-->
+                <div class="fancy-text">Example A</div>
+<!--                         <img class="gif-images" src="https://amt-it-place-apo.s3.eu-west-2.amazonaws.com/it-place/${gif_left}" />-->
                 <img class="gif-images" src="./output/very_last/17DRP5sb8fy-bedroom/walking_right_foot/it/body_1_opti_down.gif"/>
 
             </div>
             <div id="vertical-separator"></div>
             <div class="right-container">
-                <div class="fancy-text">Example 2</div>
-                <!--         <img  class="gif-images" src="https://amt-it-place.s3.eu-west-2.amazonaws.com/it-place/${gif_right}" />-->
+                <div class="fancy-text">Example B</div>
+<!--                         <img  class="gif-images" src="https://amt-it-place-apo.s3.eu-west-2.amazonaws.com/it-place/${gif_right}" />-->
                 <img class="gif-images" src="./output/very_last/17DRP5sb8fy-bedroom/walking_right_foot/place/body_1_opt2.gif"/>
             </div>
         </div>
@@ -243,8 +243,8 @@
         <div id="question">
             <b>Which example is more natural?</b><br/>
             <crowd-radio-group>
-                <crowd-radio-button name="example1">Example 1</crowd-radio-button>
-                <crowd-radio-button name="example2">Example 2</crowd-radio-button>
+                <crowd-radio-button name="exampleA">Example A</crowd-radio-button>
+                <crowd-radio-button name="exampleB">Example B</crowd-radio-button>
             </crowd-radio-group>
         </div>
 <!--        <br/>-->
