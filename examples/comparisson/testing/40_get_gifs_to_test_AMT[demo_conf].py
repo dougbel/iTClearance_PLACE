@@ -45,7 +45,7 @@ def get_fake_positions(size_batch, n_fakes):
 
     return positions_for_fake
 
-def generate_binary_csv(to_copy_real, to_copy_fake, output_subdir):
+def generate_binary_csv(to_copy_real, to_copy_fake, output_subdir, batch):
 
     size_batch = len(to_copy_real) + len(to_copy_fake)
 
@@ -83,52 +83,55 @@ def generate_binary_csv(to_copy_real, to_copy_fake, output_subdir):
 
     df = pd.DataFrame(l_data, columns=["dataset", "scene", "interaction", "num_point", "gif_left", "gif_right", "order"])
 
-    df.to_csv(os.path.join(output_subdir, "amt_binary.csv"), index=False)
+    df.to_csv(os.path.join(output_subdir, f"{str(batch).zfill(4)}_amt_binary.csv"), index=False)
 
 
-def generate_unary_csvs(to_copy_real, to_copy_fake, output_subdir):
+def generate_unary_csvs(to_copy_real, to_copy_fake, output_subdir, batch):
 
     size_batch = len(to_copy_real) + len(to_copy_fake)
 
-    positions_for_fake_it = get_fake_positions(size_batch, len(to_copy_fake))
-    positions_for_fake_place = get_fake_positions(size_batch, len(to_copy_fake))
+    positions_for_fake = get_fake_positions(size_batch, len(to_copy_fake))
+    positions_for_fake.sort()
 
-    current_fake_pos_it = 0
-    current_real_pos_it = 0
-    current_fake_pos_place = 0
-    current_real_pos_place = 0
+    sorted_to_copy_real = sorted(to_copy_real)
+    datasets_names= list(set([d[0] for d in sorted_to_copy_real]))
+    n_samples_per_dataset = int(len(sorted_to_copy_real) / len(datasets_names) / 2)
 
-    l_it_data = []
-    l_place_data = []
-    for pos in range(size_batch):
+    current_real_pos = 0
 
-        if pos in positions_for_fake_it:
-            dataset, env, interaction, p, real_gif, fake_gif, in_batch = to_copy_fake[current_fake_pos_it]
-            current_fake_pos_it += 1
-            relative_fake_gif = fake_gif[fake_gif.find(env):]
-            l_it_data.append((dataset, env, interaction, p, relative_fake_gif, "fake"))
-        else:
-            dataset, env, interaction, p, it_gif, place_gif, in_batch = to_copy_real[current_real_pos_it]
-            current_real_pos_it += 1
+    l_subbatch_01 = []
+    l_subbatch_02 = []
+
+    for n_name in range(len(datasets_names)):
+        for n_samples in range(n_samples_per_dataset):
+            dataset, env, interaction, p, it_gif, place_gif, in_batch = sorted_to_copy_real[current_real_pos]
             relative_it_gif = it_gif[it_gif.find(env):]
-            l_it_data.append((dataset, env, interaction, p, relative_it_gif, "it"))
-
-        if pos in positions_for_fake_place:
-            dataset, env, interaction, p, real_gif, fake_gif, in_batch = to_copy_fake[current_fake_pos_place]
-            current_fake_pos_place += 1
-            relative_fake_gif = fake_gif[fake_gif.find(env):]
-            l_place_data.append((dataset, env, interaction, p, relative_fake_gif, "fake"))
-        else:
-            dataset, env, interaction, p, it_gif, place_gif, in_batch = to_copy_real[current_real_pos_place]
-            current_real_pos_place += 1
             relative_place_gif = place_gif[place_gif.find(env):]
-            l_place_data.append((dataset, env, interaction, p, relative_place_gif, "place"))
+            l_subbatch_01.append((dataset, env, interaction, p, relative_it_gif, "it"))
+            l_subbatch_02.append((dataset, env, interaction, p, relative_place_gif, "place"))
+            current_real_pos += 1
+        for n_samples in range(n_samples_per_dataset):
+            dataset, env, interaction, p, it_gif, place_gif, in_batch = sorted_to_copy_real[current_real_pos]
+            relative_it_gif = it_gif[it_gif.find(env):]
+            relative_place_gif = place_gif[place_gif.find(env):]
+            l_subbatch_01.append((dataset, env, interaction, p, relative_place_gif, "place"))
+            l_subbatch_02.append((dataset, env, interaction, p, relative_it_gif, "it"))
+            current_real_pos += 1
 
-    df = pd.DataFrame(l_it_data, columns=["dataset", "scene", "interaction", "num_point", "gif_left", "order"])
-    df.to_csv(os.path.join(output_subdir, "amt_unary_it.csv"), index=False)
+    random.shuffle(l_subbatch_01)
+    random.shuffle(l_subbatch_02)
 
-    df = pd.DataFrame(l_place_data, columns=["dataset", "scene", "interaction", "num_point", "gif_left", "order"])
-    df.to_csv(os.path.join(output_subdir, "amt_unary_place.csv"), index=False)
+    for current_fake_pos in range(len(to_copy_fake)):
+        dataset, env, interaction, p, real_gif, fake_gif, in_batch = to_copy_fake[current_fake_pos]
+        relative_fake_gif = fake_gif[fake_gif.find(env):]
+        l_subbatch_01.insert(positions_for_fake[current_fake_pos], (dataset, env, interaction, p, relative_fake_gif, "fake"))
+        l_subbatch_02.insert(positions_for_fake[current_fake_pos], (dataset, env, interaction, p, relative_fake_gif, "fake"))
+
+    df = pd.DataFrame(l_subbatch_01, columns=["dataset", "scene", "interaction", "num_point", "gif_left", "order"])
+    df.to_csv(os.path.join(output_subdir, f"{str(batch).zfill(4)}_amt_unary_01.csv"), index=False)
+
+    df = pd.DataFrame(l_subbatch_02, columns=["dataset", "scene", "interaction", "num_point", "gif_left", "order"])
+    df.to_csv(os.path.join(output_subdir, f"{str(batch).zfill(4)}_amt_unary_02.csv"), index=False)
 
 
 def get_samples_list(follow_up_data, num_samples_extracted_column, samples_gif_dir):
@@ -246,7 +249,7 @@ if __name__ == '__main__':
         random.shuffle(l_real_samples)
 
         amt_available_fake_data = amt_follow_up_fake_data[amt_follow_up_fake_data[amt_follow_up_column]==0]
-        amt_available_fake_data = amt_follow_up_fake_data[amt_follow_up_fake_data['interaction'].isin(
+        amt_available_fake_data = amt_available_fake_data[amt_available_fake_data['interaction'].isin(
             ["reaching_out_mid", "reaching_out_mid_down", "reaching_out_mid_up", "reaching_out_on_table",
              "reaching_out_ontable_one_hand","standing_up", "standup_hand_on_furniture","walking_left_foot",
              "walking_right_foot"])]
@@ -265,8 +268,8 @@ if __name__ == '__main__':
 
 
         copy_files_selected(l_real_samples, l_fake_samples, output_subdir)
-        generate_binary_csv(l_real_samples, l_fake_samples, output_subdir)
-        generate_unary_csvs(l_real_samples, l_fake_samples, output_subdir)
+        generate_binary_csv(l_real_samples, l_fake_samples, output_subdir, batch)
+        generate_unary_csvs(l_real_samples, l_fake_samples, output_subdir, batch)
 
         amt_follow_up_data.set_index(["dataset", 'scene', 'interaction', 'num_point'], inplace=True)
         for sample in l_real_samples:
