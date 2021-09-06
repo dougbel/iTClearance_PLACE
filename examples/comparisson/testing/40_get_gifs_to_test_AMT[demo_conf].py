@@ -6,7 +6,25 @@ import random
 
 import numpy as np
 import pandas as pd
+from PIL import Image, ImageSequence
 
+def thumbnails(frames,x_size = 320, y_size=240):
+    for frame in frames:
+        thumbnail = frame.copy()
+        thumbnail.thumbnail((x_size,y_size), Image.HAMMING)
+        yield thumbnail
+
+def resize_gif_image(in_file_path, out_file_path, x_size = 320, y_size=240):
+    im = Image.open(in_file_path)
+
+    # Get sequence iterator
+    frames = ImageSequence.Iterator(im)
+    frames = thumbnails(frames, x_size = x_size, y_size=y_size)
+
+    # Save output
+    om = next(frames) # Handle first frame separately
+    om.info = im.info # Copy sequence info
+    om.save(out_file_path, optimize=True, save_all=True, append_images=list(frames), loop=1000)
 
 def copy_files_selected(to_copy_real, to_copy_fake, output_dir):
     for i in range(len(to_copy_real)):
@@ -14,11 +32,15 @@ def copy_files_selected(to_copy_real, to_copy_fake, output_dir):
 
         copy_it_gif = os.path.join(output_dir, env, interaction, "it", f"body_{p}_opti_smplx.gif")
         os.makedirs(os.path.dirname(copy_it_gif), exist_ok=True)
-        shutil.copyfile(it_gif, copy_it_gif)
+        # shutil.copyfile(it_gif, copy_it_gif)
+        it_gif_smaller = os.path.join(output_dir, env, interaction, "it", f"body_{p}_opti_smplx_reduced.gif")
+        resize_gif_image(it_gif, it_gif_smaller,x_size=480, y_size=360)
 
         copy_place_gif = os.path.join(output_dir, env, interaction, "place", f"body_{p}_opt2.gif")
         os.makedirs(os.path.dirname(copy_place_gif), exist_ok=True)
-        shutil.copyfile(place_gif, copy_place_gif)
+        # shutil.copyfile(place_gif, copy_place_gif)
+        place_gif_smaller = os.path.join(output_dir, env, interaction, "place", f"body_{p}_opt2_reduced.gif")
+        resize_gif_image(place_gif, place_gif_smaller,x_size=480, y_size=360)
 
     for i in range(len(to_copy_fake)):
         env, interaction, p, real_gif, fake_gif = to_copy_fake[i]
@@ -125,8 +147,8 @@ def generate_unary_csvs(to_copy_real, to_copy_fake, output_subdir):
 
 if __name__ == '__main__':
 
-    # base_dir = "/media/apacheco/Ehecatl/PLACE_comparisson/test"
-    base_dir = "/media/dougbel/Tezcatlipoca/PLACE_trainings/test"
+    base_dir = "/media/apacheco/Ehecatl/PLACE_trainings/test"
+    # base_dir = "/media/dougbel/Tezcatlipoca/PLACE_trainings/test"
 
     size_batches = 20
     total_batches = 1 # None
