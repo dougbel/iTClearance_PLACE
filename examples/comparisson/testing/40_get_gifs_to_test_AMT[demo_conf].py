@@ -137,7 +137,7 @@ if __name__ == '__main__':
     current_follow_up_column = "num_it_auto_samples"
     follow_up_data = pd.read_csv(follow_up_file, index_col=[1, 2])
 
-    real_gifs_dir = opj(base_dir, "gifted_place_auto_samples_extracted")
+    real_gifs_dir = opj(base_dir, "gifted_place_auto_samples_extracted[demo_conf]")
     fake_gifs_dir = opj(base_dir, "gifted_faked_examples")
 
     output_dir = "output"
