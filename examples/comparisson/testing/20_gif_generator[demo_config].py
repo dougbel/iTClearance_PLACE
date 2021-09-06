@@ -26,27 +26,36 @@ def generate_gif(trimesh_env, trimesh_body, view_center,  save_on_file=None):
 
     record=True if save_on_file is not None else False
 
-
     env_mesh = Mesh.from_trimesh(trimesh_env)
 
-    trimesh_body.visual.face_colors = [10, 220, 10, 255]
-    body_mesh = Mesh.from_trimesh(trimesh_body, smooth=False)
+    trimesh_body.visual.face_colors = [10, 180, 10, 255]
+    material=MetallicRoughnessMaterial(baseColorFactor=[0.3, 0.9, 0.3, 1.0])
+    body_mesh = Mesh.from_trimesh(trimesh_body, smooth=False, material=material)
 
-    trimesh_body.visual.face_colors =  [40, 40, 40, 150]
-    body_mesh_w = Mesh.from_trimesh(trimesh_body, smooth=False, wireframe=True)
+    # trimesh_body.visual.face_colors =  [40, 40, 40, 150]
+    # body_mesh_w = Mesh.from_trimesh(trimesh_body, smooth=False, wireframe=True)
 
-    # reference_mesh = Mesh.from_trimesh(trimesh.primitives.Sphere(center = np_point), smooth=False, wireframe=True)
+    scene = Scene(ambient_light=np.array([0.6, 0.6, 0.6]))
+    pl = PointLight(intensity=1)
+    pl2 = PointLight(intensity=1)
+    __, pose2 = trimesh_body.bounds
+    posl = trimesh_body.vertices.mean(axis=0)
+    posl[2] = trimesh_body.vertices.max(axis=0)[2] + .5
 
-    scene = Scene(ambient_light=np.array([0.5, 0.5, 0.5]))
-    # light = DirectionalLight(color=[.80, .80, .80], intensity=1.0)
+    # light = DirectionalLight(color=[.80, .80, .80], intensity=4)
+    # poslight = trimesh_body.vertices.mean(axis=0)
+    # poslight[2] += trimesh_body.vertices.max(axis=0)[2] + 5
+
     scene.add(env_mesh)
     scene.add(body_mesh)
-    scene.add(body_mesh_w)
+    # scene.add(body_mesh_w)
     # scene.add(reference_mesh)
-    # scene.add(light)
+    scene.add(pl, pose=trimesh.transformations.translation_matrix(posl))
+    scene.add(pl2, pose=trimesh.transformations.translation_matrix(pose2))
+    # scene.add(light, pose=trimesh.transformations.translation_matrix(poslight))
     v = Viewer(scene,
                run_in_thread=True,
-               render_flags={"shadows": True},
+               render_flags={"shadows ": True},
                viewer_flags={"rotate": True,
                              "rotate_axis": [0, 0, 1],
                              "view_center": view_center,
@@ -89,10 +98,10 @@ print(opt)
 
 if __name__ == '__main__':
 
-    # python examples/comparisson/testing/20_gif_generator[demo_config].py --base_dir /media/dougbel/Tezcatlipoca/PLACE_trainings --dataset prox --env_name MPH16 --interaction sitting_compact
+    # python examples/comparisson/testing/20_gif_generator[demo_config].py --base_dir /media/apacheco/Ehecatl/PLACE_trainings --dataset prox --env_name MPH16 --interaction sitting_compact
     # python examples/comparisson/testing/20_gif_generator[demo_config].py --base_dir /media/dougbel/Tezcatlipoca/PLACE_trainings --dataset prox --env_name MPH16 --interaction sitting_hands_on_device
 
-    register_results = True
+    register_results = False
 
     # crop the dataset to an specific size to avoid problem on rendering the gif image
     crop_scene_on_dataset = "replica_v1" # None
@@ -115,7 +124,7 @@ if __name__ == '__main__':
     paper_output_dir = opj(base_dir, 'test', 'gifted_place_auto_samples_extracted')
 
     #this is the actual output directory
-    output_dir = opj(base_dir, 'test', 'gifted_place_auto_samples_extracted[demo_conf]')
+    output_dir = opj(base_dir, 'test', 'gifted_place_auto_samples_extracted[demo_conf]_tmp')
 
     follow_up_file = opj(base_dir, 'test', 'follow_up_process.csv')
     previus_follow_up_column = "place_auto_samples_extracted[demo_conf]"
@@ -135,7 +144,7 @@ if __name__ == '__main__':
     print('STARTING TASKS: total %d, done %d, pendings %d' % (num_total_task, num_completed_task, num_pending_tasks))
 
 
-    if (dataset_name, env_name, interaction) not in pending_tasks:
+    if False:#(dataset_name, env_name, interaction) not in pending_tasks:
         print(f"PREVIOUSLY PERFORMED TASK NOTHING TO DO: base_dir {base_dir}, dataset {dataset_name}, env_name {env_name}, interaction {interaction}")
     else:
         print( dataset_name, env_name, interaction)
