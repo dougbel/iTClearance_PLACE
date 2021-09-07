@@ -5,7 +5,25 @@ import random
 
 import numpy as np
 import pandas as pd
+from PIL import Image, ImageSequence
 
+def thumbnails(frames,x_size = 320, y_size=240):
+    for frame in frames:
+        thumbnail = frame.copy()
+        thumbnail.thumbnail((x_size,y_size), Image.HAMMING)
+        yield thumbnail
+
+def resize_gif_image(in_file_path, out_file_path, x_size = 320, y_size=240):
+    im = Image.open(in_file_path)
+
+    # Get sequence iterator
+    frames = ImageSequence.Iterator(im)
+    frames = thumbnails(frames, x_size = x_size, y_size=y_size)
+
+    # Save output
+    om = next(frames) # Handle first frame separately
+    om.info = im.info # Copy sequence info
+    om.save(out_file_path, optimize=True, save_all=True, append_images=list(frames), loop=1000)
 
 def copy_files_selected(to_copy_real, to_copy_fake, output_dir):
     for i in range(len(to_copy_real)):
