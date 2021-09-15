@@ -5,6 +5,7 @@ import os
 import random
 import time
 
+import imageio
 import numpy as np
 from shutil import copyfile
 
@@ -29,30 +30,38 @@ def generate_gif(trimesh_env, trimesh_body, view_center,  save_on_file=None):
 
     env_mesh = Mesh.from_trimesh(trimesh_env)
 
-    trimesh_body.visual.face_colors = [10, 220, 10, 255]
-    body_mesh = Mesh.from_trimesh(trimesh_body, smooth=False)
+    material = MetallicRoughnessMaterial(
+        metallicFactor=0.0,
+        alphaMode='OPAQUE',
+        baseColorFactor=(0.25, 0.7, 0.25, 1.0))
 
-    trimesh_body.visual.face_colors =  [40, 40, 40, 150]
-    body_mesh_w = Mesh.from_trimesh(trimesh_body, smooth=False, wireframe=True)
+    # trimesh_body.visual.face_colors = [10, 220, 10, 255]
+    body_mesh = Mesh.from_trimesh(trimesh_body, smooth=True, material=material)
+
+    # trimesh_body.visual.face_colors =  [40, 40, 40, 150]
+    # body_mesh_w = Mesh.from_trimesh(trimesh_body, smooth=False, wireframe=True)
 
     # reference_mesh = Mesh.from_trimesh(trimesh.primitives.Sphere(center = np_point), smooth=False, wireframe=True)
 
-    scene = Scene(ambient_light=np.array([0.5, 0.5, 0.5]))
+    scene = Scene(ambient_light=np.array([0.1, 0.1, 0.1]))
     # light = DirectionalLight(color=[.80, .80, .80], intensity=1.0)
     scene.add(env_mesh)
     scene.add(body_mesh)
-    scene.add(body_mesh_w)
+    # scene.add(body_mesh_w)
     # scene.add(reference_mesh)
     # scene.add(light)
     v = Viewer(scene,
                run_in_thread=True,
-               render_flags={"shadows": True},
+               viewport_size=(420, 315),
+               render_flags={"shadows": False},
                viewer_flags={"rotate": True,
                              "rotate_axis": [0, 0, 1],
                              "view_center": view_center,
                              "rotate_rate": np.pi / 4.0,
                              "record": record,
-                             "use_perspective_cam": True
+                             "use_perspective_cam": True,
+                             "refresh_rate": 24,
+                             "use_raymond_lighting": True
                              })
 
     # for "use_perspective_cam": True
@@ -67,14 +76,17 @@ def generate_gif(trimesh_env, trimesh_body, view_center,  save_on_file=None):
     # v._camera_node.camera.xmag = max(c.xmag * sf, 1e-8)
     # v._camera_node.camera.ymag = max(c.ymag * sf, 1e-8 * c.ymag / c.xmag)
 
-    v._trackball.rotate(np.pi / 5, [0, 1, 0])
+    v._trackball.rotate(np.pi / 6.4, [0, 1, 0])
 
     time.sleep(8.1)
     v.close_external()
     while v.is_active:
         pass
     if record:
-        v.save_gif(save_on_file)
+        # v.save_gif(save_on_file)
+        imageio.mimwrite(save_on_file,  v._saved_frames, fps=v.viewer_flags['refresh_rate'],
+                         palettesize=256, subrectangles=True)
+        v._saved_frames = []
 
 
 parser = argparse.ArgumentParser()
@@ -91,11 +103,11 @@ if __name__ == '__main__':
 
     # python examples/comparisson/testing/21_faked_gif_generator.py --base_dir /media/dougbel/Tezcatlipoca/PLACE_trainings --batch_size 5
 
-    register_results = True
+    register_results = False
     shuffle_order = False
     base_dir = opt.base_dir
     # crop the dataset to an specific size to avoid problem on rendering the gif image
-    crop_scene_on_dataset = "replica_v1"  # None
+    crop_scene_on_dataset = "all"  # None
 
     batch_size = int(opt.batch_size)
 
@@ -110,7 +122,7 @@ if __name__ == '__main__':
     output_dir = opj(base_dir, 'test', 'gifted_faked_examples')
 
     follow_up_file = opj(base_dir, 'test', 'follow_up_process.csv')
-    previus_follow_up_column = "gifted_place_auto_samples_extracted[demo_conf]"
+    # previus_follow_up_column = "gifted_place_auto_samples_extracted[demo_conf]"
     current_follow_up_column = "gifted_faked_examples"
 
     follow_up_data = pd.read_csv(follow_up_file, index_col=[0, 1, 2])
@@ -119,12 +131,20 @@ if __name__ == '__main__':
 
     num_total_task = follow_up_data.index.size
 
-    completed_task = list(follow_up_data[(follow_up_data[current_follow_up_column] == True)
-                                        & (follow_up_data[previus_follow_up_column] == True)].index)
+    completed_task = list(follow_up_data[(follow_up_data[current_follow_up_column] == True)].index)
     num_completed_task = len(completed_task)
 
-    pending_tasks = list(follow_up_data[(follow_up_data[current_follow_up_column] == False)
-                                        & (follow_up_data[previus_follow_up_column] == True)].index)
+    pseudo_pending_tasks = list(follow_up_data[(follow_up_data[current_follow_up_column] == False)].index)
+
+
+    pending_tasks=[]
+    for (dataset_name, env_name, interaction) in pseudo_pending_tasks:
+        if interaction.startswith("laying"):
+            print("avoiding",dataset_name, env_name,  interaction)
+            continue
+        else:
+            pending_tasks.append([dataset_name, env_name, interaction])
+
     num_pending_tasks = len(pending_tasks)
 
     if num_pending_tasks <= 0:
@@ -147,6 +167,10 @@ if __name__ == '__main__':
         place_subdir = opj(samples_place_dir, env_name, interaction)
 
         np_point_files = [f for f in get_file_names_with_extension_in(it_subdir, ".npy") if f.startswith("point_")]
+        if  len(np_point_files) ==0:
+            print("NO positions capable of support action ", dataset_name, env_name, interaction)
+            continue
+
         #select one of the files randomly
         np_point_file_name = np_point_files[ random.randint( 0, len(np_point_files)-1 ) ]
 
@@ -158,7 +182,7 @@ if __name__ == '__main__':
         file_mesh_env = opj(directory_datasets, dataset_name, "scenes", env_name + ".ply")
         trimesh_env = trimesh.load(file_mesh_env)
 
-        if crop_scene_on_dataset == dataset_name:
+        if crop_scene_on_dataset == dataset_name or crop_scene_on_dataset=="all":
             output_subdir = opj(output_dir, env_name, interaction)
             if not os.path.exists(output_subdir):
                 os.makedirs(output_subdir)
@@ -170,7 +194,7 @@ if __name__ == '__main__':
             os.remove(opj(output_subdir, f"{env_name}_cropped.ply"))
 
 
-        z_translation = -0.70
+        z_translation = -0.60
         # if random.uniform(0, 1) < .5:
         #     z_translation = -0.70
         # if random.uniform(0, 1) < .5:
@@ -188,12 +212,12 @@ if __name__ == '__main__':
             os.makedirs(output_subdir)
 
         sample_algorithm=""
-        if random.uniform(0,1) <.5 :
-            trimesh_body = trimesh.load(opj(place_subdir, f"body_{n}_opt2.ply"))
-            sample_algorithm = "place"
-        else:
-            trimesh_body = trimesh.load(opj(it_opti_smplx_subdir, f"body_{n}.ply"))
-            counter_part_algorithm = "it"
+        # if random.uniform(0,1) <.5 :
+        #     trimesh_body = trimesh.load(opj(place_subdir, f"body_{n}_opt2.ply"))
+        #     sample_algorithm = "place"
+        # else:
+        trimesh_body = trimesh.load(opj(it_opti_smplx_subdir, f"body_{n}.ply"))
+        sample_algorithm = "it"
 
         trimesh_body.apply_translation([0, 0, z_translation])
         generate_gif(trimesh_env, trimesh_body, view_center, opj(output_subdir, f"body_fake.gif"))
