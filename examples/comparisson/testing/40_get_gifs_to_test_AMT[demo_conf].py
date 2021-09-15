@@ -271,10 +271,10 @@ def get_fake_samples_list(follow_up_data, fake_samples_gifs_dir, real_gifs_dir):
                 fake_gif_data = json.load(f)
 
             p = fake_gif_data["num_point"]
-            if fake_gif_data["sample_algorithm"] == "place":
-                real_gif = os.path.join(real_gifs_dir, env, interaction, "it", f"body_{p}_opti_smplx.gif")
-            else:  # fake_gif_data["sample_algorithm"] == "it":
-                real_gif = os.path.join(real_gifs_dir, env, interaction, "place", f"body_{p}_opt2.gif")
+            # if fake_gif_data["sample_algorithm"] == "place":
+            real_gif = os.path.join(real_gifs_dir, env, interaction, "it", f"body_{p}_opti_smplx.gif")
+            # else:  # fake_gif_data["sample_algorithm"] == "it":
+            #     real_gif = os.path.join(real_gifs_dir, env, interaction, "place", f"body_{p}_opt2.gif")
             assert os.path.exists(fake_gif) and os.path.exists(real_gif)
 
             dataset = follow_up_data.at[(env, interaction), "dataset"]
@@ -367,11 +367,6 @@ def get_control_samples(follow_up_control_data, amt_follow_up_column_survey, num
                         real_gifs_dir, fake_gifs_dir, new_surveys_nums, verify_control_samples):
     total_new_surveys = len(new_surveys_nums)
     available_control_data = follow_up_control_data[follow_up_control_data[amt_follow_up_column_survey] == 0]
-    available_control_data = available_control_data[
-        available_control_data['interaction'].isin(
-            ["reaching_out_mid", "reaching_out_mid_down", "reaching_out_mid_up", "reaching_out_on_table",
-             "reaching_out_ontable_one_hand", "standing_up", "standup_hand_on_furniture", "walking_left_foot",
-             "walking_right_foot"])]
     control_samples = available_control_data.sample(n=num_fake_in_survey * total_new_surveys)
     l_control_samples = control_samples.values.tolist()
     for sample in l_control_samples:
@@ -406,7 +401,7 @@ if __name__ == '__main__':
     base_dir = "/media/dougbel/Tezcatlipoca/PLACE_trainings/test"
 
     # CONFIGURATIONS
-    total_new_surveys = 1  # None
+    total_new_surveys = 3  # None
     percentage_fake = 2 / 10
     num_samples_per_dataset = 3
     verify_control_samples = True
@@ -418,8 +413,8 @@ if __name__ == '__main__':
     real_gifs_dir = opj(base_dir, "gifted_place_auto_samples_extracted[demo_conf]")
     fake_gifs_dir = opj(base_dir, "gifted_faked_examples")
 
-    amt_follow_up_real_file = opj(output_dir, 'samples_in_survey.csv')
-    amt_follow_up_control_file = opj(output_dir, 'control_samples_in_survey.csv')
+    amt_follow_up_real_file = opj(output_dir, 'follow_up_real_samples_in_surveys.csv')
+    amt_follow_up_control_file = opj(output_dir, 'follow_up_control_samples_in_surveys.csv')
     amt_follow_up_column_survey = "in_survey"
     amt_follow_up_column_batch = "in_batch"
 
