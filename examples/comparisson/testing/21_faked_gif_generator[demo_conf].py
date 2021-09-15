@@ -183,6 +183,7 @@ if __name__ == '__main__':
         trimesh_env = trimesh.load(file_mesh_env)
 
         if crop_scene_on_dataset == dataset_name or crop_scene_on_dataset=="all":
+            print("cropping ", dataset_name)
             output_subdir = opj(output_dir, env_name, interaction)
             if not os.path.exists(output_subdir):
                 os.makedirs(output_subdir)
