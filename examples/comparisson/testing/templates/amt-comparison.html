@@ -80,7 +80,7 @@
 
     function on_select_question(n){
         $("#loading_imgs").dialog("open")
-        $("#counter").html(" Comparison number "+n+" of "+total_num_questions)
+        $("#counter").html("comparison "+n+" of "+total_num_questions+"")
         $("#q" + n).show()
         $("#link"+n).addClass("active");
         current_question = n
@@ -153,6 +153,7 @@
                     if ($("#check_instructions").prop('checked')) {
                         $(this).dialog("close");
                         $("#check_instructions").tooltip("disable");
+                        $(window).scrollTop(0);
                         on_select_question(current_question)
                     } else {
                         $("#check_instructions").tooltip("enable");
@@ -180,8 +181,11 @@
             }
         });
         $("#check_instructions").tooltip( "disable" );
-
+        $(window).scrollTop(0);
     })
+    window.onbeforeunload = function () {
+      window.scrollTo(0, 0);
+    }
 
 </script>
 <!-- For the full list of available Crowd HTML Elements and their input/output documentation,
@@ -191,7 +195,7 @@
         padding-top: 10px;
         /*padding-bottom: 20px;*/
         /*border:1px solid black;*/
-        max-width: 1400px;
+        max-width: 1200px;
         justify-content: center;
         margin: auto;
     }
@@ -221,8 +225,12 @@
         /*padding-bottom: 10px;*/
         /* border: 1px solid black; */
         flex-direction: row;
-        flex-wrap: wrap;
+        flex-wrap: wrap-reverse;
         align-items: center;
+    }
+
+    .counter{
+        font-size: large;
     }
 
     .detailed_guideline {
@@ -328,24 +336,12 @@
         }
     }
 
-    #counter{
-        /*max-width: 780px;*/
-        /*margin-bottom: 20px;*/
-        margin-left: auto;
-        margin-right: auto;
-        text-align: center;
-        padding-top: 15px;
-        padding-bottom: 15px;
-        background-color: rgb(241, 255, 250);
-         font-weight: bold;
-    }
-
     #question{
         max-width: 780px;
     }
 
     .paginacion {
-        margin:35px 0;
+        margin:5px 0;
     }
 
     .paginacion ul {
@@ -463,8 +459,8 @@
 </div>
 <div  id="dialog-instructions" title="Instructions">
     <p>
-        In this task 11 pairs of humans interacting with a given environment are presented in the animated images.
-        You must decide which one presents the most natural interaction.
+        This task presents 11 pairs of images of humans interacting within their environment. You should decide which
+        one presents the most natural interaction.
         </p>
 
         You can solve it by pondering the following support questions:
@@ -520,13 +516,13 @@
 
 
         <div class="guideline">
-            <div><b>Guideline:</b> Eleven pairs of human-scene interactions are presented in the next set of images.</div>
+            <div  class='counter'><b>Guideline:</b> Eleven pairs of human-scene interactions are presented in the next set of images (<span id='counter'> </span>)</div>
             <div class="detailed_guideline">
                 <a class="call_instructions"  onclick="$('#dialog-instructions').dialog('open')">Intructions</a>
             </div>
         </div>
 
-        <div id='counter' class='counter'>        </div>
+
         ${
          for i in range(1,total_num_question+1):
                 emit(f"<div id='q{i}'>\n")
