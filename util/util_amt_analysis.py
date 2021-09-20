@@ -48,3 +48,46 @@ def narrowing_batch_conf_data(pd_flat_conf_batch):
     pd_narrowed_conf_batch = pd.DataFrame(columns=column_names, data=narrowed_survey_data)
 
     return  pd_narrowed_conf_batch
+
+
+
+
+def narrowing_batch_results_evaluations_test(pd_flat_results_data):
+    """
+    This helps to narrow (arrow by question), dataframe should have the format of outputs from AMT "EVALUATION" test
+    (no the one used for configure or the output of a "COMPARISON" test)
+    :param pd_flat_results_data: Dataframe to analyse, from AMT evaluation test (output)
+    :return: the arrowed version of the dataframe
+    """
+    num_questions = 0
+    for c in pd_flat_results_data.columns:
+        if c.__contains__("strongly_agree"):
+            posibble_num = int(c.replace("Answer.strongly_agree", "").replace(".on", ""))
+            num_questions = max(posibble_num, num_questions)
+
+    df = pd.DataFrame(
+        columns=["AssignmentStatus", "WorkerId", "batch", "survey", "num_question", "dataset", "scene", "interaction",
+                 "num_point", "order", "strongly_disagree", "disagree", "neither", "agree", "strongly_agree"])
+
+    for index, row in pd_flat_results_data.iterrows():
+        for q in range(1, num_questions + 1):
+            data = []
+            data.append(row["AssignmentStatus"])
+            data.append(row["WorkerId"])
+            data.append(row["Input.batch"])
+            data.append(row["Input.survey"])
+            data.append(q)
+            data.append(row[f"Input.dataset_{q}"])
+            data.append(row[f"Input.scene_{q}"])
+            data.append(row[f"Input.interaction_{q}"])
+            data.append(row[f"Input.num_point_{q}"])
+            data.append(row[f"Input.order_{q}"])
+            data.append(row[f"Answer.strongly_disagree{q}.on"])
+            data.append(row[f"Answer.disagree{q}.on"])
+            data.append(row[f"Answer.neither{q}.on"])
+            data.append(row[f"Answer.agree{q}.on"])
+            data.append(row[f"Answer.strongly_agree{q}.on"])
+
+            df.loc[len(df.index)] = data
+
+    return df
