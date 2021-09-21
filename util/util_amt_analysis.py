@@ -91,3 +91,41 @@ def narrowing_batch_results_evaluations_test(pd_flat_results_data):
             df.loc[len(df.index)] = data
 
     return df
+
+
+def narrowing_batch_results_comparison_test(pd_flat_results_data):
+    """
+    This helps to narrow (arrow by question), dataframe should have the format of outputs from AMT "COMPARISON" test
+    (no the one used for configure or the output of a "EVALUATION" test)
+    :param pd_flat_results_data: Dataframe to analyse, from AMT comparison test (output)
+    :return: the arrowed version of the dataframe
+    """
+    num_questions = 0
+    for c in pd_flat_results_data.columns:
+        if c.__contains__("exampleA"):
+            posibble_num = int(c.replace("Answer.exampleA", "").replace(".on", ""))
+            num_questions = max(posibble_num, num_questions)
+
+    df = pd.DataFrame(
+        columns=["AssignmentStatus", "WorkerId", "batch", "survey", "num_question", "dataset", "scene", "interaction",
+                 "num_point", "order", "exampleA", "exampleB"])
+
+    for index, row in pd_flat_results_data.iterrows():
+        for q in range(1, num_questions + 1):
+            data = []
+            data.append(row["AssignmentStatus"])
+            data.append(row["WorkerId"])
+            data.append(row["Input.batch"])
+            data.append(row["Input.survey"])
+            data.append(q)
+            data.append(row[f"Input.dataset_{q}"])
+            data.append(row[f"Input.scene_{q}"])
+            data.append(row[f"Input.interaction_{q}"])
+            data.append(row[f"Input.num_point_{q}"])
+            data.append(row[f"Input.order_{q}"])
+            data.append(row[f"Answer.exampleA{q}.on"])
+            data.append(row[f"Answer.exampleB{q}.on"])
+
+            df.loc[len(df.index)] = data
+
+    return df
