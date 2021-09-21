@@ -491,7 +491,7 @@ if __name__ == '__main__':
     total_new_surveys = 3  # None
     percentage_fake = 2 / 10
     num_samples_per_dataset = 3
-    verify_control_samples = False
+    verify_control_samples = True
 
     output_dir = opj(base_dir, "amt")
     if not os.path.exists(output_dir):

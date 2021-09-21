@@ -43,23 +43,25 @@ if __name__ == '__main__':
             print(f"Survey {num_survey_to_visualize} is nor present at {batch_directory}")
             exit()
 
-        dir_link=batch_directory[batch_directory.rfind("/")+1:]
-        base_url_images = f"../../../images/amt_samples/{dir_link}/"
-        example_url_images = "../../../images/"
+        name_dir_link=batch_directory[batch_directory.rfind("/")+1:]
+        path_dir_link = f"../../../images/amt_samples/{name_dir_link}/"
+        base_url_images = f"../{path_dir_link}"
+        example_url_images = "../../../../images/"
+
         comparison_imgs_01 = pd_narrowed_conf_survey_01["gif_left"].values.tolist()
         comparison_imgs_02 = pd_narrowed_conf_survey_02["gif_left"].values.tolist()
-        if os.path.exists(base_url_images):
-            os.unlink(base_url_images[:-1])
-        os.symlink(batch_directory, base_url_images[:-1])
+        if os.path.exists(path_dir_link):
+            os.unlink(path_dir_link[:-1])
+        os.symlink(batch_directory, path_dir_link[:-1])
 
         assert (total_num_question_01 == len(comparison_imgs_01) and total_num_question_02 == len(comparison_imgs_02))
 
-        with open(f'amt-eval-visualizer-survey-{num_survey_to_visualize}_01.html', 'w') as the_file:
+        with open(f'surveys/amt-eval-visualizer-survey-{num_survey_to_visualize}_01.html', 'w') as the_file:
             the_file.write(template.render(total_num_question = total_num_question_01,
                                            base_url_images = base_url_images,
                                            comparison_imgs=comparison_imgs_01,
                                            example_url_images=example_url_images))
-        with open(f'amt-eval-visualizer-survey-{num_survey_to_visualize}_02.html', 'w') as the_file:
+        with open(f'surveys/amt-eval-visualizer-survey-{num_survey_to_visualize}_02.html', 'w') as the_file:
             the_file.write(template.render(total_num_question=total_num_question_02,
                                            base_url_images=base_url_images,
                                            comparison_imgs=comparison_imgs_02,
