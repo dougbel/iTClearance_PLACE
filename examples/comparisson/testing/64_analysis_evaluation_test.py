@@ -37,6 +37,11 @@ if __name__ == '__main__':
     # ##########
     # # frequency table for evaluation data
     frequency_table = df_approved_results.groupby(["order"])[ ["strongly_disagree", "disagree", "neither", "agree", "strongly_agree"]].sum()
+    frequency_table.reset_index(inplace=True)
+    frequency_table.loc[frequency_table["order"] == "it", "order"] = "iTClearance"
+    frequency_table.loc[frequency_table["order"] == "place", "order"] = "PLACE"
+    frequency_table.set_index("order", inplace=True)
+    frequency_table.index.name = None
     frequency_table = frequency_table.rename(columns={"strongly_disagree": "strongly\ndisagree", "strongly_agree": "strongly\nagree"})
     # Total sum per column:
     frequency_table.loc['Total', :] = frequency_table.sum(axis=0)
