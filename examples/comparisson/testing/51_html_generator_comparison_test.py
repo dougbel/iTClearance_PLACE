@@ -51,7 +51,7 @@ if __name__ == '__main__':
 
         assert total_num_question == len(comparison_imgs)
 
-        with open(f'surveys/amt-comp-visualizer-survey-{num_survey_to_visualize}.html', 'w') as the_file:
+        with open(f'surveys/amt-comp-visualizer-survey-{num_survey_to_visualize}_no_replication_sentence.html', 'w') as the_file:
             the_file.write(template.render(total_num_question = total_num_question,
                                        base_url_images = base_url_images,
                                        comparison_imgs=comparison_imgs,

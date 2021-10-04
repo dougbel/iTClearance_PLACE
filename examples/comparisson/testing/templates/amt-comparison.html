@@ -150,14 +150,24 @@
             },
             buttons: {
                 "OK": function() {
-                    if ($("#check_instructions").prop('checked')) {
+                    if ($("#check_instructions").prop('checked') && $("#check_first_time").prop('checked') ) {
                         $(this).dialog("close");
                         $("#check_instructions").tooltip("disable");
+                        $("#check_first_time").tooltip("disable");
                         $(window).scrollTop(0);
                         on_select_question(current_question)
-                    } else {
-                        $("#check_instructions").tooltip("enable");
-                        $("#check_instructions").tooltip("open")
+                    }
+                    else{
+                        if(!$("#check_instructions").prop('checked')) {
+                            $("#check_instructions").tooltip("enable");
+                            $("#check_instructions").tooltip("open");
+                        }
+                        else {
+                            if (!$("#check_first_time").prop('checked')) {
+                                $("#check_first_time").tooltip("enable");
+                                $("#check_first_time").tooltip("open");
+                            }
+                        }
                     }
                 }
             },
@@ -168,8 +178,8 @@
         // add a tooltip for secure reading of instructions
         $("#check_instructions").tooltip({
             position: {
-                my: "center bottom-20",
-                at: "center top",
+                my: "right bottom-20",
+                at: "left top",
                 using: function( position, feedback ) {
                     $( this ).css( position );
                     $( "<div>" )
@@ -181,6 +191,36 @@
             }
         });
         $("#check_instructions").tooltip( "disable" );
+        $("#check_instructions").change(function() {
+            if(this.checked) {
+               $("#check_instructions").tooltip( "close" )
+               $("#check_instructions").tooltip( "disable" )
+            }
+        });
+        $("#check_first_time").tooltip({
+            position: {
+                my: "right bottom-20",
+                at: "left top",
+                using: function( position, feedback ) {
+                    $( this ).css( position );
+                    $( "<div>" )
+                    .addClass( "arrow" )
+                    .addClass( feedback.vertical )
+                    .addClass( feedback.horizontal )
+                    .appendTo( this );
+                }
+            }
+        });
+        $("#check_first_time").tooltip( "disable" );
+        $("#check_first_time").change(function() {
+            if(this.checked) {
+                $("#check_first_time").tooltip( "disable" )
+                $("#check_first_time").tooltip( "close" )
+            }
+
+        });
+
+
         $(window).scrollTop(0);
     })
     window.onbeforeunload = function () {
@@ -191,6 +231,18 @@
 <!-- For the full list of available Crowd HTML Elements and their input/output documentation,
       please refer to https://docs.aws.amazon.com/sagemaker/latest/dg/sms-ui-template-reference.html -->
 <style>
+    #notice {
+        background-color: #f4eee9;
+        border: 2px solid rgb(213, 95, 17);
+        /* font-weight: bold; */
+        /*width: 75%;*/
+        padding: 15px;
+        text-align: center;
+        justify-content: center;
+        margin: auto;
+        color: orangered;
+    }
+
     .body {
         padding-top: 10px;
         /*padding-bottom: 20px;*/
@@ -436,6 +488,9 @@
       .arrow.left {
         left: 20%;
       }
+      .arrow.right {
+        left: 90%;
+      }
       .arrow:after {
         content: "";
         position: absolute;
@@ -458,6 +513,12 @@
     Waiting for the comparison to evaluate ...
 </div>
 <div  id="dialog-instructions" title="Instructions">
+    <div id="notice">
+        <b>Notice</b>: Before accepting this HIT, you must know that  "Comparing Human-Scene Interactions" is a survey
+        meant to be completed just <b>once</b> by a Worker. If a Worker answers more than one assignment of this survey,
+        only the first one would be <b>considered</b>, but other submissions would be <b>rejected</b>.
+    </div>
+
     <p>
         This task presents 11 pairs of images of humans interacting within their environment. You should decide which
         one presents the most natural interaction.
@@ -478,7 +539,7 @@
     <div class="example">
         <p>
             <br/>
-        <b>Example:</b> a pair of images with human-scene interactions are presented.
+        <b>Guide:</b> a pair of images with human-scene interactions are presented.
         </p>
         <div class='gif-container'>
             <div class='left-container'>
@@ -503,8 +564,11 @@
     </div>
     <div class="checkbox_alignment">
         <form id="form_check_instructions">
-            <input type="checkbox" id="check_instructions" name="check_instructions" value="read" title="Confirm you have read and understood the instructions for the task">
-            <label for="check_instructions" > I confirm I have read and understood the instructions for the task</label><br>
+            <label for="check_instructions" >I confirm I have read and understood the instructions for the task</label>
+            <input type="checkbox" id="check_instructions" name="check_instructions" value="read" title="Check to confirm you have read and understood the instructions for this task">
+            <br/><br/>
+            <label for="check_first_time" >I confirm I am aware that only the first time I completed this survey would be considered and that further attempts would be rejected</label>
+            <input type="checkbox" id="check_first_time" name="check_first_time" value="read" title="Check to confirm you are aware of the notice regarding rewards">
       </form>
     </div>
 </div>

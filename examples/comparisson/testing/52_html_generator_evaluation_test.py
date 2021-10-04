@@ -56,12 +56,12 @@ if __name__ == '__main__':
 
         assert (total_num_question_01 == len(comparison_imgs_01) and total_num_question_02 == len(comparison_imgs_02))
 
-        with open(f'surveys/amt-eval-visualizer-survey-{num_survey_to_visualize}_01.html', 'w') as the_file:
+        with open(f'surveys/amt-eval-visualizer-survey-{num_survey_to_visualize}_01_no_replication_sentence.html', 'w') as the_file:
             the_file.write(template.render(total_num_question = total_num_question_01,
                                            base_url_images = base_url_images,
                                            comparison_imgs=comparison_imgs_01,
                                            example_url_images=example_url_images))
-        with open(f'surveys/amt-eval-visualizer-survey-{num_survey_to_visualize}_02.html', 'w') as the_file:
+        with open(f'surveys/amt-eval-visualizer-survey-{num_survey_to_visualize}_02_no_replication_sentence.html', 'w') as the_file:
             the_file.write(template.render(total_num_question=total_num_question_02,
                                            base_url_images=base_url_images,
                                            comparison_imgs=comparison_imgs_02,
