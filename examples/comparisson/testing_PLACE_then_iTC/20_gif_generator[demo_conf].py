@@ -2,6 +2,8 @@ import argparse
 import gc
 import os
 import time
+import imageio
+
 from os.path import join as opj
 from shutil import copyfile
 
@@ -9,7 +11,7 @@ import numpy as np
 import pandas as pd
 import trimesh
 import vedo
-from pyrender import Mesh, Scene, Viewer
+from pyrender import Mesh, Scene, Viewer, MetallicRoughnessMaterial
 
 
 def generate_gif(trimesh_env, trimesh_body, view_center,  save_on_file=None):
@@ -19,30 +21,38 @@ def generate_gif(trimesh_env, trimesh_body, view_center,  save_on_file=None):
 
     env_mesh = Mesh.from_trimesh(trimesh_env)
 
-    trimesh_body.visual.face_colors = [10, 220, 10, 255]
-    body_mesh = Mesh.from_trimesh(trimesh_body, smooth=False)
+    material = MetallicRoughnessMaterial(
+        metallicFactor=0.0,
+        alphaMode='OPAQUE',
+        baseColorFactor=(0.25, 0.7, 0.25, 1.0))
 
-    trimesh_body.visual.face_colors =  [40, 40, 40, 150]
-    body_mesh_w = Mesh.from_trimesh(trimesh_body, smooth=False, wireframe=True)
+    # trimesh_body.visual.face_colors = [10, 220, 10, 255]
+    body_mesh = Mesh.from_trimesh(trimesh_body, smooth=True, material=material)
+
+    # trimesh_body.visual.face_colors =  [40, 40, 40, 150]
+    # body_mesh_w = Mesh.from_trimesh(trimesh_body, smooth=False, wireframe=True)
 
     # reference_mesh = Mesh.from_trimesh(trimesh.primitives.Sphere(center = np_point), smooth=False, wireframe=True)
 
-    scene = Scene(ambient_light=np.array([0.5, 0.5, 0.5]))
+    scene = Scene(ambient_light=np.array([0.1, 0.1, 0.1]))
     # light = DirectionalLight(color=[.80, .80, .80], intensity=1.0)
     scene.add(env_mesh)
     scene.add(body_mesh)
-    scene.add(body_mesh_w)
+    # scene.add(body_mesh_w)
     # scene.add(reference_mesh)
     # scene.add(light)
     v = Viewer(scene,
                run_in_thread=True,
-               render_flags={"shadows": True},
+               viewport_size=(420, 315),
+               render_flags={"shadows": False},
                viewer_flags={"rotate": True,
                              "rotate_axis": [0, 0, 1],
                              "view_center": view_center,
                              "rotate_rate": np.pi / 4.0,
                              "record": record,
-                             "use_perspective_cam": True
+                             "use_perspective_cam": True,
+                             "refresh_rate": 24,
+                             "use_raymond_lighting": True
                              })
 
     # for "use_perspective_cam": True
@@ -57,14 +67,17 @@ def generate_gif(trimesh_env, trimesh_body, view_center,  save_on_file=None):
     # v._camera_node.camera.xmag = max(c.xmag * sf, 1e-8)
     # v._camera_node.camera.ymag = max(c.ymag * sf, 1e-8 * c.ymag / c.xmag)
 
-    v._trackball.rotate(np.pi / 5, [0, 1, 0])
+    v._trackball.rotate(np.pi / 6.4, [0, 1, 0])
 
     time.sleep(8.1)
     v.close_external()
     while v.is_active:
         pass
     if record:
-        v.save_gif(save_on_file)
+        # v.save_gif(save_on_file)
+        imageio.mimwrite(save_on_file,  v._saved_frames, fps=v.viewer_flags['refresh_rate'],
+                         palettesize=256, subrectangles=True)
+        v._saved_frames = []
 
 
 parser = argparse.ArgumentParser()
@@ -79,12 +92,12 @@ print(opt)
 
 if __name__ == '__main__':
 
-    # python examples/comparisson/testing_PLACE_then_iTC/20_gif_generator.py --base_dir /media/apacheco/Ehecatl/PLACE_comparisson --dataset prox --env_name MPH16 --num_point 0
+    # python examples/comparisson/testing_PLAqCE_then_iTC/20_gif_generator.py --base_dir /media/dougbel/Tezcatlipoca/PLACE_trainings --dataset prox --env_name MPH16 --num_point 0
     # python examples/comparisson/testing_PLACE_then_iTC/20_gif_generator.py --base_dir /media/apacheco/Ehecatl/PLACE_comparisson --dataset prox --env_name MPH16 --num_point 1
 
     register_results = True
     # crop the dataset to an specific size to avoid problem on rendering the gif image
-    crop_scene_on_dataset = "replica_v1"  # None
+    crop_scene_on_dataset = "all"  # None
 
     base_dir = opt.base_dir
     dataset_name = opt.dataset
@@ -147,7 +160,8 @@ if __name__ == '__main__':
         file_mesh_env = opj(directory_datasets, dataset_name, "scenes", env_name + ".ply")
         trimesh_env = trimesh.load(file_mesh_env)
 
-        if crop_scene_on_dataset == dataset_name:
+        if crop_scene_on_dataset == dataset_name or crop_scene_on_dataset=="all":
+            print("cropping ", dataset_name)
             output_subdir = opj(output_dir, env_name)
             if not os.path.exists(output_subdir):
                 os.makedirs(output_subdir)

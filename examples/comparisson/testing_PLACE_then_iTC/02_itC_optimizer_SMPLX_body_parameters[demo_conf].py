@@ -84,7 +84,7 @@ if __name__ == '__main__':
     print( 'STARTING TASKS: total %d, done %d, pendings %d' % (num_total_task, num_completed_task, num_pending_tasks))
 
 
-    last_env_used=None
+    # last_env_used=None
 
     for current_dataset_name, current_scene_name, current_num_point in pending_tasks:
         print(current_dataset_name, current_scene_name, current_num_point)
@@ -105,12 +105,12 @@ if __name__ == '__main__':
 
             file_mesh_env = opj(directory_datasets, current_dataset_name, "scenes", current_scene_name + ".ply")
 
-            if last_env_used != current_scene_name:
-                # get enviroment
-                env_trimesh = trimesh.load(opj(directory_datasets, current_dataset_name, "scenes", f"{current_scene_name}.ply"))
-                # get sdf environment information
-                s_grid_min_batch, s_grid_max_batch, s_sdf_batch = read_sdf(opj(directory_datasets, current_dataset_name), current_scene_name)
-                last_env_used = current_scene_name
+            # if last_env_used != current_scene_name:
+            # get enviroment
+            env_trimesh = trimesh.load(opj(directory_datasets, current_dataset_name, "scenes", f"{current_scene_name}.ply"))
+            # get sdf environment information
+            s_grid_min_batch, s_grid_max_batch, s_sdf_batch = read_sdf(opj(directory_datasets, current_dataset_name), current_scene_name)
+            last_env_used = current_scene_name
 
             # get body "gender" and "contact regions"
             json_descriptor_file = [f for f in os.listdir(opj(descriptors_dir, current_interaction)) if f.endswith(".json")][0]
@@ -156,7 +156,8 @@ if __name__ == '__main__':
                 output_subdir = opj(output_dir, current_scene_name)
                 if not os.path.exists(output_subdir):
                     os.makedirs(output_subdir)
-                it_body.export(opj(output_subdir, f"body_{current_num_point}_{current_interaction}.ply"))
+                body_trimesh_optim.export(opj(output_subdir, f"body_{current_num_point}_{current_interaction}.ply"))
+                np.save(opj(output_subdir, f"body_{current_num_point}_{current_interaction}_smplx_body_params.npy"), np_body_params_optim)
 
         if save_results:
             num_completed_task += 1
