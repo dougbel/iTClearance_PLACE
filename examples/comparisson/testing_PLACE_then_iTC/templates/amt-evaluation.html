@@ -1,0 +1,597 @@
+<!-- You must include this JavaScript file -->
+<script src="https://assets.crowd.aws/crowd-html-elements.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js" integrity="sha256-VazP97ZCwtekAsvgPBSUwPFKdrwD3unUfSGVYrahUqU=" crossorigin="anonymous"></script>
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/cupertino/jquery-ui.css">
+<script>
+
+    var total_num_questions = ${emit(total_num_question)}$
+    var current_question = 1
+    var general_url_imgs = "${emit(base_url_images)}$"
+    var images_loaded=[]
+    var comparison_list = ${emit(comparison_imgs)}$
+
+    function check_if_all_questions_answered() {
+        missings=[]
+        for(n=1; n<=total_num_questions;n++){
+            if (!is_answer_selected(n)) {
+                missings.push(n)
+            }
+        }
+        return missings
+    }
+
+
+    function run_this_function() {
+        ok = true
+        missings=check_if_all_questions_answered()
+        for(i=0; i<=missings.length;i++){
+            miss = missings[i]
+            $("#link"+miss).addClass("missing");
+        }
+
+        if (missings.length >0){
+            errorBox.innerHTML = '<crowd-alert type="error" dismissible>There are still pending evaluations. You are missing to evaluate '+missings+'</crowd-alert>';
+            errorBox.scrollIntoView();
+            ok=false
+        }
+        return ok
+    }
+
+    function visualize_q(n){
+        on_leave_question(current_question)
+        on_select_question(n)
+    }
+
+    function on_leave_question(n){
+        $("#link"+n).removeClass("active");
+        $("#q" + n).hide()
+    }
+
+    function is_answer_selected(n){
+        return $("#strongly_agree"+n).prop( "checked") ||
+            $("#agree"+n).prop( "checked") ||
+            $("#neither"+n).prop( "checked") ||
+            $("#disagree"+n).prop( "checked") ||
+            $("#strongly_disagree"+n).prop( "checked")
+    }
+
+    function on_change_answer_selected(n){
+        $("#link"+n).removeClass("missing");
+        $("#link"+n).addClass("deactive");
+        errorBox.innerHTML = '';
+        missings=check_if_all_questions_answered()
+        if (missings.length ===0){
+            $("#submit_button").tooltip({
+                position: {
+                    my: "center bottom-20",
+                    at: "center top",
+                    using: function( position, feedback ) {
+                        $( this ).css( position );
+                        $( "<div>" )
+                        .addClass( "arrow" )
+                        .addClass( feedback.vertical )
+                        .addClass( feedback.horizontal )
+                        .appendTo( this );
+                    }
+                }
+            });
+            $("#submit_button").tooltip("open");
+        }
+    }
+
+    function on_select_question(n){
+        $("#loading_imgs").dialog("open")
+        $("#q" + n).show()
+        $("#link"+n).addClass("active");
+        current_question = n
+        if(images_loaded.indexOf(n)<0){
+            $('#imageA'+n).on('load', function () {
+                $("#loading_imgs").dialog("close")
+            });
+           $('#imageA'+n).attr('src', general_url_imgs+comparison_list[n-1]);
+        }
+    }
+
+    function on_click_prev(){
+        on_leave_question(current_question)
+        prev_q =current_question-1
+        if (prev_q < 1)
+            on_select_question(total_num_questions)
+        else
+            on_select_question(prev_q)
+    }
+
+    function on_click_next(){
+        on_leave_question(current_question)
+        next_q =current_question+1
+        if (next_q > total_num_questions)
+            on_select_question(1)
+        else
+            on_select_question(next_q)
+    }
+
+
+    window.addEventListener('load', function () {
+        for(i=1; i<=total_num_questions;i++)
+            $("#q" + i).hide()
+
+        $( "#loading_imgs").dialog({
+            modal: true,
+            width: 600,
+            closeOnEscape: false,
+         });
+        $("#loading_imgs").dialog("close")
+
+        var wWidth = $(window).width();
+        var dWidth = wWidth * 0.8;
+        var maxWidth= 1400
+        if (dWidth > maxWidth)
+            dWidth = maxWidth
+        $( "#dialog-instructions" ).dialog({
+            modal: true,
+            width: dWidth,
+            position: {
+               my: "center top",
+               at: "center top",
+               of: window
+            },
+            buttons: {
+                "OK": function() {
+                    if ($("#check_instructions").prop('checked') && $("#check_first_time").prop('checked') ) {
+                        $(this).dialog("close");
+                        $("#check_instructions").tooltip("disable");
+                        $("#check_first_time").tooltip("disable");
+                        $(window).scrollTop(0);
+                        on_select_question(current_question)
+                    }
+                    else{
+                        if(!$("#check_instructions").prop('checked')) {
+                            $("#check_instructions").tooltip("enable");
+                            $("#check_instructions").tooltip("open");
+                        }
+                        else {
+                            if (!$("#check_first_time").prop('checked')) {
+                                $("#check_first_time").tooltip("enable");
+                                $("#check_first_time").tooltip("open");
+                            }
+                        }
+                    }
+                }
+            },
+            closeOnEscape: false
+         });
+        // remove the x in the dialog window
+        $(".ui-dialog-titlebar-close").hide()
+        // add a tooltip for secure reading of instructions
+        $("#check_instructions").tooltip({
+            position: {
+                my: "right bottom-20",
+                at: "left top",
+                using: function( position, feedback ) {
+                    $( this ).css( position );
+                    $( "<div>" )
+                    .addClass( "arrow" )
+                    .addClass( feedback.vertical )
+                    .addClass( feedback.horizontal )
+                    .appendTo( this );
+                }
+            }
+        });
+        $("#check_instructions").tooltip( "disable" );
+        $("#check_instructions").change(function() {
+            if(this.checked) {
+               $("#check_instructions").tooltip( "close" )
+               $("#check_instructions").tooltip( "disable" )
+            }
+        });
+        $("#check_first_time").tooltip({
+            position: {
+                my: "right bottom-20",
+                at: "left top",
+                using: function( position, feedback ) {
+                    $( this ).css( position );
+                    $( "<div>" )
+                    .addClass( "arrow" )
+                    .addClass( feedback.vertical )
+                    .addClass( feedback.horizontal )
+                    .appendTo( this );
+                }
+            }
+        });
+        $("#check_first_time").tooltip( "disable" );
+        $("#check_first_time").change(function() {
+            if(this.checked) {
+                $("#check_first_time").tooltip( "disable" )
+                $("#check_first_time").tooltip( "close" )
+            }
+
+        });
+
+        $(window).scrollTop(0);
+    })
+    window.onbeforeunload = function () {
+      window.scrollTo(0, 0);
+    }
+</script>
+<!-- For the full list of available Crowd HTML Elements and their input/output documentation,
+      please refer to https://docs.aws.amazon.com/sagemaker/latest/dg/sms-ui-template-reference.html -->
+<style>
+    #notice {
+        background-color: #f4eee9;
+        border: 2px solid rgb(213, 95, 17);
+        /* font-weight: bold; */
+        /*width: 75%;*/
+        padding: 15px;
+        text-align: center;
+        justify-content: center;
+        margin: auto;
+        color: orangered;
+    }
+
+    .body {
+        padding-top: 10px;
+        /*padding-bottom: 20px;*/
+        /*border:1px solid black;*/
+        max-width: 1200px;
+        justify-content: center;
+        margin: auto;
+    }
+
+    .checkbox_alignment{
+       text-align: right;
+       padding-top: 25px;
+    }
+
+    .claim {
+        margin-top: 20px;
+    }
+
+    .detailed_guideline {
+        flex-wrap: wrap;
+        display: flex;
+        align-items: center;
+    }
+    #counter{
+        font-size: large;
+        margin-right: auto;
+    }
+
+    #vertical-separator {
+        border: solid 3px #d5dbdb;
+        background-color: #d5dbdb;
+    }
+    .examples-side-container{
+        max-width: 500px;
+        padding: 20px ;
+    }
+
+    .examples-container {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        margin: auto;
+    }
+    .gif-container {
+        display: flex;
+        flex-wrap: nowrap;
+        justify-content: center;
+        margin: auto;
+    }
+
+    .left-container {
+        margin-top: 20px;
+        padding-left: 10px;
+        padding-right: 20px;
+        /*border:1px solid black;*/
+    }
+
+    .right-container {
+        margin-top: 20px;
+        padding-left: 20px;
+        padding-right: 10px;
+        /*border:1px solid black;*/
+    }
+
+    .gif-images {
+        width: 45vw;
+        max-width: 540px;
+        min-width: 200px;
+    }
+
+    img {
+        object-fit: cover;
+    }
+
+    #question {
+        max-width: 780px;
+        margin-top: 20px;
+        margin-left: auto;
+        margin-right: auto;
+        text-align: center;
+        padding-top: 5px;
+        background-color: rgb(241, 255, 250);
+        border: 2px solid rgb(0, 187, 115);
+    }
+
+    .options {
+        padding-left: 70px;
+        text-align: left;
+    }
+
+    @media all and (max-width: 980px) {
+        .detailed_guideline {
+            float: none;
+        }
+
+        .gif-container {
+            padding-top: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            flex-direction: column;
+        }
+
+        .left-container {
+            padding: initial;
+            padding-bottom: 20px;
+            margin: auto;
+            text-align: center;
+        }
+
+        .right-container {
+            padding: initial;
+            margin: auto;
+            padding-top: 0px;
+        }
+
+        .gif-images {
+            width: 90vw;
+            max-width: 540px;
+            min-width: 200px;
+
+        }
+    }
+
+    .paginacion {
+        margin:5px 0;
+    }
+
+    .paginacion ul {
+        list-style:none;
+        text-align: center;
+    }
+
+    .paginacion ul li {
+        display:inline-block;
+        margin-right:10px;
+    }
+
+    .paginacion ul li a {
+        display:block;
+        padding:10px 20px;
+        color:#fff;
+        background: #add0d2;
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+    /*.paginacion ul li a:hover {*/
+    /*    background:#024959;*/
+    /*}*/
+
+    .paginacion ul li .active {
+        /*background:#024959;*/
+        font-weight:bold;
+        border: 5px solid rgb(0, 187, 115)
+
+    }
+
+    .paginacion ul li .deactive {
+        /*background: #d55f11;*/
+        background: #758c8f;
+        font-weight:bold;
+        cursor: pointer;
+    }
+
+    .paginacion ul li .missing {
+        background: #d55f11;
+        font-weight:bold;
+        cursor: pointer;
+    }
+
+    .submit_button {
+        display: inline-block;
+        float: right;
+    }
+
+
+
+    .call_instructions{
+        margin-bottom: 30px;
+        display:inline-block;
+        margin-right:10px;
+        padding:10px 20px;
+        color:#fff;
+        text-decoration: none;
+        cursor: pointer;
+        background: #758c8f;
+        font-weight:bold;
+        cursor: pointer;
+    }
+
+    /*Jquery tooltip*/
+      .ui-tooltip, .arrow:after {
+        background: white;
+        border: 2px solid orangered;
+      }
+      .ui-tooltip {
+        padding: 10px 20px;
+        color: orangered;
+        border-radius: 20px;
+        font: bold 14px "Helvetica Neue", Sans-Serif;
+        text-transform: uppercase;
+        box-shadow: 0 0 7px orangered;
+      }
+      .arrow {
+        width: 70px;
+        height: 16px;
+        overflow: hidden;
+        position: absolute;
+        left: 50%;
+        margin-left: -35px;
+        bottom: -16px;
+      }
+      .arrow.top {
+        top: -16px;
+        bottom: auto;
+      }
+      .arrow.left {
+        left: 20%;
+      }
+      .arrow.right {
+        left: 90%;
+      }
+      .arrow:after {
+        content: "";
+        position: absolute;
+        left: 20px;
+        top: -20px;
+        width: 25px;
+        height: 25px;
+        box-shadow: 6px 5px 9px -9px black;
+        -webkit-transform: rotate(45deg);
+        -ms-transform: rotate(45deg);
+        transform: rotate(45deg);
+      }
+      .arrow.top:after {
+        bottom: -20px;
+        top: auto;
+      }
+
+</style>
+<div  id="loading_imgs" title="Loading">
+    Waiting for the interaction to evaluate ...
+</div>
+<div  id="dialog-instructions" title="Instructions">
+    <div id="notice">
+        <b>Notice</b>: Before accepting this HIT, you must know that "Evaluation of Human-Scene Interaction" is a survey
+        meant to be completed just <b>once</b> by a Worker. If a Worker answers more than one assignment of this survey,
+        only the first one would be <b>considered</b>, but other submissions would be <b>rejected</b>.
+    </div>
+
+    <p>
+        This task presents 11 images of humans interacting within their environment. You should decide if such interaction could be considered <b>very natural</b>.
+    </p>
+    You can solve it by pondering the following support questions:
+    <ul>
+        <li>Is it possible to interact with the environment in that way? <br><br>
+            You <b>should not use social biases</b> like "Tables are not for humans to be sitting",
+            nor "He should not be standing up on the bed", nor "The floor of a room is only for
+            standing and walking, not for laying".<br><br>
+        </li>
+        <li>Is this a possible situation?<br><br>
+            When we perform actions in an environment, physical rules apply to such interactions.
+            For example, we can not walk through a solid wall nor stand up at a room's ceiling.
+        </li>
+    </ul>
+    <div class="example">
+        <div class='examples-container'>
+            <div class='examples-side-container'>
+                <p><b>Guide 1) A very natural interaction</b></p>
+                <img src="${emit(example_url_images)}$amt_physically_plaussible_optim.gif"/>
+                <p><b>Claim</b>: human is interacting very naturally with the scene.</p>
+                <p>What is your opinion?</p>
+                    <input type="radio" name="drone" disabled><label for="louie">5. Strongly agree</label><br/>
+                    <input type="radio" name="drone" disabled><label for="louie">4. Agree</label><br/>
+                    <input type="radio" name="drone" disabled><label for="louie">3. Neither agree nor disagree</label><br/>
+                    <input type="radio" name="drone" disabled><label for="louie">2. Disagree</label><br/>
+                    <input type="radio" name="drone" disabled><label for="louie">1. Strongly disagree</label><br/>
+                <p><b>Answer</b>: This interaction shows a human in possible interaction with the environment, further, this
+                    interaction is physically plausible. Claim seems to be correct, an option that <b>agrees</b> with it could be selected.</p>
+            </div>
+            <div id='vertical-separator'></div>
+            <div class='examples-side-container'>
+                <p><b>Guide 2) No natural interaction</b></p>
+                <!-- <img src="https://amt-it-place-apo.s3.eu-west-2.amazonaws.com/examples/amt_NO_physically_plaussible_optim.gif"/> -->
+                <img src="${emit(example_url_images)}$amt_NO_physically_plaussible_optim.gif"/>
+                <p><b>Claim</b>: The human is interacting very naturally with the scene.</p>
+                <p>What is your opinion?</p>
+                    <input type="radio" name="drone" disabled><label for="louie">5. Strongly agree</label><br/>
+                    <input type="radio" name="drone" disabled><label for="louie">4. Agree</label><br/>
+                    <input type="radio" name="drone" disabled><label for="louie">3. Neither agree nor disagree</label><br/>
+                    <input type="radio" name="drone" disabled><label for="louie">2. Disagree</label><br/>
+                    <input type="radio" name="drone" disabled><label for="louie">1. Strongly disagree</label><br/>
+                <p><b>Answer</b>: This interaction shows an interaction no physically plausible, then it is not natural, furthermore,
+                it is not possible interact with the environment this way. Then claiming seems to be incorrect, an option that
+                    <b>disagrees</b> with it could be selected.</p>
+            </div>
+        </div>
+    </div>
+    <div class="checkbox_alignment">
+        <form id="form_check_instructions">
+            <label for="check_instructions" > I confirm I have read and understood the instructions for the task</label>
+            <input type="checkbox" id="check_instructions" name="check_instructions" value="read" title="Confirm you have read and understood the instructions for the task">
+            <br/><br/>
+            <label for="check_first_time" >I confirm I am aware that only the first time I completed this survey would be considered and that further attempts would be rejected</label>
+            <input type="checkbox" id="check_first_time" name="check_first_time" value="read" title="Check to confirm you are aware of the notice regarding rewards">
+      </form>
+    </div>
+</div>
+
+<crowd-form answer-format="flatten-objects" onsubmit="return run_this_function()">
+    <div id="errorBox"></div>
+    <div class="body">
+        ${
+         for i in range(1,total_num_question+1):
+            emit(f"<div id='q{i}'>\n")
+            emit(f"     <div class='gif-container'>\n")
+            emit(f"         <div class='left-container'>\n")
+            emit(f"             <img class='gif-images' id='imageA{i}'/>\n")
+            emit(f"         </div>\n")
+            emit(f"         <div class='right-container'>\n")
+            emit(f"             <div class='detailed_guideline'>\n")
+            emit(f"                 <div id='counter'>Evaluation {i} of {total_num_question} </div>\n")
+            emit(f"                 <div>\n")
+            emit(f"                     <a class='call_instructions'  onclick='$(\"#dialog-instructions\").dialog(\"open\")'>Intructions</a>\n")
+            emit(f"                 </div>\n")
+            emit(f"             </div>\n")
+            emit(f"             <div class='claim'>\n")
+            emit(f"                 <p><b>Claim</b>: The <b>human</b> is interacting <b>very naturally</b> with the scene.</p>\n")
+            emit(f"                 <p><b>What is your opinion?</b></p>\n")
+            emit(f"             </div>\n")
+            emit(f"             <div id='question'>\n")
+            emit(f"                 <div class='options'>\n")
+            emit(f"                     <crowd-radio-group>\n")
+            emit(f"                         <crowd-radio-button name='strongly_agree{i}' id='strongly_agree{i}' onChange='on_change_answer_selected({i})'>5. Strongly agree</crowd-radio-button><br/>\n")
+            emit(f"                         <crowd-radio-button name='agree{i}' id='agree{i}' onChange='on_change_answer_selected({i})'>4. Agree</crowd-radio-button><br/>\n")
+            emit(f"                         <crowd-radio-button name='neither{i}' id='neither{i}' onChange='on_change_answer_selected({i})'>3. Neither agree nor disagree</crowd-radio-button><br/>\n")
+            emit(f"                         <crowd-radio-button name='disagree{i}' id='disagree{i}' onChange='on_change_answer_selected({i})'>2. Disagree</crowd-radio-button><br/>\n")
+            emit(f"                         <crowd-radio-button name='strongly_disagree{i}' id='strongly_disagree{i}' onChange='on_change_answer_selected({i})'>1. Strongly disagree</crowd-radio-button><br/>\n")
+            emit(f"                     </crowd-radio-group>\n")
+            emit(f"                 </div>\n")
+            emit(f"             </div>\n")
+            emit(f"         </div>\n")
+            emit(f"     </div>\n")
+            emit(f"</div>\n")
+         }$
+
+         <section class="paginacion">
+			<ul>
+
+				<li><a id="Prev" class="deactive" onclick="on_click_prev()">Prev</a></li>
+                ${
+                    for i in range(1,total_num_question+1):
+                        emit(f"<li><a id='link{i}' onclick='visualize_q({i})'>{i}</a></li>\n")
+                }$
+				<li><a id="Next" class="deactive" onclick="on_click_next()">Next</a></li>
+			</ul>
+		</section>
+
+        <div class="submit_button" id="submit_button" title="Great! now you can submit your answers">
+            <crowd-button form-action="submit" class="submit-button" variant="primary">
+                Submit
+                <iron-icon icon="icons:thumb-up"/>
+            </crowd-button>
+        </div>
+    </div>
+</crowd-form>

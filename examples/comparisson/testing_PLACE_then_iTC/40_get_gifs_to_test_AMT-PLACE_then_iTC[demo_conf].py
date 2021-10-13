@@ -85,10 +85,9 @@ def copy_files_selected(surveys_real_samples, surveys_control_binary_samples, su
             # resize_gif_image(fake_gif, copy_fake_gif)
 
             if "/place/" in real_gif:
-                copy_real_gif = os.path.join(output_dir, env, interaction, "place", f"body_{p}_opt2.gif")
+                copy_real_gif = os.path.join(output_dir, env, "place", f"body_{p}_opt2.gif")
             else:
-                copy_real_gif = os.path.join(output_dir, env, interaction, "it", f"body_{p}_{interaction}_opti_smplx.gif")
-
+                copy_real_gif = os.path.join(output_dir, env, "it",  f"body_{p}_{interaction}_opti_smplx.gif")
             os.makedirs(os.path.dirname(copy_real_gif), exist_ok=True)
             if not os.path.exists(copy_real_gif):
                 os.link(real_gif, copy_real_gif)
@@ -171,7 +170,7 @@ def generate_binary_csv(surveys_real_samples, surveys_control_samples, output_su
     df = pd.DataFrame(l_data, columns=columns)
 
     # print("hola")
-    df.to_csv(os.path.join(output_subdir, f"{str(current_batch_num).zfill(4)}_amt_binary.csv"), index=False)
+    df.to_csv(os.path.join(output_subdir, f"{str(current_batch_num).zfill(4)}_challenge_amt_binary.csv"), index=False)
 
 
 def generate_unary_csv(surveys_real_samples, surveys_control_samples, output_subdir):
@@ -246,7 +245,7 @@ def generate_unary_csv(surveys_real_samples, surveys_control_samples, output_sub
         l_data.append(flatten(l_subbatch_02))
 
     df = pd.DataFrame(l_data, columns=columns)
-    df.to_csv(os.path.join(output_subdir, f"{str(current_batch_num).zfill(4)}_amt_unary.csv"), index=False)
+    df.to_csv(os.path.join(output_subdir, f"{str(current_batch_num).zfill(4)}_challenge_amt_unary.csv"), index=False)
 
 
 
@@ -617,7 +616,7 @@ if __name__ == '__main__':
     #########################################################################################################################
 
     # # compile the used data method 1 PREFERABLE
-    surveys_in_batch = pd.read_csv(os.path.join(output_subdir, f"{str(current_num_batch).zfill(4)}_amt_binary.csv"))
+    surveys_in_batch = pd.read_csv(os.path.join(output_subdir, f"{str(current_num_batch).zfill(4)}_challenge_amt_binary.csv"))
     del surveys_in_batch['batch']
     del surveys_in_batch['survey']
     surveys_in_batch = surveys_in_batch.values.tolist()
@@ -638,7 +637,7 @@ if __name__ == '__main__':
 
     # CHECKIN UNARY TEST DATA
     #########################################################################################################################
-    surveys_in_batch = pd.read_csv(os.path.join(output_subdir, f"{str(current_num_batch).zfill(4)}_amt_unary.csv"))
+    surveys_in_batch = pd.read_csv(os.path.join(output_subdir, f"{str(current_num_batch).zfill(4)}_challenge_amt_unary.csv"))
     del surveys_in_batch['batch']
     del surveys_in_batch['survey']
     surveys_in_batch = surveys_in_batch.values.tolist()
