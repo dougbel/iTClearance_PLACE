@@ -14,8 +14,8 @@ if __name__ == '__main__':
     # 'laying_bed', 'laying_hands_up', 'laying_on_sofa', 'laying_sofa_foot_on_floor'
     # 'standing_up', 'standup_hand_on_furniture'
     # 'walking_left_foot']
-
-    interaction = 'sitting_looking_to_right'
+    save_outputs = False
+    interaction = 'sitting_bit_open_arms'
 
     # base_dir = "/media/dougbel/Tezcatlipoca/PLACE_trainings_no_proxd"
     base_dir = "/media/dougbel/Tezcatlipoca/PLACE_trainings"
@@ -59,7 +59,7 @@ if __name__ == '__main__':
                                                      datasets_dir,
                                                      dataset_name,
                                                      env_tested_name)
-                scores_ctrl.start_viewer()
+                scores_ctrl.start_viewer( save_outputs=save_outputs)
                 exit(0)
 
                 # this only work for sitting looking to right

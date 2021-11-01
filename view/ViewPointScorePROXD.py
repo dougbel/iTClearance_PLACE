@@ -1,3 +1,5 @@
+import time
+
 from vedo import Plotter, Points, Point, load, interactive
 
 from vedo.utils import flatten
@@ -15,6 +17,7 @@ class ViewPointScorePROXD():
         self.point_clouds=[]
         self.right_side_elements=[self.vedo_file_env]
         self.started = False
+        self.save_outputs= False
 
     def add_point_cloud(self, np_points, np_scores, r=5, at=0):
         pts = Points(np_points, r=r)
@@ -25,7 +28,8 @@ class ViewPointScorePROXD():
     def add_vedo_element(self, vedo_element, at):
         self.vp.add(vedo_element, at=at)
 
-    def start(self):
+    def start(self, save_outputs=False):
+        self.save_outputs=save_outputs
         self.started = True
         self.vp.mouseRightClickFunction = self.on_right_click
         self.vp.show(flatten([self.vedo_file_env,self.point_clouds]), at=0, axes=4)
@@ -36,4 +40,6 @@ class ViewPointScorePROXD():
     def on_right_click(self, mesh):
         if mesh.picked3d is not None:
             np_point, best_angle = self.controler.get_data_from_nearest_point_to(mesh.picked3d)
-            self.controler.optimize_best_scored_position(np_point, best_angle)
+            body_trimesh_optim, __ = self.controler.optimize_best_scored_position(np_point, best_angle)
+            if self.save_outputs is True:
+                body_trimesh_optim.export(f"{self.controler.affordance_name}_{int(time.time())}.ply", "ply")

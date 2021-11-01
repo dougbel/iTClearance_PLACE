@@ -116,8 +116,8 @@ class ControlPointScorePROXD():
         self.s_grid_min_batch, self.s_grid_max_batch, self.s_sdf_batch = read_sdf(self.dataset_dir, self.env_test_name)
 
 
-    def start_viewer(self):
-        self.view.start()
+    def start_viewer(self, save_outputs=False):
+        self.view.start(save_outputs)
 
     def get_data_from_nearest_point_to(self, np_point):
         closest_index = distance.cdist([np_point], self.np_full_points).argmin()
