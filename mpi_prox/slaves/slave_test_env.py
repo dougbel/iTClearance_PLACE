@@ -22,10 +22,11 @@ class SlaveEnviroTester(Slave):
      A slave process extends Slave class, overrides the 'do_work' method
      and calls 'Slave.run'. The Master will do the rest
      """
-    def __init__(self, dataset_scans_path, work_directory, config_directory ):
+    def __init__(self, dataset_scans_path, work_directory, config_directory, use_filled_env=True):
         super().__init__()
         self.dataset_scans_path = dataset_scans_path
         self.work_directory = work_directory
+        self.use_filled_env =use_filled_env
         self.descriptors_repository = os.path.join(config_directory, "descriptors_repository")
         self.json_exec_file_dir = os.path.join(config_directory, "json_execution")
 
@@ -42,7 +43,10 @@ class SlaveEnviroTester(Slave):
             env_file = os.path.join(self.dataset_scans_path, dataset, "scenes",  scene+'.ply')
             env_file_filled = os.path.join(self.dataset_scans_path, dataset, "scenes_filled",  scene+'.ply')
             tri_mesh_env = trimesh.load_mesh(env_file)
-            tri_mesh_env_filled = vedo.vtk2trimesh(vedo.load(env_file_filled).triangulate())
+            if self.use_filled_env:
+                tri_mesh_env_filled = vedo.vtk2trimesh(vedo.load(env_file_filled).triangulate())
+            else:
+                tri_mesh_env_filled = tri_mesh_env #vedo.vtk2trimesh(vedo.load(tri_mesh_env).triangulate())
 
 
             test_points_file = os.path.join(self.work_directory,"samples", scene, "sample_points.npy")
@@ -68,7 +72,10 @@ class SlaveEnviroTester(Slave):
                 it_name = tester.affordances[idx_aff][0]
 
                 # creating output directory
-                output_dir = os.path.join(self.work_directory, "env_test", scene, it_name)
+                if self.use_filled_env:
+                    output_dir = os.path.join(self.work_directory, "env_test", scene, it_name)
+                else:
+                    output_dir = os.path.join(self.work_directory, "no_filled_env_test", scene, it_name)
                 if not os.path.exists(output_dir):
                     os.makedirs(output_dir)
 
