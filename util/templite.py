@@ -1,3 +1,7 @@
+"""
+It is helpful to write html documents with using templates
+"""
+
 import re
 
 
