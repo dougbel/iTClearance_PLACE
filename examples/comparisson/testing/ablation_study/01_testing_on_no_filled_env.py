@@ -1,3 +1,7 @@
+"""
+Execute the iTClearance algorithm on scene without Sphere fillers
+"""
+
 import argparse
 
 from mpi4py import MPI

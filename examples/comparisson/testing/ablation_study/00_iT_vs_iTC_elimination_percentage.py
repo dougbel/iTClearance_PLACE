@@ -1,3 +1,7 @@
+"""
+It count an generate the number of point detected that facilitates a given afordances.
+Creates a csv file with a resume of the data
+"""
 import json
 import os
 from os.path import  join as opj
@@ -18,12 +22,15 @@ if __name__ == '__main__':
     directory_of_trainings = opj(base_dir, "config", "descriptors_repository")
 
 
-    env_test_dir = opj(base_dir, "test", "env_test")
+    # env_test_dir = opj(base_dir, "test", "env_test")
+    env_test_dir = opj(base_dir, "test", "no_filled_env_test")
     datasets_dir = opj(base_dir, "datasets")
 
     results= pd.DataFrame(columns=["dataset", "scene", "interaction", "detected_iT", "detected_iTC"])
 
     for scene  in os.listdir(env_test_dir):
+        if not os.path.isdir(opj(env_test_dir, scene)):
+            continue
         file_mesh_env, dataset_name = find_files_mesh_env(datasets_dir, scene)
         # print(file_mesh_env)
         for interaction in os.listdir(opj(env_test_dir, scene)):
