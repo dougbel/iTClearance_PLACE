@@ -76,4 +76,5 @@ if __name__ == '__main__':
 
             results.loc[len(results.index)] = [dataset_name, scene, interaction, len(naive_np_points),len(clearance_np_points)]
 
-    results.to_csv(opj(output_dir,"00_iT_vs_iTC_elimination_percentage.csv"))
+    results.sort_values(["dataset", "scene", "interaction"], inplace=True)
+    results.to_csv(opj(output_dir, "00_iT_vs_iTC_elimination_percentage.csv"), index=False)
