@@ -4,21 +4,37 @@ Creates a csv file with a resume of the data
 """
 import json
 import os
-from os.path import  join as opj
+from os.path import join as opj
 
-from trimesh import load_mesh
+import pandas as pd
 
 from it_clearance.testing.tester import TesterClearance
 from si.fulldataclearancescores import FullDataClearanceScores
 from si.fulldatascores import FullDataScores
 from util.util_mesh import find_files_mesh_env
-import pandas as pd
+
+interactions_by_type = {
+        "laying": ["laying_bed", "laying_hands_up", "laying_on_sofa", "laying_sofa_foot_on_floor"],
+        "reaching_out": ["reaching_out_mid", "reaching_out_mid_down", "reaching_out_mid_up", "reaching_out_on_table",
+                         "reaching_out_ontable_one_hand"],
+        "sitting": ["sitting", "sitting_bit_open_arms", "sitting_chair", "sitting_comfortable", "sitting_compact",
+                    "sitting_hands_on_device", "sitting_looking_to_right", "sitting_small_table", "sitting_stool",
+                    "sitting_stool_one_foot_floor"],
+        "standing_up": ["standing_up", "standup_hand_on_furniture"],
+        "walking": ["walking_left_foot", "walking_right_foot"]
+    }
+
+
+def get_interaction_type(interaction_name):
+    for current_type in interactions_by_type:
+        if interaction_name in interactions_by_type[current_type]:
+            return current_type
 
 if __name__ == '__main__':
     base_dir = "/media/dougbel/Tezcatlipoca/PLACE_trainings"
     output_base = opj(base_dir, "ablation_study_in_test")
 
-    with_fillers = True # True   False                  This indicates if use data generated iTClearance in environments with fillers
+    with_fillers = False # True   False                  This indicates if use data generated iTClearance in environments with fillers
     filter_dataset = "prox"    # None   prox   mp3d  replica_v1
 
     json_conf_execution_dir = opj(base_dir,"config", "json_execution")
@@ -69,14 +85,15 @@ if __name__ == '__main__':
             df_scores_data = pd.read_csv(os.path.join(env_test_results_dir, "test_scores.csv"))
             scores_data = FullDataClearanceScores(df_scores_data, interaction)
             sub_df = scores_data.filter_dataframe_best_score_per_point( max_limit_score, max_limit_missing, max_limit_cv_collided)
+            sub_df.insert(loc=0, column='interaction_type', value=get_interaction_type(interaction))
             sub_df.insert(loc=0, column='interaction', value=interaction)
             sub_df.insert(loc=0, column='scene', value=scene)
             sub_df.insert(loc=0, column='dataset', value=dataset_name)
 
 
-
             naive_score_data = FullDataScores(df_scores_data, interaction)
             naive_sub_df = naive_score_data.filter_dataframe_best_score_per_point(max_limit_score, max_limit_missing)
+            naive_sub_df.insert(loc=0, column='interaction_type', value=get_interaction_type(interaction))
             naive_sub_df.insert(loc=0, column='interaction', value=interaction)
             naive_sub_df.insert(loc=0, column='scene', value=scene)
             naive_sub_df.insert(loc=0, column='dataset', value=dataset_name)
