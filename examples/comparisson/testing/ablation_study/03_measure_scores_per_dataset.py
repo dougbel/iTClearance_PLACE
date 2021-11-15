@@ -19,7 +19,7 @@ import torch.nn.functional as F
 from tabulate import tabulate
 
 def get_next_sampling_id(l_column_names):
-    return max([int(x.replace(column_prefix, "")) for x in l_column_names if
+    return len([int(x.replace(column_prefix, "")) for x in l_column_names if
          x.startswith(column_prefix) and x.replace(column_prefix, "").isdigit()]) + 1
 
 if __name__ == '__main__':
