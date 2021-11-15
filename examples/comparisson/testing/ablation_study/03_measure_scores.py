@@ -2,6 +2,7 @@
 It count an generate the number of point detected that facilitates a given afordances.
 Creates a csv file with a resume of the data
 """
+import statistics
 import warnings
 warnings.simplefilter("ignore", UserWarning)
 from os.path import  join as opj
@@ -17,14 +18,18 @@ import torch.nn.functional as F
 
 from tabulate import tabulate
 
+def get_next_sampling_id(l_column_names):
+    return max([int(x.replace(column_prefix, "")) for x in l_column_names if
+         x.startswith(column_prefix) and x.replace(column_prefix, "").isdigit()]) + 1
+
 if __name__ == '__main__':
     base_dir = "/media/dougbel/Tezcatlipoca/PLACE_trainings"
     output_base = opj(base_dir, "ablation_study_in_test")
 
     stratified_sampling = True
 
-    n_sample_per_scene=1297 # confidence level = 97%, margin error = 3%  for infinite samples
-    # n_sample_per_scene=100 #
+    # n_sample_per_scene=1297 # confidence level = 97%, margin error = 3%  for infinite samples
+    n_sample_per_scene=10 #
 
     filter_dataset = "prox"    # None   prox   mp3d  replica_v1
 
@@ -49,7 +54,7 @@ if __name__ == '__main__':
 
     column_prefix = f"ablation_{filter_dataset}_"
     for model in filles_to_test:
-        tb_headers = ["model", "dataset", "scene", "non_collision", "contact"]
+        tb_headers = ["model", "dataset", "scene", "non_collision","std_dev", "contact"]
         tb_data = []
         conglo_path =filles_to_test[model]
         print(conglo_path)
@@ -58,7 +63,7 @@ if __name__ == '__main__':
         loss_contacts_model=[]
 
         conglo_data = pd.read_csv(conglo_path)
-        n_sampling = sum([x.startswith(column_prefix) for x in conglo_data.columns.to_list()])+1
+        n_sampling = get_next_sampling_id(conglo_data.columns.to_list())
         follow_up_column = f"{column_prefix}{n_sampling}"
         conglo_data[follow_up_column] = False
         conglo_data[follow_up_column + "non_collision"] = ""
@@ -68,7 +73,7 @@ if __name__ == '__main__':
 
         for current_env_name in conglo_data['scene'].unique():
 
-            loss_non_collision_env, loss_contact_env = 0, 0
+            loss_non_collision_env, loss_contact_env = [], []
 
             dataset_results = grouped.get_group(current_env_name)
             if stratified_sampling:
@@ -116,30 +121,38 @@ if __name__ == '__main__':
 
                 sample.loc[idx, [follow_up_column + "non_collision"]] = current_loss_non_coll
                 sample.loc[idx, [follow_up_column + "contact_sample"]] = current_loss_contact
-                loss_non_collision_env += current_loss_non_coll
-                loss_contact_env += current_loss_contact
+                loss_non_collision_env.append( current_loss_non_coll)
+                loss_contact_env.append(current_loss_contact)
 
                 loss_non_collisions_model.append(current_loss_non_coll)
                 loss_contacts_model.append(current_loss_contact)
 
-            loss_non_collision_env = loss_non_collision_env / n_sample_per_scene
-            loss_contact_env = loss_contact_env / n_sample_per_scene
+            # loss_non_collision_env = loss_non_collision_env / n_sample_per_scene
+            # loss_contact_env = loss_contact_env / n_sample_per_scene
             # print("   Scene", current_env_name)
             # print('      non_collision score:', loss_non_collision_env)
             # print('      contact score:', loss_contact_env)
-            tb_data.append([model, filter_dataset, current_env_name, loss_non_collision_env, loss_contact_env ])
+            tb_data.append([model, filter_dataset, current_env_name, statistics.mean(loss_non_collision_env), statistics.stdev(loss_non_collision_env),  statistics.mean(loss_contact_env) ])
 
             conglo_data.loc[sample.index.to_list(),[follow_up_column]] =True
             conglo_data.loc[sample.index.to_list(),[follow_up_column + "non_collision"]] = sample.loc[sample.index.to_list(),[follow_up_column + "non_collision"]]
             conglo_data.loc[sample.index.to_list(),[follow_up_column + "contact_sample"]] = sample.loc[sample.index.to_list(),[follow_up_column + "contact_sample"]]
         # print("  Overall")
-        collision_score = sum(loss_non_collisions_model)/len(loss_non_collisions_model)
-        contact_score = sum(loss_contacts_model)/len(loss_contacts_model)
+        #collision_score =  # sum(loss_non_collisions_model)/len(loss_non_collisions_model)
+        #contact_score =  # sum(loss_contacts_model)/len(loss_contacts_model)
         # print('      non_collision score:', collision_score)
         # print('      contact score:', contact_score)
-        tb_data.append([model, filter_dataset, "Overall", collision_score, contact_score])
+        tb_data.append([model, filter_dataset, "Overall", statistics.mean(loss_non_collisions_model), statistics.stdev(loss_non_collisions_model),  statistics.mean(loss_contacts_model)])
 
         print(tabulate(tb_data,headers=tb_headers, floatfmt=".4f",  tablefmt="latex_booktabs"))
         print(tabulate(tb_data, headers=tb_headers, floatfmt=".4f", tablefmt="simple"))
 
-        conglo_data.to_csv(conglo_path,index=False)
+        import logging
+
+        logging.basicConfig(filename=f"output_{follow_up_column}.txt", level=logging.DEBUG, format='')
+
+        logging.info('\n'+tabulate(tb_data,headers=tb_headers, floatfmt=".4f",  tablefmt="latex_booktabs"))
+        logging.info('\n'+tabulate(tb_data,headers=tb_headers, floatfmt=".4f",  tablefmt="simple"))
+
+
+        # conglo_data.to_csv(conglo_path,index=False)
