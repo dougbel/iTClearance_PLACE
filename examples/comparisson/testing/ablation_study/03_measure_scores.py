@@ -144,12 +144,16 @@ if __name__ == '__main__':
         # print('      contact score:', contact_score)
         tb_data.append([model, filter_dataset, "Overall", statistics.mean(loss_non_collisions_model), statistics.stdev(loss_non_collisions_model),  statistics.mean(loss_contacts_model)])
 
-        print(tabulate(tb_data,headers=tb_headers, floatfmt=".4f",  tablefmt="latex_booktabs"))
-        print(tabulate(tb_data, headers=tb_headers, floatfmt=".4f", tablefmt="simple"))
+        # print(tabulate(tb_data,headers=tb_headers, floatfmt=".4f",  tablefmt="latex_booktabs"))
+        # print(tabulate(tb_data, headers=tb_headers, floatfmt=".4f", tablefmt="simple"))
 
         import logging
 
         logging.basicConfig(filename=f"output_{follow_up_column}.txt", level=logging.DEBUG, format='')
+
+        logging.info(f"stratified_sampling: {stratified_sampling}")
+        logging.info(f"n_sample_per_scene:  {n_sample_per_scene}")
+        logging.info(f"filter_dataset: {filter_dataset}")
 
         logging.info('\n'+tabulate(tb_data,headers=tb_headers, floatfmt=".4f",  tablefmt="latex_booktabs"))
         logging.info('\n'+tabulate(tb_data,headers=tb_headers, floatfmt=".4f",  tablefmt="simple"))
