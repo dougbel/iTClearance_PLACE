@@ -15,11 +15,16 @@ import pandas as pd
 import numpy as np
 import torch.nn.functional as F
 
+from tabulate import tabulate
+
 if __name__ == '__main__':
     base_dir = "/media/dougbel/Tezcatlipoca/PLACE_trainings"
     output_base = opj(base_dir, "ablation_study_in_test")
 
-    n_sample=4800
+    stratified_sampling = True
+
+    n_sample_per_scene=1297 # confidence level = 97%, margin error = 3%  for infinite samples
+    # n_sample_per_scene=100 #
 
     filter_dataset = "prox"    # None   prox   mp3d  replica_v1
 
@@ -41,58 +46,100 @@ if __name__ == '__main__':
         "conglo_env_fill_iT_clearance": opj(env_filled_data_test_dir, f"02_conglomerate_capable_positions_clearance_{filter_dataset}.csv")
     }
 
-    loss_non_collision_sample, loss_contact_sample = 0, 0
 
     column_prefix = f"ablation_{filter_dataset}_"
-    for file in filles_to_test:
-        conglo_path =filles_to_test[file]
+    for model in filles_to_test:
+        tb_headers = ["model", "dataset", "scene", "non_collision", "contact"]
+        tb_data = []
+        conglo_path =filles_to_test[model]
         print(conglo_path)
 
-        conglo_data = pd.read_csv(conglo_path)
+        loss_non_collisions_model=[]
+        loss_contacts_model=[]
 
+        conglo_data = pd.read_csv(conglo_path)
         n_sampling = sum([x.startswith(column_prefix) for x in conglo_data.columns.to_list()])+1
         follow_up_column = f"{column_prefix}{n_sampling}"
-        sample = conglo_data.sample(n_sample)
-
-        for idx, row in sample.iterrows():
-            dataset = row["dataset"]
-            env_name = row["scene"]
-            interaction = row["interaction"]
-            angle = row["angle"]
-            json_conf_execution_file = opj(json_conf_execution_dir, f"single_testing_{interaction}.json")
-            tester = TesterClearance(directory_of_trainings, json_conf_execution_file)
-            subdir_name = "_".join(tester.affordances[0])
-            ply_obj_file = opj(directory_of_trainings, interaction, subdir_name + "_object.ply")
-            vtk_object = load(ply_obj_file)
-            vtk_object.rotate(angle, axis=(0, 0, 1), rad=True)
-            vtk_object.pos(x=row["point_x"], y=row["point_y"], z=row["point_z"])
-
-            s_grid_min_batch, s_grid_max_batch, s_sdf_batch = read_sdf(opj(datasets_dir, dataset), env_name)
-
-            #####################  compute non-collision/contact score ##############
-            # body verts before optimization
-            # [1, 10475, 3]
-            body_verts_sample = np.asarray(vtk_object.points())
-            body_verts_sample_prox_tensor = torch.from_numpy(body_verts_sample).float().unsqueeze(0).to(device)
-            norm_verts_batch = (body_verts_sample_prox_tensor - s_grid_min_batch) / (
-                        s_grid_max_batch - s_grid_min_batch) * 2 - 1
-            body_sdf_batch = F.grid_sample(s_sdf_batch.unsqueeze(1),
-                                           norm_verts_batch[:, :, [2, 1, 0]].view(-1, 10475, 1, 1, 3),
-                                           padding_mode='border')
-            if body_sdf_batch.lt(0).sum().item() < 1:  # if no interpenetration: negative sdf entries is less than one
-                loss_non_collision_sample += 1.0
-                loss_contact_sample += 0.0
-            else:
-                loss_non_collision_sample += (body_sdf_batch > 0).sum().float().item() / 10475.0
-                loss_contact_sample += 1.0
-
-        loss_non_collision_sample = loss_non_collision_sample / n_sample
-        loss_contact_sample = loss_contact_sample / n_sample
-        print('w/o optimization body: non_collision score:', loss_non_collision_sample)
-        print('w/o optimization body: contact score:', loss_contact_sample)
-
-
-
         conglo_data[follow_up_column] = False
-        conglo_data.loc[sample.index.to_list(),[follow_up_column]] =True
+        conglo_data[follow_up_column + "non_collision"] = ""
+        conglo_data[follow_up_column + "contact_sample"] = ""
+
+        grouped = conglo_data.groupby(conglo_data['scene'])
+
+        for current_env_name in conglo_data['scene'].unique():
+
+            loss_non_collision_env, loss_contact_env = 0, 0
+
+            dataset_results = grouped.get_group(current_env_name)
+            if stratified_sampling:
+                sample = dataset_results.groupby('interaction_type', group_keys=False).apply(lambda x: x.sample(int(np.rint(n_sample_per_scene*len(x)/len(dataset_results))))).sample(frac=1)
+            else:
+                sample = conglo_data.sample(n_sample_per_scene)
+            sample[follow_up_column + "non_collision"] = 0.0
+            sample[follow_up_column + "contact_sample"] = 0.0
+            # sample = conglo_data.sample(n_sample)
+
+            for idx, row in sample.iterrows():
+                dataset = row["dataset"]
+                env_name = row["scene"]
+                interaction = row["interaction"]
+                angle = row["angle"]
+                json_conf_execution_file = opj(json_conf_execution_dir, f"single_testing_{interaction}.json")
+                tester = TesterClearance(directory_of_trainings, json_conf_execution_file)
+                subdir_name = "_".join(tester.affordances[0])
+                ply_obj_file = opj(directory_of_trainings, interaction, subdir_name + "_object.ply")
+                vtk_object = load(ply_obj_file)
+                vtk_object.rotate(angle, axis=(0, 0, 1), rad=True)
+                vtk_object.pos(x=row["point_x"], y=row["point_y"], z=row["point_z"])
+
+                s_grid_min_batch, s_grid_max_batch, s_sdf_batch = read_sdf(opj(datasets_dir, dataset), env_name)
+
+                #####################  compute non-collision/contact score ##############
+                # body verts before optimization
+                # [1, 10475, 3]
+                body_verts_sample = np.asarray(vtk_object.points())
+                body_verts_sample_prox_tensor = torch.from_numpy(body_verts_sample).float().unsqueeze(0).to(device)
+                norm_verts_batch = (body_verts_sample_prox_tensor - s_grid_min_batch) / (
+                        s_grid_max_batch - s_grid_min_batch) * 2 - 1
+                body_sdf_batch = F.grid_sample(s_sdf_batch.unsqueeze(1),
+                                               norm_verts_batch[:, :, [2, 1, 0]].view(-1, 10475, 1, 1, 3),
+                                               padding_mode='border')
+
+                current_loss_non_coll = 0.0
+                current_loss_contact = 0.0
+                if body_sdf_batch.lt(0).sum().item() < 1:  # if no interpenetration: negative sdf entries is less than one
+                    current_loss_non_coll= 1.0
+                    current_loss_contact = 0.0
+                else:
+                    current_loss_non_coll = (body_sdf_batch > 0).sum().float().item() / 10475.0
+                    current_loss_contact = 1.0
+
+                sample.loc[idx, [follow_up_column + "non_collision"]] = current_loss_non_coll
+                sample.loc[idx, [follow_up_column + "contact_sample"]] = current_loss_contact
+                loss_non_collision_env += current_loss_non_coll
+                loss_contact_env += current_loss_contact
+
+                loss_non_collisions_model.append(current_loss_non_coll)
+                loss_contacts_model.append(current_loss_contact)
+
+            loss_non_collision_env = loss_non_collision_env / n_sample_per_scene
+            loss_contact_env = loss_contact_env / n_sample_per_scene
+            # print("   Scene", current_env_name)
+            # print('      non_collision score:', loss_non_collision_env)
+            # print('      contact score:', loss_contact_env)
+            tb_data.append([model, filter_dataset, current_env_name, loss_non_collision_env, loss_contact_env ])
+
+            conglo_data.loc[sample.index.to_list(),[follow_up_column]] =True
+            conglo_data.loc[sample.index.to_list(),[follow_up_column + "non_collision"]] = sample.loc[sample.index.to_list(),[follow_up_column + "non_collision"]]
+            conglo_data.loc[sample.index.to_list(),[follow_up_column + "contact_sample"]] = sample.loc[sample.index.to_list(),[follow_up_column + "contact_sample"]]
+        # print("  Overall")
+        collision_score = sum(loss_non_collisions_model)/len(loss_non_collisions_model)
+        contact_score = sum(loss_contacts_model)/len(loss_contacts_model)
+        # print('      non_collision score:', collision_score)
+        # print('      contact score:', contact_score)
+        tb_data.append([model, filter_dataset, "Overall", collision_score, contact_score])
+
+        print(tabulate(tb_data,headers=tb_headers, floatfmt=".4f",  tablefmt="latex_booktabs"))
+        print(tabulate(tb_data, headers=tb_headers, floatfmt=".4f", tablefmt="simple"))
+
         conglo_data.to_csv(conglo_path,index=False)
