@@ -22,6 +22,8 @@ import numpy as np
 import torch.nn.functional as F
 from it import util
 
+import gc
+
 from tabulate import tabulate
 
 def get_next_sampling_id(l_column_names):
@@ -55,8 +57,8 @@ if __name__ == '__main__':
 
     stratified_sampling = True
 
-    # n_sample_per_scene=382 # confidence level = 95%, margin error = 5%  for infinite samples
-    # n_sample_per_scene=1297 # confidence level = 97%, margin error = 3%  for infinite samples
+    # n_sample_per_interaction_type=382 # confidence level = 95%, margin error = 5%  for infinite samples
+    # n_sample_per_interaction_type=1297 # confidence level = 97%, margin error = 3%  for infinite samples
     n_sample_per_interaction_type=10 #
 
     filter_dataset = "prox"    # None   prox   mp3d  replica_v1
@@ -126,6 +128,7 @@ if __name__ == '__main__':
             sample[follow_up_column + "contact_sample"] = 0.0
 
             for idx, row in tqdm(sample.iterrows(), total=sample.shape[0]):
+                gc.collect()
                 dataset = row["dataset"]
                 env_name = row["scene"]
                 interaction = row["interaction"]
@@ -211,4 +214,4 @@ if __name__ == '__main__':
         logging.info('\n'+tabulate(tb_data,headers=tb_headers, floatfmt=".4f",  tablefmt="simple"))
 
 
-        # conglo_data.to_csv(conglo_path,index=False)
+        conglo_data.to_csv(conglo_path,index=False)
