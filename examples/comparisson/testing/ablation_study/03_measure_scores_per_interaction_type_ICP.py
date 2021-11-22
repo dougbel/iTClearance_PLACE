@@ -104,8 +104,8 @@ if __name__ == '__main__':
         decimated_envs = {}
         for scene in conglo_data['scene'].unique():
             file_mesh_env, __ = find_files_mesh_env(datasets_dir, scene)
-            # decimated_envs[scene] = vedo.vtk2trimesh(vedo.load(file_mesh_env).decimate(fraction=.3))
-            decimated_envs[scene] = trimesh.load_mesh(file_mesh_env)
+            decimated_envs[scene] = vedo.vtk2trimesh(vedo.load(file_mesh_env).decimate(fraction=.3))
+            # decimated_envs[scene] = trimesh.load_mesh(file_mesh_env)
         ##########################################################################
 
         for current_interaction_type in conglo_data['interaction_type'].unique():
