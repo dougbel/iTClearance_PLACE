@@ -50,8 +50,8 @@ if __name__ == '__main__':
     stratified_sampling = True
 
     # n_sample_per_interaction_type=382 # confidence level = 95%, margin error = 5%  for infinite samples
-    # n_sample_per_interaction_type=1297 # confidence level = 97%, margin error = 3%  for infinite samples
-    n_sample_per_interaction_type=2 #
+    n_sample_per_interaction_type=1297 # confidence level = 97%, margin error = 3%  for infinite samples
+    # n_sample_per_interaction_type=2 #
 
     filter_dataset = "prox"    # None   prox   mp3d  replica_v1
 
@@ -78,6 +78,8 @@ if __name__ == '__main__':
 
     column_prefix = f"ablation_{filter_dataset}_"
     for model in filles_to_test:
+        gc.collect()
+        torch.cuda.empty_cache()
         tb_headers = ["model", "dataset", "interaction_type", "non_collision","std_dev", "contact", "collision_points","collision_points_std_dev", "collision_depth", "collision_depth_std_dev"]
         tb_data = []
         conglo_path =filles_to_test[model]
@@ -109,7 +111,8 @@ if __name__ == '__main__':
         ##########################################################################
 
         for current_interaction_type in conglo_data['interaction_type'].unique():
-
+            gc.collect()
+            torch.cuda.empty_cache()
             loss_non_collision_inter_type, loss_contact_inter_type = [], []
             loss_collision_n_points, loss_collision_sum_depths = [], []
 
@@ -117,7 +120,7 @@ if __name__ == '__main__':
             if stratified_sampling:
                 sample = interaction_type_results.groupby('interaction_type', group_keys=False).apply(lambda x: x.sample(int(np.rint(n_sample_per_interaction_type * len(x) / len(interaction_type_results))))).sample(frac=1)
             else:
-                sample = conglo_data.sample(n_sample_per_interaction_type)
+                sample = interaction_type_results.sample(n_sample_per_interaction_type)
 
             sample[follow_up_column + "non_collision"] = 0.0
             sample[follow_up_column + "contact_sample"] = 0.0
@@ -143,13 +146,14 @@ if __name__ == '__main__':
 
                 trimesh_decimated_env =  decimated_envs[env_name]
 
-                influence_radio_bb = 1.5
+                influence_radio_bb = 1.2
                 extension, middle_point = util.influence_sphere(trimesh_obj, influence_radio_bb)
                 tri_mesh_env_cropped = util.slide_mesh_by_bounding_box(trimesh_decimated_env, middle_point,
                                                                           extension)
 
                 matrix, transformation, cost = trimesh.registration.icp(trimesh_obj.vertices, tri_mesh_env_cropped,
-                                                                        max_iterations=1, reflection=False, scale=False)
+                                                                        max_iterations=2,
+                                                                        reflection=False, scale=False)
                 trimesh_translated_obj = trimesh.Trimesh(vertices=transformation, faces=trimesh_obj.faces)
 
 
