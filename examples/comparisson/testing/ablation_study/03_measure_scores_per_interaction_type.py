@@ -2,6 +2,7 @@
 It count an generate the number of point detected that facilitates a given afordances.
 Creates a csv file with a resume of the data
 """
+import os
 import statistics
 import warnings
 warnings.simplefilter("ignore", UserWarning)
@@ -26,9 +27,10 @@ if __name__ == '__main__':
     base_dir = "/media/dougbel/Tezcatlipoca/PLACE_trainings"
     output_base = opj(base_dir, "ablation_study_in_test")
 
-    stratified_sampling = True
+    stratified_sampling = False
 
     # n_sample_per_scene=382 # confidence level = 95%, margin error = 5%  for infinite samples
+    # n_sample_per_interaction_type=1297 # confidence level = 97%, margin error = 3%  for infinite samples
     n_sample_per_interaction_type=100 #
 
     filter_dataset = "prox"    # None   prox   mp3d  replica_v1
@@ -79,7 +81,7 @@ if __name__ == '__main__':
             if stratified_sampling:
                 sample = interaction_type_results.groupby('interaction_type', group_keys=False).apply(lambda x: x.sample(int(np.rint(n_sample_per_interaction_type * len(x) / len(interaction_type_results))))).sample(frac=1)
             else:
-                sample = conglo_data.sample(n_sample_per_interaction_type)
+                sample = interaction_type_results.sample(n_sample_per_interaction_type)
             sample[follow_up_column + "non_collision"] = 0.0
             sample[follow_up_column + "contact_sample"] = 0.0
             # sample = conglo_data.sample(n_sample)
@@ -149,8 +151,9 @@ if __name__ == '__main__':
 
         import logging
 
-        logging.basicConfig(filename=f"output_{follow_up_column}.txt", level=logging.DEBUG, format='')
+        logging.basicConfig(filename=f"output_{follow_up_column}.txt", level=logging.INFO, format='')
 
+        logging.info(f"File: {os.path.basename(os.path.realpath(__file__))}")
         logging.info(f"stratified_sampling: {stratified_sampling}")
         logging.info(f"n_sample_per_scene:  {n_sample_per_interaction_type}")
         logging.info(f"filter_dataset: {filter_dataset}")
