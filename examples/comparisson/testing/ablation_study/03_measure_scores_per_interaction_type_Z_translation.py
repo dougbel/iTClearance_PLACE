@@ -127,7 +127,7 @@ if __name__ == '__main__':
             if stratified_sampling:
                 sample = interaction_type_results.groupby('interaction_type', group_keys=False).apply(lambda x: x.sample(int(np.rint(n_sample_per_interaction_type * len(x) / len(interaction_type_results))))).sample(frac=1)
             else:
-                sample = conglo_data.sample(n_sample_per_interaction_type)
+                sample = interaction_type_results.sample(n_sample_per_interaction_type)
 
             sample[follow_up_column + "z_translation"] = 0.0
             sample[follow_up_column + "non_collision"] = 0.0

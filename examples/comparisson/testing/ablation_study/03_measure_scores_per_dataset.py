@@ -79,7 +79,7 @@ if __name__ == '__main__':
             if stratified_sampling:
                 sample = dataset_results.groupby('interaction_type', group_keys=False).apply(lambda x: x.sample(int(np.rint(n_sample_per_scene*len(x)/len(dataset_results))))).sample(frac=1)
             else:
-                sample = conglo_data.sample(n_sample_per_scene)
+                sample = dataset_results.sample(n_sample_per_scene)
             sample[follow_up_column + "non_collision"] = 0.0
             sample[follow_up_column + "contact_sample"] = 0.0
             # sample = conglo_data.sample(n_sample)
