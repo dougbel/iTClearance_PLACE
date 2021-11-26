@@ -101,8 +101,8 @@ if __name__ == '__main__':
         decimated_envs = {}
         for scene in conglo_data['scene'].unique():
             file_mesh_env, __ = find_files_mesh_env(datasets_dir, scene)
-            decimated_envs[scene] = vedo.vtk2trimesh(vedo.load(file_mesh_env).decimate(fraction=.3))
-            # decimated_envs[scene] = trimesh.load_mesh(file_mesh_env)
+            #decimated_envs[scene] = vedo.vtk2trimesh(vedo.load(file_mesh_env).decimate(fraction=.3))
+            decimated_envs[scene] = trimesh.load_mesh(file_mesh_env)
         ##########################################################################
 
         print(conglo_path)
@@ -148,8 +148,8 @@ if __name__ == '__main__':
                 tri_mesh_env_cropped = util.slide_mesh_by_bounding_box(trimesh_decimated_env, middle_point,
                                                                           extension)
 
-                matrix, transformation, cost = trimesh.registration.icp(trimesh_obj.vertices, tri_mesh_env_cropped,
-                                                                        max_iterations=3,
+                matrix, transformation, cost = trimesh.registration.icp(trimesh_obj.vertices, tri_mesh_env_cropped.vertices,
+                                                                        max_iterations=90,
                                                                         reflection=False, scale=False)
                 trimesh_translated_obj = trimesh.Trimesh(vertices=transformation, faces=trimesh_obj.faces)
 
