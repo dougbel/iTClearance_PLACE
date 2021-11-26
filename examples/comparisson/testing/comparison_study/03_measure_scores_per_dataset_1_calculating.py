@@ -81,7 +81,6 @@ if __name__ == '__main__':
     visualize = True
 
     # n_sample_per_scene=1297 # confidence level = 97%, margin error = 3%  for infinite samples
-    n_sample_per_scene=10 #
 
 
     json_conf_execution_dir = opj(base_dir,"config", "json_execution")
