@@ -24,6 +24,7 @@ from it_clearance.testing.tester import TesterClearance
 from util.util_mesh import read_sdf, find_files_mesh_env
 import pandas as pd
 import numpy as np
+from tqdm import tqdm
 import torch.nn.functional as F
 
 from tabulate import tabulate
@@ -78,7 +79,7 @@ if __name__ == '__main__':
 
     id = "itClearance"  # None
 
-    visualize = True
+    visualize = False
 
     # n_sample_per_scene=1297 # confidence level = 97%, margin error = 3%  for infinite samples
 
@@ -150,7 +151,7 @@ if __name__ == '__main__':
             # sample[follow_up_column + "_collision_points_optim"] = 0.0
             # sample[follow_up_column + "_collision_sum_depths_optim"] = 0.0
 
-            for idx, row in sample.iterrows():
+            for idx, row in tqdm(sample.iterrows(), total=sample.shape[0] ):
                 gc.collect()
                 torch.cuda.empty_cache()
                 if sample.loc[idx, [follow_up_column + "_non_collision"]].isnull().values[0] == False:
