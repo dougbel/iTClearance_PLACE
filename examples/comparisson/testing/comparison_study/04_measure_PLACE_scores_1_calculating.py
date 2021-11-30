@@ -543,10 +543,8 @@ if __name__ == '__main__':
     print(f"{current_env_name}  -     {dataset_name}")
 
 
-
+    counter = 0
     for idx, row in tqdm(conglo_data.iterrows(), total=conglo_data.shape[0] ):
-        gc.collect()
-        torch.cuda.empty_cache()
         if conglo_data.loc[idx, [follow_up_column + "_non_collision"]].isnull().values[0] == False:
             continue
 
@@ -595,4 +593,13 @@ if __name__ == '__main__':
         conglo_data.loc[idx,[follow_up_column + "_collision_points_adv_optim"]] = current_contact_n_points_opt2
         conglo_data.loc[idx,[follow_up_column + "_collision_sum_depths_adv_optim"]] = current_contact_sum_depths_opt2
 
-        conglo_data.to_csv(conglo_path,index=False)
+        # partial saving
+        if counter % 20 == 0:
+            print(f"env: {current_env_name}, counter: {counter}, saving data on csv {conglo_path} ")
+            conglo_data.to_csv(conglo_path,index=False)
+            gc.collect()
+            torch.cuda.empty_cache()
+        counter += 1
+
+    # final saving
+    conglo_data.to_csv(conglo_path, index=False)

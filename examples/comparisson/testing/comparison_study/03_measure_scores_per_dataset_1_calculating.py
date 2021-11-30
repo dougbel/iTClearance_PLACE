@@ -150,10 +150,8 @@ if __name__ == '__main__':
             # sample[follow_up_column + "_contact_sample_optim"] = 0.0
             # sample[follow_up_column + "_collision_points_optim"] = 0.0
             # sample[follow_up_column + "_collision_sum_depths_optim"] = 0.0
-
+            counter=0
             for idx, row in tqdm(sample.iterrows(), total=sample.shape[0] ):
-                gc.collect()
-                torch.cuda.empty_cache()
                 if sample.loc[idx, [follow_up_column + "_non_collision"]].isnull().values[0] == False:
                     continue
 
@@ -254,4 +252,12 @@ if __name__ == '__main__':
                 # conglo_data.loc[idx, [follow_up_column + "collision_points_optim"]] = sample.loc[idx, [follow_up_column + "collision_points_optim"]]
                 # conglo_data.loc[idx, [follow_up_column + "collision_sum_depths_optim"]] = sample.loc[idx, [follow_up_column + "collision_sum_depths_optim"]]
 
-                conglo_data.to_csv(conglo_path,index=False)
+                #partial saving
+                if counter % 20 == 0:
+                    print(f"env: {current_env_name}, counter: {counter}, saving data on csv {conglo_path} ")
+                    conglo_data.to_csv(conglo_path,index=False)
+                    gc.collect()
+                    torch.cuda.empty_cache()
+                counter += 1
+            #final saving
+            conglo_data.to_csv(conglo_path, index=False)
