@@ -82,4 +82,4 @@ if __name__ == '__main__':
         grouped = conglo_data.groupby('scene')
         for current_env_name in conglo_data['scene'].unique():
             per_scene = grouped.get_group(current_env_name)
-            conglo_data.to_csv(opj(env_filled_data_test_dir, f"{output_file_name_pattern}_{current_env_name}.csv"),index=False)
+            per_scene.to_csv(opj(env_filled_data_test_dir, f"{output_file_name_pattern}_{current_env_name}.csv"),index=False)
