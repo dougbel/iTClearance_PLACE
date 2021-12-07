@@ -106,7 +106,7 @@ if __name__ == '__main__':
 
         logging.info(f"File: {os.path.basename(os.path.realpath(__file__))}")
         logging.info(f"stratified_sampling: {stratified_sampling}")
-        logging.info(f"n_sample_per_scene:  {n_sample_per_interaction_type}")
+        logging.info(f"n_sample_per_interaction:  {n_sample_per_interaction_type}")
         logging.info(f"filter_dataset: {filter_dataset}")
 
         conglo_data.to_csv(conglo_path,index=False)

@@ -6,42 +6,16 @@ import os
 import statistics
 import warnings
 
-import trimesh
-import vedo
-
 warnings.simplefilter("ignore", UserWarning)
 from os.path import  join as opj
 
 import torch
-from vedo import load
 from tqdm import tqdm
 
-from it_clearance.testing.tester import TesterClearance
-from util.util_mesh import read_sdf, find_files_mesh_env
 import pandas as pd
-import numpy as np
-import torch.nn.functional as F
-from it import util
-
-import gc
 
 from tabulate import tabulate
 
-def get_next_sampling_id(l_column_names):
-    return len([int(x.replace(column_prefix, "")) for x in l_column_names if
-         x.startswith(column_prefix) and x.replace(column_prefix, "").isdigit()]) + 1
-
-
-def measure_trimesh_collision(trimesh_decimated_env, it_body):
-    influence_radio_bb = 1.5
-    extension, middle_point = util.influence_sphere(it_body, influence_radio_bb)
-    tri_mesh_env_cropped = util.slide_mesh_by_bounding_box(trimesh_decimated_env, middle_point, extension)
-
-    collision_tester = trimesh.collision.CollisionManager()
-    collision_tester.add_object('env', tri_mesh_env_cropped)
-    in_collision, contact_data = collision_tester.in_collision_single(it_body, return_data=True)
-
-    return contact_data
 
 if __name__ == '__main__':
     base_dir = "/media/dougbel/Tezcatlipoca/PLACE_trainings"
@@ -88,12 +62,8 @@ if __name__ == '__main__':
 
         conglo_data = pd.read_csv(conglo_path)
 
-        if id is None:
-            n_sampling = get_next_sampling_id(conglo_data.columns.to_list())
-        else:
-            n_sampling = id
 
-        follow_up_column = f"{column_prefix}{n_sampling}"
+        follow_up_column = f"{column_prefix}{id}"
 
         grouped = conglo_data.groupby(conglo_data['interaction_type'])
 
