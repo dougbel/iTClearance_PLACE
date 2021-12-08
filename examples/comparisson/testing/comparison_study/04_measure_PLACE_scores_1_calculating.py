@@ -53,7 +53,10 @@ def execute_place_in_picked_point(data_dir, dataset_name, scene_name, np_point, 
     weight_loss_vposer = 0.02
     weight_loss_shape = 0.01
     weight_loss_hand = 0.01
-    weight_collision = 8.0
+    if dataset_name == "replica_v1":
+        weight_collision = 0.1
+    else:
+        weight_collision = 8.0
     weight_loss_contact = 0.5
     itr_s1 = 200
     itr_s2 = 100
