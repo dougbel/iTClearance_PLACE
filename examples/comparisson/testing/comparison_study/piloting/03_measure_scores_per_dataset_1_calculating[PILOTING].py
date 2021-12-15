@@ -166,7 +166,7 @@ if __name__ == '__main__':
 
         counter=0
         for idx, row in tqdm(sample.iterrows(), total=sample.shape[0] ):
-            if sample.loc[idx, [follow_up_column + "_non_collision"]].isnull().values[0] == False:
+            if sample.loc[idx, [follow_up_column + "_non_collision_optim"]].isnull().values[0] == False:
                 continue
 
             dataset = row["dataset"]
