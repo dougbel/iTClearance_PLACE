@@ -20,6 +20,7 @@ from tabulate import tabulate
 parser = argparse.ArgumentParser()
 # data paths
 parser.add_argument('--follow_up_file_name', required=True, help='file name with the follow up')
+parser.add_argument('--measure_it_clearance_metrics', required=False, default='True', help='decide if calculate iTClearance metric or go directly to measure optimization')
 opt = parser.parse_args()
 print(opt)
 
@@ -39,6 +40,9 @@ if __name__ == '__main__':
 
     column_prefix = "piloting_"
     model = "conglo_env_fill_iT_clearance"
+
+    measure_it_clearance_metrics = opt.measure_it_clearance_metrics=='True'
+
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -60,10 +64,11 @@ if __name__ == '__main__':
 
         per_dataset_data = conglo_data[conglo_data['dataset'] == dataset_name]
 
-        loss_non_collisions_dataset = []
-        loss_contacts_dataset = []
-        loss_collision_n_points_dataset = []
-        loss_collision_sum_depths_dataset = []
+        if measure_it_clearance_metrics:
+            loss_non_collisions_dataset = []
+            loss_contacts_dataset = []
+            loss_collision_n_points_dataset = []
+            loss_collision_sum_depths_dataset = []
 
         loss_non_collisions_dataset_optim = []
         loss_contacts_dataset_optim = []
@@ -75,8 +80,9 @@ if __name__ == '__main__':
 
         for current_env_name in per_dataset_data['scene'].unique():
 
-            loss_non_collision_env, loss_contact_env = [], []
-            loss_collision_n_points, loss_collision_sum_depths = [], []
+            if measure_it_clearance_metrics:
+                loss_non_collision_env, loss_contact_env = [], []
+                loss_collision_n_points, loss_collision_sum_depths = [], []
             loss_non_collision_env_optim, loss_contact_env_optim = [], []
             loss_collision_n_points_optim, loss_collision_sum_depths_optim = [], []
 
@@ -86,20 +92,21 @@ if __name__ == '__main__':
 
             for idx, row in sample.iterrows():
 
-                current_loss_non_coll = sample.loc[idx, [follow_up_column + "_non_collision"]].values[0]
-                current_loss_contact = sample.loc[idx, [follow_up_column + "_contact_sample"]].values[0]
-                current_contact_n_points = sample.loc[idx, [follow_up_column + "_collision_points"]].values[0]
-                current_contact_sum_depths = sample.loc[idx, [follow_up_column + "_collision_sum_depths"]].values[0]
+                if measure_it_clearance_metrics:
+                    current_loss_non_coll = sample.loc[idx, [follow_up_column + "_non_collision"]].values[0]
+                    current_loss_contact = sample.loc[idx, [follow_up_column + "_contact_sample"]].values[0]
+                    current_contact_n_points = sample.loc[idx, [follow_up_column + "_collision_points"]].values[0]
+                    current_contact_sum_depths = sample.loc[idx, [follow_up_column + "_collision_sum_depths"]].values[0]
 
-                loss_non_collision_env.append( current_loss_non_coll)
-                loss_contact_env.append(current_loss_contact)
-                loss_collision_n_points.append(current_contact_n_points)
-                loss_collision_sum_depths.append(current_contact_sum_depths)
+                    loss_non_collision_env.append( current_loss_non_coll)
+                    loss_contact_env.append(current_loss_contact)
+                    loss_collision_n_points.append(current_contact_n_points)
+                    loss_collision_sum_depths.append(current_contact_sum_depths)
 
-                loss_non_collisions_dataset.append(current_loss_non_coll)
-                loss_contacts_dataset.append(current_loss_contact)
-                loss_collision_n_points_dataset.append(current_contact_n_points)
-                loss_collision_sum_depths_dataset.append(current_contact_sum_depths)
+                    loss_non_collisions_dataset.append(current_loss_non_coll)
+                    loss_contacts_dataset.append(current_loss_contact)
+                    loss_collision_n_points_dataset.append(current_contact_n_points)
+                    loss_collision_sum_depths_dataset.append(current_contact_sum_depths)
 
                 current_loss_non_coll_optim = sample.loc[idx, [follow_up_column + "_non_collision_optim"]].values[0]
                 current_loss_contact_optim = sample.loc[idx, [follow_up_column + "_contact_sample_optim"]].values[0]
@@ -116,15 +123,16 @@ if __name__ == '__main__':
                 loss_collision_n_points_dataset_optim.append(current_contact_n_points_optim)
                 loss_collision_sum_depths_dataset_optim.append(current_contact_sum_depths_optim)
 
-            tb_data.append([model, dataset_name, current_env_name,
-                            statistics.mean(loss_non_collision_env),
-                            statistics.stdev(loss_non_collision_env),
-                            statistics.mean(loss_contact_env),
-                            statistics.mean(loss_collision_n_points),
-                            statistics.stdev(loss_collision_n_points),
-                            statistics.mean(loss_collision_sum_depths),
-                            statistics.stdev(loss_collision_sum_depths)
-                            ])
+            if measure_it_clearance_metrics:
+                tb_data.append([model, dataset_name, current_env_name,
+                                statistics.mean(loss_non_collision_env),
+                                statistics.stdev(loss_non_collision_env),
+                                statistics.mean(loss_contact_env),
+                                statistics.mean(loss_collision_n_points),
+                                statistics.stdev(loss_collision_n_points),
+                                statistics.mean(loss_collision_sum_depths),
+                                statistics.stdev(loss_collision_sum_depths)
+                                ])
             tb_data_optim.append([model, dataset_name, current_env_name,
                                   statistics.mean(loss_non_collision_env_optim),
                                   statistics.stdev(loss_non_collision_env_optim),
@@ -135,14 +143,15 @@ if __name__ == '__main__':
                                   statistics.stdev(loss_collision_sum_depths_optim)
                                   ])
 
-        tb_data.append([model, dataset_name, "Overall",
-                        statistics.mean(loss_non_collisions_dataset),
-                        statistics.stdev(loss_non_collisions_dataset),
-                        statistics.mean(loss_contacts_dataset),
-                        statistics.mean(loss_collision_n_points_dataset),
-                        statistics.stdev(loss_collision_n_points_dataset),
-                        statistics.mean(loss_collision_sum_depths_dataset),
-                        statistics.stdev(loss_collision_sum_depths_dataset)])
+        if measure_it_clearance_metrics:
+            tb_data.append([model, dataset_name, "Overall",
+                            statistics.mean(loss_non_collisions_dataset),
+                            statistics.stdev(loss_non_collisions_dataset),
+                            statistics.mean(loss_contacts_dataset),
+                            statistics.mean(loss_collision_n_points_dataset),
+                            statistics.stdev(loss_collision_n_points_dataset),
+                            statistics.mean(loss_collision_sum_depths_dataset),
+                            statistics.stdev(loss_collision_sum_depths_dataset)])
 
         tb_data_optim.append([model, dataset_name, "Overall",
                               statistics.mean(loss_non_collisions_dataset_optim),
@@ -157,12 +166,13 @@ if __name__ == '__main__':
     conglo_file_name = os.path.basename(conglo_path)
     logging.basicConfig(filename=f"output_{conglo_file_name}.txt", level=logging.INFO, format='')
 
-    logging.info('\n\n\n')
-    logging.info('\n ---------------------------------------------------------------------------------------------')
-    logging.info('\n ---------------------------------------------------------------------------------------------')
-    logging.info('\n RAW iTClearance OUTPUT')
-    logging.info('\n'+tabulate(tb_data,headers=tb_headers, floatfmt=".4f",  tablefmt="latex_booktabs"))
-    logging.info('\n'+tabulate(tb_data,headers=tb_headers, floatfmt=".4f",  tablefmt="simple"))
+    if measure_it_clearance_metrics:
+        logging.info('\n\n\n')
+        logging.info('\n ---------------------------------------------------------------------------------------------')
+        logging.info('\n ---------------------------------------------------------------------------------------------')
+        logging.info('\n RAW iTClearance OUTPUT')
+        logging.info('\n'+tabulate(tb_data,headers=tb_headers, floatfmt=".4f",  tablefmt="latex_booktabs"))
+        logging.info('\n'+tabulate(tb_data,headers=tb_headers, floatfmt=".4f",  tablefmt="simple"))
 
     logging.info('\n\n\n')
     logging.info('\n ---------------------------------------------------------------------------------------------')

@@ -74,6 +74,8 @@ parser.add_argument('--dataset_name', required=True, help='dataset to test on')
 parser.add_argument('--weight_loss_vposer', required=False, default=0.10,  type=float, help='vposer weight')  # this was originally 0.02
 parser.add_argument('--weight_collision', required=False, default=1.0, type=float,  help='collision weight')# this was originally 8.0 or 0.01 for replica
 parser.add_argument('--weight_loss_contact', required=False, default=1.5, type=float, help='contact weight')# this was originally 0.5
+parser.add_argument('--measure_it_clearance_metrics', required=False, default='True', help='decide if calculate iTClearance metric or go directly to measure optimization')
+
 
 
 opt = parser.parse_args()
@@ -97,8 +99,7 @@ if __name__ == '__main__':
     weight_loss_contact = opt.weight_loss_contact #1.5 # this was originally 0.5
     itr_s2 = 150
 
-
-
+    measure_it_clearance_metrics = opt.measure_it_clearance_metrics=='True'
 
     json_conf_execution_dir = opj(base_dir,"config", "json_execution")
     directory_of_prop_configs= opj(base_dir, "config","propagators_configs")
@@ -186,16 +187,17 @@ if __name__ == '__main__':
 
             # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
             # measuring for simple iTClearance++
-            body_trimesh = vtk2trimesh(vtk_object)
-            current_loss_non_coll, current_loss_contact = measure_scores(vtk_object, s_sdf_batch, s_grid_min_batch, s_grid_max_batch)
-            contact_data = measure_trimesh_collision(env_trimesh, body_trimesh)
-            current_contact_n_points = len(contact_data)
-            current_contact_sum_depths = sum([data.depth for data in contact_data])
+            if measure_it_clearance_metrics:
+                body_trimesh = vtk2trimesh(vtk_object)
+                current_loss_non_coll, current_loss_contact = measure_scores(vtk_object, s_sdf_batch, s_grid_min_batch, s_grid_max_batch)
+                contact_data = measure_trimesh_collision(env_trimesh, body_trimesh)
+                current_contact_n_points = len(contact_data)
+                current_contact_sum_depths = sum([data.depth for data in contact_data])
 
-            conglo_data.loc[idx,[follow_up_column + "_non_collision"]] = current_loss_non_coll
-            conglo_data.loc[idx,[follow_up_column + "_contact_sample"]] = current_loss_contact
-            conglo_data.loc[idx, [follow_up_column + "_collision_points"]] = current_contact_n_points
-            conglo_data.loc[idx, [follow_up_column + "_collision_sum_depths"]] = current_contact_sum_depths
+                conglo_data.loc[idx,[follow_up_column + "_non_collision"]] = current_loss_non_coll
+                conglo_data.loc[idx,[follow_up_column + "_contact_sample"]] = current_loss_contact
+                conglo_data.loc[idx, [follow_up_column + "_collision_points"]] = current_contact_n_points
+                conglo_data.loc[idx, [follow_up_column + "_collision_sum_depths"]] = current_contact_sum_depths
 
             # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
             #measuring for optimized iTClearance++
@@ -241,10 +243,11 @@ if __name__ == '__main__':
             print(f"weight_loss_hand = {weight_loss_hand}")
             print(f"weight_collision = {weight_collision}")
             print(f"weight_loss_contact = {weight_loss_contact}")
-            print("non_coll    " , current_loss_non_coll, " -to- ", current_loss_non_coll_optim)
-            print("contact     ", current_loss_contact, " -to- ", current_loss_contact_optim)
-            print("coll_points ", current_contact_n_points, " -to- ", current_contact_n_points_optim)
-            print("coll_depth   ", current_contact_sum_depths, " -to- ", current_contact_sum_depths_optim)
+            if measure_it_clearance_metrics:
+                print("non_coll    " , current_loss_non_coll, " -to- ", current_loss_non_coll_optim)
+                print("contact     ", current_loss_contact, " -to- ", current_loss_contact_optim)
+                print("coll_points ", current_contact_n_points, " -to- ", current_contact_n_points_optim)
+                print("coll_depth   ", current_contact_sum_depths, " -to- ", current_contact_sum_depths_optim)
 
             if visualize:
                 json_conf_execution_file = opj(json_conf_execution_dir, f"single_testing_{interaction}.json")
@@ -252,7 +255,7 @@ if __name__ == '__main__':
                 subdir_name = "_".join(tester.affordances[0])
                 ply_obj_file = opj(directory_of_trainings, interaction, subdir_name + "_object.ply")
 
-                body_trimesh.visual.face_colors = [200, 200, 200, 150]
+                # body_trimesh.visual.face_colors = [200, 200, 200, 150]
                 body_trimesh_optim.visual.face_colors = [200, 200, 200, 255]
 
                 s = trimesh.Scene()
