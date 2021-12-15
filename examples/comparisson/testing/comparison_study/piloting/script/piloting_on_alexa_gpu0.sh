@@ -39,11 +39,11 @@ cd $SRCS/examples/comparisson/testing/comparison_study/piloting
 
 
 # experiment number 4
-python $SRCS/examples/comparisson/testing/comparison_study/piloting/03_measure_scores_per_dataset_1_calculating[PILOTING].py --follow_up_file_name piloting_itClearance_replica_coll_1_5_contact_1_0.csv --dataset replica_v1 --weight_collision 1.5 --weight_loss_contact 1.0 --weight_loss_vposer 0.10 --measure_it_clearance_metrics False
-python $SRCS/examples/comparisson/testing/comparison_study/piloting/03_measure_scores_per_dataset_1_calculating[PILOTING].py --follow_up_file_name piloting_itClearance_mp3d_coll_1_5_contact_1_0.csv --dataset mp3d --weight_collision 1.5 --weight_loss_contact 1.0 --weight_loss_vposer 0.10 --measure_it_clearance_metrics False
-# execution for generating latex tables
-python $SRCS/examples/comparisson/testing/comparison_study/piloting/03_measure_scores_per_dataset_2_summarize[PILOTING].py --follow_up_file_name piloting_itClearance_replica_coll_1_5_contact_1_0.csv --measure_it_clearance_metrics False
-python $SRCS/examples/comparisson/testing/comparison_study/piloting/03_measure_scores_per_dataset_2_summarize[PILOTING].py --follow_up_file_name piloting_itClearance_mp3d_coll_1_5_contact_1_0.csv --measure_it_clearance_metrics False
+#python $SRCS/examples/comparisson/testing/comparison_study/piloting/03_measure_scores_per_dataset_1_calculating[PILOTING].py --follow_up_file_name piloting_itClearance_replica_coll_1_5_contact_1_0.csv --dataset replica_v1 --weight_collision 1.5 --weight_loss_contact 1.0 --weight_loss_vposer 0.10 --measure_it_clearance_metrics False
+#python $SRCS/examples/comparisson/testing/comparison_study/piloting/03_measure_scores_per_dataset_1_calculating[PILOTING].py --follow_up_file_name piloting_itClearance_mp3d_coll_1_5_contact_1_0.csv --dataset mp3d --weight_collision 1.5 --weight_loss_contact 1.0 --weight_loss_vposer 0.10 --measure_it_clearance_metrics False
+## execution for generating latex tables
+#python $SRCS/examples/comparisson/testing/comparison_study/piloting/03_measure_scores_per_dataset_2_summarize[PILOTING].py --follow_up_file_name piloting_itClearance_replica_coll_1_5_contact_1_0.csv --measure_it_clearance_metrics False
+#python $SRCS/examples/comparisson/testing/comparison_study/piloting/03_measure_scores_per_dataset_2_summarize[PILOTING].py --follow_up_file_name piloting_itClearance_mp3d_coll_1_5_contact_1_0.csv --measure_it_clearance_metrics False
 
 
 # experiment number 5
