@@ -113,11 +113,11 @@ if __name__ == '__main__':
 
     current_env_name = opt.scene
 
-    output_path = opj(env_filled_data_test_dir, f"02_conglomerate_capable_positions_clearance_{current_env_name}.csv")
+    output_path = opj(env_filled_data_test_dir, f"03_conglomerate_capable_positions_clearance_{current_env_name}.csv")
     if os.path.exists(output_path):
         conglo_path = output_path
     else:
-        conglo_path = opj(env_filled_data_test_dir, f"02_conglomerate_capable_positions_clearance.csv")
+        conglo_path = opj(env_filled_data_test_dir, f"full_02_conglomerate_capable_positions_clearance.csv")
     print(conglo_path)
     print("output: ", output_path)
 
