@@ -6,6 +6,7 @@ import argparse
 import os
 import statistics
 import warnings
+import numpy as np
 
 from numpy.distutils.command.config import config
 from tabulate import tabulate
@@ -24,7 +25,7 @@ def get_next_sampling_id(l_column_names):
 parser = argparse.ArgumentParser()
 # data paths
 parser.add_argument('--scene', required=False, help='scene')
-parser.add_argument('--dataset', default="prox", help='scene')
+parser.add_argument('--dataset', default="replica_v1", help='scene')
 opt = parser.parse_args()
 print(opt)
 
@@ -40,11 +41,11 @@ if __name__ == '__main__':
     column_prefix = f"comparison_"
     follow_up_column = f"{column_prefix}{id}"
 
-    tb_headers = ["model", "dataset", "interaction_type", "non_collision", "std_dev", "contact",
+    tb_headers = ["model", "dataset", "interaction_type", "non_collision", "std_dev", "contact","contact_std",
                   "collision_points", "collision_points_std_dev", "collision_depth", "collision_depth_std_dev"]
-    tb_headers_opt1 = ["model", "dataset", "interaction_type", "non_collision", "std_dev", "contact",
+    tb_headers_opt1 = ["model", "dataset", "interaction_type", "non_collision", "std_dev", "contact","contact_std",
                         "collision_points", "collision_points_std_dev", "collision_depth", "collision_depth_std_dev"]
-    tb_headers_opt2 = ["model", "dataset", "interaction_type", "non_collision", "std_dev", "contact",
+    tb_headers_opt2 = ["model", "dataset", "interaction_type", "non_collision", "std_dev", "contact","contact_std",
                        "collision_points", "collision_points_std_dev", "collision_depth", "collision_depth_std_dev"]
     tb_data_orig = []
     tb_data_opt1 = []
@@ -143,60 +144,66 @@ if __name__ == '__main__':
 
 
         tb_data_orig.append([model, opt.dataset, current_env_name,
-                        statistics.mean(loss_non_collision_env_orig),
-                        statistics.stdev(loss_non_collision_env_orig),
-                        statistics.mean(loss_contact_env_orig),
-                        statistics.mean(loss_collision_n_points_orig),
-                        statistics.stdev(loss_collision_n_points_orig),
-                        statistics.mean(loss_collision_sum_depths_orig),
-                        statistics.stdev(loss_collision_sum_depths_orig)
+                        np.mean(loss_non_collision_env_orig),
+                        np.std(loss_non_collision_env_orig),
+                        np.mean(loss_contact_env_orig),
+                        np.std(loss_contact_env_orig),
+                        np.mean(loss_collision_n_points_orig),
+                        np.std(loss_collision_n_points_orig),
+                        np.mean(loss_collision_sum_depths_orig),
+                        np.std(loss_collision_sum_depths_orig)
                         ])
         tb_data_opt1.append([model, opt.dataset, current_env_name,
-                              statistics.mean(loss_non_collision_env_opt1),
-                              statistics.stdev(loss_non_collision_env_opt1),
-                              statistics.mean(loss_contact_env_opt1),
-                              statistics.mean(loss_collision_n_points_opt1),
-                              statistics.stdev(loss_collision_n_points_opt1),
-                              statistics.mean(loss_collision_sum_depths_opt1),
-                              statistics.stdev(loss_collision_sum_depths_opt1)
+                              np.mean(loss_non_collision_env_opt1),
+                              np.std(loss_non_collision_env_opt1),
+                              np.mean(loss_contact_env_opt1),
+                              np.std(loss_contact_env_opt1),
+                              np.mean(loss_collision_n_points_opt1),
+                              np.std(loss_collision_n_points_opt1),
+                              np.mean(loss_collision_sum_depths_opt1),
+                              np.std(loss_collision_sum_depths_opt1)
                               ])
 
         tb_data_opt2.append([model, opt.dataset, current_env_name,
-                             statistics.mean(loss_non_collision_env_opt2),
-                             statistics.stdev(loss_non_collision_env_opt2),
-                             statistics.mean(loss_contact_env_opt2),
-                             statistics.mean(loss_collision_n_points_opt2),
-                             statistics.stdev(loss_collision_n_points_opt2),
-                             statistics.mean(loss_collision_sum_depths_opt2),
-                             statistics.stdev(loss_collision_sum_depths_opt2)
+                             np.mean(loss_non_collision_env_opt2),
+                             np.std(loss_non_collision_env_opt2),
+                             np.mean(loss_contact_env_opt2),
+                             np.std(loss_contact_env_opt2),
+                             np.mean(loss_collision_n_points_opt2),
+                             np.std(loss_collision_n_points_opt2),
+                             np.mean(loss_collision_sum_depths_opt2),
+                             np.std(loss_collision_sum_depths_opt2)
                              ])
 
     tb_data_orig.append([model, opt.dataset, "Overall",
-                    statistics.mean(loss_non_collisions_dataset_orig),
-                    statistics.stdev(loss_non_collisions_dataset_orig),
-                    statistics.mean(loss_contacts_dataset_orig),
-                    statistics.mean(loss_collision_n_points_dataset_orig),
-                    statistics.stdev(loss_collision_n_points_dataset_orig),
-                    statistics.mean(loss_collision_sum_depths_dataset_orig),
-                    statistics.stdev(loss_collision_sum_depths_dataset_orig)])
+                    np.mean(loss_non_collisions_dataset_orig),
+                    np.std(loss_non_collisions_dataset_orig),
+                    np.mean(loss_contacts_dataset_orig),
+                    np.std(loss_contacts_dataset_orig),
+                    np.mean(loss_collision_n_points_dataset_orig),
+                    np.std(loss_collision_n_points_dataset_orig),
+                    np.mean(loss_collision_sum_depths_dataset_orig),
+                    np.std(loss_collision_sum_depths_dataset_orig)])
 
     tb_data_opt1.append([model, opt.dataset, "Overall",
-                          statistics.mean(loss_non_collisions_dataset_opt1),
-                          statistics.stdev(loss_non_collisions_dataset_opt1),
-                          statistics.mean(loss_contacts_dataset_opt1),
-                          statistics.mean(loss_collision_n_points_dataset_opt1),
-                          statistics.stdev(loss_collision_n_points_dataset_opt1),
-                          statistics.mean(loss_collision_sum_depths_dataset_opt1),
-                          statistics.stdev(loss_collision_sum_depths_dataset_opt1)])
+                          np.mean(loss_non_collisions_dataset_opt1),
+                          np.std(loss_non_collisions_dataset_opt1),
+                          np.mean(loss_contacts_dataset_opt1),
+                          np.std(loss_contacts_dataset_opt1),
+                          np.mean(loss_collision_n_points_dataset_opt1),
+                          np.std(loss_collision_n_points_dataset_opt1),
+                          np.mean(loss_collision_sum_depths_dataset_opt1),
+                          np.std(loss_collision_sum_depths_dataset_opt1)])
 
     tb_data_opt2.append([model, opt.dataset, "Overall",
-                         statistics.mean(loss_non_collisions_dataset_opt2),
-                         statistics.stdev(loss_non_collisions_dataset_opt2),
-                         statistics.mean(loss_contacts_dataset_opt2),
-                         statistics.mean(loss_collision_n_points_dataset_opt2),
-                         statistics.stdev(loss_collision_n_points_dataset_opt2),
-                         statistics.mean(loss_collision_sum_depths_dataset_opt2),
-                         statistics.stdev(loss_collision_sum_depths_dataset_opt2)])
+                         np.mean(loss_non_collisions_dataset_opt2),
+                         np.std(loss_non_collisions_dataset_opt2),
+                         np.mean(loss_contacts_dataset_opt2),
+                         np.std(loss_contacts_dataset_opt2),
+                         np.mean(loss_collision_n_points_dataset_opt2),
+                         np.std(loss_collision_n_points_dataset_opt2),
+                         np.mean(loss_collision_sum_depths_dataset_opt2),
+                         np.std(loss_collision_sum_depths_dataset_opt2)])
 
     import logging
 

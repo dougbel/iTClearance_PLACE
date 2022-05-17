@@ -9,6 +9,7 @@ import warnings
 
 from numpy.distutils.command.config import config
 from tabulate import tabulate
+import numpy as np
 
 warnings.simplefilter("ignore", UserWarning)
 from os.path import  join as opj
@@ -22,9 +23,7 @@ def get_next_sampling_id(l_column_names):
          x.startswith(column_prefix) and x.replace(column_prefix, "").isdigit()]) + 1
 
 parser = argparse.ArgumentParser()
-# data paths
-parser.add_argument('--scene', required=False, help='scene')
-parser.add_argument('--dataset', default="prox", help='scene')
+parser.add_argument('--dataset', default="mp3d", help='scene')
 opt = parser.parse_args()
 print(opt)
 
@@ -40,9 +39,9 @@ if __name__ == '__main__':
     column_prefix = f"comparison_"
     follow_up_column = f"{column_prefix}{id}_improved"
 
-    tb_headers = ["model", "dataset", "interaction_type", "non_collision", "std_dev", "contact",
+    tb_headers = ["model", "dataset", "interaction_type", "non_collision", "std_dev", "contact","contact_std",
                   "collision_points", "collision_points_std_dev", "collision_depth", "collision_depth_std_dev"]
-    tb_headers_optim = ["model", "dataset", "interaction_type", "non_collision", "std_dev", "contact",
+    tb_headers_optim = ["model", "dataset", "interaction_type", "non_collision", "std_dev", "contact","contact_std",
                         "collision_points", "collision_points_std_dev", "collision_depth", "collision_depth_std_dev"]
     tb_data_orig = []
     tb_data_optim = []
@@ -119,41 +118,45 @@ if __name__ == '__main__':
 
 
         tb_data_orig.append([model, opt.dataset, current_env_name,
-                        statistics.mean(loss_non_collision_env_orig),
-                        statistics.stdev(loss_non_collision_env_orig),
-                        statistics.mean(loss_contact_env_orig),
-                        statistics.mean(loss_collision_n_points_orig),
-                        statistics.stdev(loss_collision_n_points_orig),
-                        statistics.mean(loss_collision_sum_depths_orig),
-                        statistics.stdev(loss_collision_sum_depths_orig)
+                        np.mean(loss_non_collision_env_orig),
+                        np.std(loss_non_collision_env_orig),
+                        np.mean(loss_contact_env_orig),
+                        np.std(loss_contact_env_orig),
+                        np.mean(loss_collision_n_points_orig),
+                        np.std(loss_collision_n_points_orig),
+                        np.mean(loss_collision_sum_depths_orig),
+                        np.std(loss_collision_sum_depths_orig)
                         ])
         tb_data_optim.append([model, opt.dataset, current_env_name,
-                              statistics.mean(loss_non_collision_env_optim),
-                              statistics.stdev(loss_non_collision_env_optim),
-                              statistics.mean(loss_contact_env_optim),
-                              statistics.mean(loss_collision_n_points_optim),
-                              statistics.stdev(loss_collision_n_points_optim),
-                              statistics.mean(loss_collision_sum_depths_optim),
-                              statistics.stdev(loss_collision_sum_depths_optim)
+                              np.mean(loss_non_collision_env_optim),
+                              np.std(loss_non_collision_env_optim),
+                              np.mean(loss_contact_env_optim),
+                              np.std(loss_contact_env_optim),
+                              np.mean(loss_collision_n_points_optim),
+                              np.std(loss_collision_n_points_optim),
+                              np.mean(loss_collision_sum_depths_optim),
+                              np.std(loss_collision_sum_depths_optim)
                               ])
 
     tb_data_orig.append([model, opt.dataset, "Overall",
-                    statistics.mean(loss_non_collisions_dataset_orig),
-                    statistics.stdev(loss_non_collisions_dataset_orig),
-                    statistics.mean(loss_contacts_dataset_orig),
-                    statistics.mean(loss_collision_n_points_dataset_orig),
-                    statistics.stdev(loss_collision_n_points_dataset_orig),
-                    statistics.mean(loss_collision_sum_depths_dataset_orig),
-                    statistics.stdev(loss_collision_sum_depths_dataset_orig)])
+                    np.mean(loss_non_collisions_dataset_orig),
+                    np.std(loss_non_collisions_dataset_orig),
+                    np.mean(loss_contacts_dataset_orig),
+                    np.std(loss_contacts_dataset_orig),
+                    np.mean(loss_collision_n_points_dataset_orig),
+                    np.std(loss_collision_n_points_dataset_orig),
+                    np.mean(loss_collision_sum_depths_dataset_orig),
+                    np.std(loss_collision_sum_depths_dataset_orig)])
 
     tb_data_optim.append([model, opt.dataset, "Overall",
-                          statistics.mean(loss_non_collisions_dataset_optim),
-                          statistics.stdev(loss_non_collisions_dataset_optim),
-                          statistics.mean(loss_contacts_dataset_optim),
-                          statistics.mean(loss_collision_n_points_dataset_optim),
-                          statistics.stdev(loss_collision_n_points_dataset_optim),
-                          statistics.mean(loss_collision_sum_depths_dataset_optim),
-                          statistics.stdev(loss_collision_sum_depths_dataset_optim)])
+                          np.mean(loss_non_collisions_dataset_optim),
+                          np.std(loss_non_collisions_dataset_optim),
+                          np.mean(loss_contacts_dataset_optim),
+                          np.std(loss_contacts_dataset_optim),
+                          np.mean(loss_collision_n_points_dataset_optim),
+                          np.std(loss_collision_n_points_dataset_optim),
+                          np.mean(loss_collision_sum_depths_dataset_optim),
+                          np.std(loss_collision_sum_depths_dataset_optim)])
 
     import logging
 

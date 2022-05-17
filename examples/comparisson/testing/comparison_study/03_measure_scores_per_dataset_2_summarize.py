@@ -11,6 +11,7 @@ from os.path import  join as opj
 import torch
 
 import pandas as pd
+import numpy as np
 
 from tabulate import tabulate
 
@@ -35,7 +36,7 @@ if __name__ == '__main__':
         # "conglo_env_raw_iT_naive": opj(env_raw_data_test_dir, f"02_conglomerate_capable_positions_naive.csv"),
         # "conglo_env_raw_iT_clearance": opj(env_raw_data_test_dir, f"02_conglomerate_capable_positions_clearance.csv"),
         # "conglo_env_fill_iT_naive": opj(env_filled_data_test_dir, f"02_conglomerate_capable_positions_naive.csv"),
-        "conglo_env_fill_iT_clearance": opj(env_filled_data_test_dir, f"02_conglomerate_capable_positions_clearance.csv")
+        "conglo_env_fill_iT_clearance": opj(env_filled_data_test_dir, f"full_02_conglomerate_capable_positions_clearance.csv")
     }
 
 
@@ -43,9 +44,9 @@ if __name__ == '__main__':
 
     for model in filles_to_test:
 
-        tb_headers = ["model", "dataset", "interaction_type", "non_collision", "std_dev", "contact",
+        tb_headers = ["model", "dataset", "interaction_type", "non_collision", "std_dev", "contact", "contact_std",
                       "collision_points", "collision_points_std_dev", "collision_depth", "collision_depth_std_dev"]
-        tb_headers_optim = ["model", "dataset", "interaction_type", "non_collision", "std_dev", "contact",
+        tb_headers_optim = ["model", "dataset", "interaction_type", "non_collision", "std_dev", "contact", "contact_std",
                       "collision_points", "collision_points_std_dev", "collision_depth", "collision_depth_std_dev"]
         tb_data = []
         tb_data_optim = []
@@ -118,41 +119,45 @@ if __name__ == '__main__':
                     loss_collision_sum_depths_dataset_optim.append(current_contact_sum_depths_optim)
 
                 tb_data.append([model, dataset_name, current_env_name,
-                                statistics.mean(loss_non_collision_env),
-                                statistics.stdev(loss_non_collision_env),
-                                statistics.mean(loss_contact_env),
-                                statistics.mean(loss_collision_n_points),
-                                statistics.stdev(loss_collision_n_points),
-                                statistics.mean(loss_collision_sum_depths),
-                                statistics.stdev(loss_collision_sum_depths)
+                                np.mean(loss_non_collision_env),
+                                np.std(loss_non_collision_env),
+                                np.mean(loss_contact_env),
+                                np.std(loss_contact_env),
+                                np.mean(loss_collision_n_points),
+                                np.std(loss_collision_n_points),
+                                np.mean(loss_collision_sum_depths),
+                                np.std(loss_collision_sum_depths)
                                 ])
                 tb_data_optim.append([model, dataset_name, current_env_name,
-                                      statistics.mean(loss_non_collision_env_optim),
-                                      statistics.stdev(loss_non_collision_env_optim),
-                                      statistics.mean(loss_contact_env_optim),
-                                      statistics.mean(loss_collision_n_points_optim),
-                                      statistics.stdev(loss_collision_n_points_optim),
-                                      statistics.mean(loss_collision_sum_depths_optim),
-                                      statistics.stdev(loss_collision_sum_depths_optim)
+                                      np.mean(loss_non_collision_env_optim),
+                                      np.std(loss_non_collision_env_optim),
+                                      np.mean(loss_contact_env_optim),
+                                      np.std(loss_contact_env_optim),
+                                      np.mean(loss_collision_n_points_optim),
+                                      np.std(loss_collision_n_points_optim),
+                                      np.mean(loss_collision_sum_depths_optim),
+                                      np.std(loss_collision_sum_depths_optim)
                                       ])
 
             tb_data.append([model, dataset_name, "Overall",
-                            statistics.mean(loss_non_collisions_dataset),
-                            statistics.stdev(loss_non_collisions_dataset),
-                            statistics.mean(loss_contacts_dataset),
-                            statistics.mean(loss_collision_n_points_dataset),
-                            statistics.stdev(loss_collision_n_points_dataset),
-                            statistics.mean(loss_collision_sum_depths_dataset),
-                            statistics.stdev(loss_collision_sum_depths_dataset)])
+                            np.mean(loss_non_collisions_dataset),
+                            np.std(loss_non_collisions_dataset),
+                            np.mean(loss_contacts_dataset),
+                            np.std(loss_contacts_dataset),
+                            np.mean(loss_collision_n_points_dataset),
+                            np.std(loss_collision_n_points_dataset),
+                            np.mean(loss_collision_sum_depths_dataset),
+                            np.std(loss_collision_sum_depths_dataset)])
 
             tb_data_optim.append([model, dataset_name, "Overall",
-                                  statistics.mean(loss_non_collisions_dataset_optim),
-                                  statistics.stdev(loss_non_collisions_dataset_optim),
-                                  statistics.mean(loss_contacts_dataset_optim),
-                                  statistics.mean(loss_collision_n_points_dataset_optim),
-                                  statistics.stdev(loss_collision_n_points_dataset_optim),
-                                  statistics.mean(loss_collision_sum_depths_dataset_optim),
-                                  statistics.stdev(loss_collision_sum_depths_dataset_optim)])
+                                  np.mean(loss_non_collisions_dataset_optim),
+                                  np.std(loss_non_collisions_dataset_optim),
+                                  np.mean(loss_contacts_dataset_optim),
+                                  np.std(loss_contacts_dataset_optim),
+                                  np.mean(loss_collision_n_points_dataset_optim),
+                                  np.std(loss_collision_n_points_dataset_optim),
+                                  np.mean(loss_collision_sum_depths_dataset_optim),
+                                  np.std(loss_collision_sum_depths_dataset_optim)])
 
         import logging
 
